@@ -1,143 +1,36 @@
 import { prepare, layout } from "@chenglou/pretext";
-import matrixDemo from "./data/matrix-demo.json";
-import jurassicParkThreeActDemo from "./data/jurassic-park-three-act-demo.json";
-import backToTheFutureSaveTheCatDemo from "./data/back-to-the-future-save-the-cat-demo.json";
-import findingNemoStoryCircleDemo from "./data/finding-nemo-story-circle-demo.json";
-import harryPotterSevenPointDemo from "./data/harry-potter-seven-point-demo.json";
-import prideAndPrejudiceRomancingDemo from "./data/pride-and-prejudice-romancing-the-beat-demo.json";
-import inceptionMiceDemo from "./data/inception-mice-quotient-demo.json";
-
-const STORAGE_KEY = "structurer.boards.v1";
-const SETTINGS_KEY = "structurer.settings.v1";
-const CUSTOM_STRUCTURES_KEY = "structurer.customStructures.v1";
-const CUSTOM_ARCHETYPES_KEY = "structurer.customArchetypes.v1";
-const DEV_RESET_FLAG_KEY = "activate.reset";
-const HOME_ROUTE = "/dashboard";
-const DEFAULT_COLUMN_WIDTH = 260;
-
-const BUILTIN_STRUCTURES = {
-  hero_journey: {
-    id: "hero_journey",
-    name: "Hero's Journey",
-    phases: [
-      "Ordinary World",
-      "Call to Adventure",
-      "Refusal of the Call",
-      "Meeting the Mentor",
-      "Crossing the Threshold",
-      "Tests, Allies, Enemies",
-      "Approach to the Inmost Cave",
-      "Ordeal",
-      "Reward",
-      "The Road Back",
-      "Resurrection",
-      "Return with the Elixir",
-    ],
-  },
-  three_act: {
-    id: "three_act",
-    name: "Three-Act Structure",
-    phases: [
-      "Act I - Setup",
-      "Act I - Inciting Incident",
-      "Act II - Progressive Complications",
-      "Act II - Midpoint",
-      "Act II - Crisis",
-      "Act II - Break into Act III",
-      "Act III - Climax",
-      "Act III - Resolution",
-    ],
-  },
-  save_the_cat: {
-    id: "save_the_cat",
-    name: "Save the Cat",
-    phases: [
-      "Opening Image",
-      "Theme Stated",
-      "Set-Up",
-      "Catalyst",
-      "Debate",
-      "Break into Two",
-      "B Story",
-      "Fun and Games",
-      "Midpoint",
-      "Bad Guys Close In",
-      "All Is Lost",
-      "Dark Night of the Soul",
-      "Break into Three",
-      "Finale",
-      "Final Image",
-    ],
-  },
-  story_circle: {
-    id: "story_circle",
-    name: "Story Circle",
-    phases: [
-      "1. You (Comfort Zone)",
-      "2. Need",
-      "3. Go",
-      "4. Search",
-      "5. Find",
-      "6. Take",
-      "7. Return",
-      "8. Change",
-    ],
-  },
-  seven_point: {
-    id: "seven_point",
-    name: "7-Point Story Structure",
-    phases: [
-      "Hook",
-      "Plot Turn 1",
-      "Pinch Point 1",
-      "Midpoint",
-      "Pinch Point 2",
-      "Plot Turn 2",
-      "Resolution",
-    ],
-  },
-  romancing_the_beat: {
-    id: "romancing_the_beat",
-    name: "Romancing the Beat",
-    phases: [
-      "Setup and Need",
-      "Meet and Spark",
-      "No Way / Resistance",
-      "Adhesion / Forced Proximity",
-      "Deepening Desire",
-      "Retreat and Doubt",
-      "Breakup / Crisis",
-      "Grand Gesture",
-      "Commitment / HEA-HFN",
-    ],
-  },
-  mice_quotient: {
-    id: "mice_quotient",
-    name: "MICE Quotient",
-    phases: [
-      "Milieu Question Open",
-      "Idea Question Open",
-      "Character Question Open",
-      "Event Question Open",
-      "Event Question Close",
-      "Character Question Close",
-      "Idea Question Close",
-      "Milieu Question Close",
-    ],
-  },
-};
-
-const BUILTIN_ARCHETYPES = [
-  { id: "none", icon: "", label: "No specific role" },
-  { id: "hero", icon: "🛡️", label: "Hero" },
-  { id: "mentor", icon: "🧙", label: "Mentor" },
-  { id: "ally", icon: "🤝", label: "Ally" },
-  { id: "herald", icon: "📣", label: "Herald" },
-  { id: "guardian", icon: "🚧", label: "Threshold Guardian" },
-  { id: "shadow", icon: "🕶️", label: "Shadow/Antagonist" },
-  { id: "trickster", icon: "🃏", label: "Trickster" },
-  { id: "shapeshifter", icon: "🦊", label: "Shapeshifter" },
-];
+import {
+  BUILTIN_ARCHETYPES,
+  BUILTIN_STRUCTURES,
+  CUSTOM_ARCHETYPES_KEY,
+  CUSTOM_STRUCTURES_KEY,
+  DEFAULT_COLUMN_WIDTH,
+  DEV_RESET_FLAG_KEY,
+  HOME_ROUTE,
+  SETTINGS_KEY,
+  STORAGE_KEY,
+} from "./app-config";
+import { DEMO_BOARD_DATA } from "./demo-boards";
+import {
+  clearKeys,
+  isFlagEnabled,
+  loadBoards as loadBoardsFromStorage,
+  loadCustomArchetypes as loadCustomArchetypesFromStorage,
+  loadCustomStructures as loadCustomStructuresFromStorage,
+  loadSettings as loadSettingsFromStorage,
+  saveBoards as saveBoardsToStorage,
+  saveCustomArchetypes as saveCustomArchetypesToStorage,
+  saveCustomStructures as saveCustomStructuresToStorage,
+  saveSettings as saveSettingsToStorage,
+} from "./storage";
+import {
+  boardCardTemplate,
+  columnMenuTemplate,
+  kindLabel,
+  noteTemplate,
+  renderStructureOptionsHtml,
+  structurePhaseRowTemplate,
+} from "./ui-render";
 
 const loadedBoards = loadBoards();
 let boards = loadedBoards || [];
@@ -188,69 +81,35 @@ const boardEl = document.querySelector("#board");
 const insightsEl = document.querySelector("#insights");
 
 function loadBoards() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === null) return null;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch {
-    return [];
-  }
+  return loadBoardsFromStorage(STORAGE_KEY);
 }
 
 function saveBoards() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(boards));
+  saveBoardsToStorage(STORAGE_KEY, boards);
 }
 
 function loadSettings() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed;
-  } catch {
-    return {};
-  }
+  return loadSettingsFromStorage(SETTINGS_KEY);
 }
 
 function saveSettings() {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ columnMinWidth, wrapColumns }));
+  saveSettingsToStorage(SETTINGS_KEY, { columnMinWidth, wrapColumns });
 }
 
 function loadCustomStructures() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(CUSTOM_STRUCTURES_KEY) || "[]");
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item) =>
-        item &&
-        typeof item.id === "string" &&
-        typeof item.name === "string" &&
-        Array.isArray(item.phases),
-    );
-  } catch {
-    return [];
-  }
+  return loadCustomStructuresFromStorage(CUSTOM_STRUCTURES_KEY);
 }
 
 function saveCustomStructures() {
-  localStorage.setItem(CUSTOM_STRUCTURES_KEY, JSON.stringify(customStructures));
+  saveCustomStructuresToStorage(CUSTOM_STRUCTURES_KEY, customStructures);
 }
 
 function loadCustomArchetypes() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(CUSTOM_ARCHETYPES_KEY) || "[]");
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item) => item && typeof item.id === "string" && typeof item.label === "string" && typeof item.icon === "string",
-    );
-  } catch {
-    return [];
-  }
+  return loadCustomArchetypesFromStorage(CUSTOM_ARCHETYPES_KEY);
 }
 
 function saveCustomArchetypes() {
-  localStorage.setItem(CUSTOM_ARCHETYPES_KEY, JSON.stringify(customArchetypes));
+  saveCustomArchetypesToStorage(CUSTOM_ARCHETYPES_KEY, customArchetypes);
 }
 
 function getAllStructures() {
@@ -270,7 +129,7 @@ function getAllArchetypes() {
 }
 
 function isDevResetEnabled() {
-  return localStorage.getItem(DEV_RESET_FLAG_KEY) === "true";
+  return isFlagEnabled(DEV_RESET_FLAG_KEY);
 }
 
 function applyDevFlags() {
@@ -338,41 +197,14 @@ function getStructureConfig(structureId) {
 
 function renderStructureOptions(selectedId = null) {
   const structures = getAllStructureList();
-  boardStructureSelect.innerHTML = structures
-    .map((structure) => {
-      const selectedAttr = structure.id === (selectedId || boardStructureSelect.value || "hero_journey") ? "selected" : "";
-      return `<option value="${structure.id}" ${selectedAttr}>${structure.name}</option>`;
-    })
-    .join("");
-}
-
-function structurePhaseRowTemplate(index, value = "") {
-  return `
-    <div class="structure-phase-row">
-      <span class="phase-row-index">${index + 1}.</span>
-      <input
-        type="text"
-        data-role="phase-input"
-        maxlength="80"
-        placeholder="Phase name"
-        value="${value}"
-        required
-      />
-      <button type="button" class="ghost-button" data-role="remove-phase-row" aria-label="Remove row">✕</button>
-    </div>
-  `;
+  const activeId = selectedId || boardStructureSelect.value || "hero_journey";
+  boardStructureSelect.innerHTML = renderStructureOptionsHtml(structures, activeId);
 }
 
 function renderStructurePhaseRows(values = ["", "", ""]) {
   structurePhasesList.innerHTML = values
     .map((value, index) => structurePhaseRowTemplate(index, value))
     .join("");
-}
-
-function kindLabel(kind) {
-  if (kind === "plot") return "Plot";
-  if (kind === "character") return "Character";
-  return "Theme";
 }
 
 function archetypeById(id) {
@@ -426,115 +258,14 @@ function formatDate(timestamp) {
   return new Date(timestamp).toLocaleString();
 }
 
-function boardCardTemplate(board) {
-  const noteCount = board.notes.length;
-  const structure = getStructureConfig(board.structureId);
-  return `
-    <article class="board-card" data-board-id="${board.id}" role="button" tabindex="0" aria-label="Open ${board.title}">
-      <div>
-        <strong>${board.title}</strong>
-        <div class="board-meta">
-          <div class="board-meta-line">${structure.name} • ${noteCount} notes</div>
-          <div class="board-meta-line">Updated ${formatDate(board.updatedAt)}</div>
-        </div>
-      </div>
-      <div class="board-actions">
-        <button type="button" class="action-button" data-role="board-actions" aria-label="Board actions">
-          <span class="action-icon" aria-hidden="true">⋯</span>
-          <span class="action-label">Actions</span>
-        </button>
-      </div>
-    </article>
-  `;
-}
-
-function noteTemplate(note) {
-  const archetype = archetypeById(note.archetype || "none");
-  const archetypes = getAllArchetypes();
-  const characterUI =
-    note.kind === "character"
-      ? `
-      <div class="character-fields">
-        <input
-          type="text"
-          data-role="character-name"
-          value="${note.characterName || ""}"
-          placeholder="Character name"
-          aria-label="Character name"
-        />
-        <select data-role="archetype" aria-label="Character archetype">
-          ${archetypes
-            .map(
-              (a) =>
-                `<option value="${a.id}" ${
-                  a.id === (note.archetype || "none") ? "selected" : ""
-                }>${a.icon} ${a.label}</option>`,
-            )
-            .join("")}
-        </select>
-      </div>
-    `
-      : "";
-
-  return `
-    <article class="note" data-id="${note.id}" data-kind="${note.kind}" draggable="true">
-      <div class="note-head">
-        <span class="badge">${kindLabel(note.kind)} ${
-          note.kind === "character" && archetype.icon ? archetype.icon : ""
-        }</span>
-        <button class="delete" data-role="delete" title="Delete note">✕</button>
-      </div>
-      ${characterUI}
-      <textarea
-        data-role="text"
-        data-note-id="${note.id}"
-        style="${note.customHeight ? `height: ${note.customHeight}px;` : ""}"
-        placeholder="Write your note..."
-      >${note.text || ""}</textarea>
-    </article>
-  `;
-}
-
-function columnMenuTemplate(columnIndex) {
-  const archetypes = getAllArchetypes();
-  return `
-    <div class="column-menu hidden" data-role="column-menu">
-      <button class="menu-item" data-role="quick-add" data-kind="plot" data-column="${columnIndex}">
-        Add plot note
-      </button>
-      <button class="menu-item" data-role="quick-add" data-kind="theme" data-column="${columnIndex}">
-        Add theme note
-      </button>
-      <button class="menu-item" data-role="toggle-character-submenu">
-        Add character note ▸
-      </button>
-      <div class="submenu hidden" data-role="character-submenu">
-        <div class="submenu-title">Choose archetype</div>
-        ${archetypes
-          .map(
-            (archetype) => `
-          <button
-            class="menu-item"
-            data-role="quick-add-character"
-            data-column="${columnIndex}"
-            data-archetype="${archetype.id}"
-          >
-            ${archetype.icon} ${archetype.label}
-          </button>
-        `,
-          )
-          .join("")}
-        <button class="menu-item" data-role="define-custom-archetype" data-column="${columnIndex}">
-          ✨ Define custom archetype...
-        </button>
-      </div>
-    </div>
-  `;
-}
-
 function renderHome() {
   const sortedBoards = [...boards].sort((a, b) => b.updatedAt - a.updatedAt);
-  boardsList.innerHTML = sortedBoards.map(boardCardTemplate).join("");
+  boardsList.innerHTML = sortedBoards
+    .map((board) => {
+      const structure = getStructureConfig(board.structureId);
+      return boardCardTemplate(board, structure.name, formatDate(board.updatedAt));
+    })
+    .join("");
   emptyState.style.display = boards.length === 0 ? "block" : "none";
 }
 
@@ -543,6 +274,7 @@ function renderEditor() {
   if (!board) return;
   const structure = getStructureConfig(board.structureId);
   const phases = structure.phases;
+  const archetypes = getAllArchetypes();
 
   editorTitle.textContent = board.title;
   structureNameEl.textContent = structure.name;
@@ -554,9 +286,11 @@ function renderEditor() {
         <div class="phase-head">
           <h2 class="phase-title">${columnIndex + 1}. ${phase}</h2>
           <button class="phase-add" data-role="open-column-menu" title="Add note">+</button>
-          ${columnMenuTemplate(columnIndex)}
+          ${columnMenuTemplate(columnIndex, archetypes)}
         </div>
-        <div class="notes">${noteItems.map(noteTemplate).join("")}</div>
+        <div class="notes">${noteItems
+          .map((note) => noteTemplate(note, archetypes, archetypeById(note.archetype || "none")))
+          .join("")}</div>
       </section>
     `;
     })
@@ -1032,10 +766,7 @@ resetAppDataBtn.addEventListener("click", () => {
   );
   if (!confirmed) return;
 
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(SETTINGS_KEY);
-  localStorage.removeItem(CUSTOM_STRUCTURES_KEY);
-  localStorage.removeItem(CUSTOM_ARCHETYPES_KEY);
+  clearKeys([STORAGE_KEY, SETTINGS_KEY, CUSTOM_STRUCTURES_KEY, CUSTOM_ARCHETYPES_KEY]);
   window.location.assign(HOME_ROUTE);
 });
 
@@ -1250,15 +981,7 @@ boards.forEach((board) => {
   normalizeOrders(board.notes, board.structureId);
 });
 if (loadedBoards === null) {
-  boards = [
-    createDemoBoardFromJson(matrixDemo),
-    createDemoBoardFromJson(jurassicParkThreeActDemo),
-    createDemoBoardFromJson(backToTheFutureSaveTheCatDemo),
-    createDemoBoardFromJson(findingNemoStoryCircleDemo),
-    createDemoBoardFromJson(harryPotterSevenPointDemo),
-    createDemoBoardFromJson(prideAndPrejudiceRomancingDemo),
-    createDemoBoardFromJson(inceptionMiceDemo),
-  ];
+  boards = DEMO_BOARD_DATA.map((demo) => createDemoBoardFromJson(demo));
 }
 boards.forEach((board) => {
   const baseSlug = slugifyTitle(board.title || "board");

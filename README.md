@@ -110,6 +110,19 @@ No backend is currently used.
 - The architecture is ready to support additional story structures beyond Hero's Journey.
 - For suggestions or feature requests, drop me a line.
 
+## History
+
+**1.2.0**
+- Reorganized project structure by introducing `src/` entrypoints (`/src/main.js`, `/src/styles.css`).
+- Moved app modules and demo datasets under `src/` for a cleaner, more scalable layout.
+
+**1.1.0**
+- Refactored core code into focused modules (`app-config`, `storage`, `ui-render`, `demo-boards`).
+- Improved maintainability while preserving existing behavior and data compatibility.
+
+**1.0.0**
+- Initial MVP release with dashboard, board editor, local persistence, and narrative structure support.
+
 ## Copyright
 
 2026 Francesco Sullo <francesco@sullo.co> — Built with Cursor AI in a couple of hours.
