@@ -175,6 +175,11 @@ h1 {
   padding-bottom: 12px;
 }
 
+.board.wrap-columns {
+  grid-template-columns: repeat(auto-fit, minmax(var(--column-min-width), 1fr));
+  overflow-x: visible;
+}
+
 .options-wrap {
   position: relative;
 }

@@ -34,7 +34,9 @@ const archetypes = [
 let boards = loadBoards();
 let currentBoardId = null;
 let draggedNoteId = null;
-let columnMinWidth = loadSettings().columnMinWidth || DEFAULT_COLUMN_WIDTH;
+const initialSettings = loadSettings();
+let columnMinWidth = initialSettings.columnMinWidth || DEFAULT_COLUMN_WIDTH;
+let wrapColumns = initialSettings.wrapColumns || false;
 
 const homeView = document.querySelector("#home-view");
 const editorView = document.querySelector("#editor-view");
@@ -47,6 +49,7 @@ const editorTitle = document.querySelector("#editor-title");
 const optionsButton = document.querySelector("#options-button");
 const optionsMenu = document.querySelector("#options-menu");
 const openResizeModalBtn = document.querySelector("#open-resize-modal");
+const toggleWrapColumnsBtn = document.querySelector("#toggle-wrap-columns");
 const resizeModalOverlay = document.querySelector("#resize-modal-overlay");
 const closeResizeModalBtn = document.querySelector("#close-resize-modal");
 const columnWidthSlider = document.querySelector("#column-width-slider");
@@ -80,13 +83,18 @@ function loadSettings() {
 }
 
 function saveSettings() {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ columnMinWidth }));
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ columnMinWidth, wrapColumns }));
 }
 
 function applyColumnWidth() {
   document.documentElement.style.setProperty("--column-min-width", `${columnMinWidth}px`);
   columnWidthSlider.value = String(columnMinWidth);
   columnWidthValue.textContent = `${columnMinWidth}px`;
+}
+
+function applyWrapColumns() {
+  boardEl.classList.toggle("wrap-columns", wrapColumns);
+  toggleWrapColumnsBtn.textContent = `Wrap columns: ${wrapColumns ? "On" : "Off"}`;
 }
 
 function slugifyTitle(title) {
@@ -321,6 +329,7 @@ function showBoard(boardId) {
   renderEditor();
   renderInsights(null);
   applyColumnWidth();
+  applyWrapColumns();
 }
 
 function touchBoard(board) {
@@ -476,6 +485,12 @@ optionsButton.addEventListener("click", (event) => {
 openResizeModalBtn.addEventListener("click", () => {
   closeOptionsMenu();
   openResizeModal();
+});
+
+toggleWrapColumnsBtn.addEventListener("click", () => {
+  wrapColumns = !wrapColumns;
+  applyWrapColumns();
+  saveSettings();
 });
 
 closeResizeModalBtn.addEventListener("click", () => {
@@ -647,4 +662,5 @@ window.addEventListener("popstate", () => {
   syncRouteToState(false);
 });
 applyColumnWidth();
+applyWrapColumns();
 syncRouteToState(true);
