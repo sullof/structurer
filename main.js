@@ -10,6 +10,7 @@ import inceptionMiceDemo from "./data/inception-mice-quotient-demo.json";
 const STORAGE_KEY = "structurer.boards.v1";
 const SETTINGS_KEY = "structurer.settings.v1";
 const CUSTOM_STRUCTURES_KEY = "structurer.customStructures.v1";
+const CUSTOM_ARCHETYPES_KEY = "structurer.customArchetypes.v1";
 const DEV_RESET_FLAG_KEY = "activate.reset";
 const HOME_ROUTE = "/dashboard";
 const DEFAULT_COLUMN_WIDTH = 260;
@@ -126,7 +127,7 @@ const BUILTIN_STRUCTURES = {
   },
 };
 
-const archetypes = [
+const BUILTIN_ARCHETYPES = [
   { id: "none", icon: "", label: "No specific role" },
   { id: "hero", icon: "🛡️", label: "Hero" },
   { id: "mentor", icon: "🧙", label: "Mentor" },
@@ -145,6 +146,7 @@ let draggedNoteId = null;
 let resizingNoteId = null;
 let boardActionsModalBoardId = null;
 let customStructures = loadCustomStructures();
+let customArchetypes = loadCustomArchetypes();
 const initialSettings = loadSettings();
 let columnMinWidth = initialSettings.columnMinWidth ?? DEFAULT_COLUMN_WIDTH;
 let wrapColumns = initialSettings.wrapColumns ?? true;
@@ -235,6 +237,22 @@ function saveCustomStructures() {
   localStorage.setItem(CUSTOM_STRUCTURES_KEY, JSON.stringify(customStructures));
 }
 
+function loadCustomArchetypes() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CUSTOM_ARCHETYPES_KEY) || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item) => item && typeof item.id === "string" && typeof item.label === "string" && typeof item.icon === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomArchetypes() {
+  localStorage.setItem(CUSTOM_ARCHETYPES_KEY, JSON.stringify(customArchetypes));
+}
+
 function getAllStructures() {
   const map = { ...BUILTIN_STRUCTURES };
   for (const structure of customStructures) {
@@ -245,6 +263,10 @@ function getAllStructures() {
 
 function getAllStructureList() {
   return Object.values(getAllStructures());
+}
+
+function getAllArchetypes() {
+  return [...BUILTIN_ARCHETYPES, ...customArchetypes];
 }
 
 function isDevResetEnabled() {
@@ -354,7 +376,27 @@ function kindLabel(kind) {
 }
 
 function archetypeById(id) {
-  return archetypes.find((item) => item.id === id) || archetypes[0];
+  return getAllArchetypes().find((item) => item.id === id) || BUILTIN_ARCHETYPES[0];
+}
+
+function createCustomArchetype(label) {
+  const trimmed = label.trim();
+  if (!trimmed) return null;
+  const baseId = `custom_${slugifyTitle(trimmed)}`;
+  let id = baseId;
+  let suffix = 2;
+  while (getAllArchetypes().some((item) => item.id === id)) {
+    id = `${baseId}_${suffix}`;
+    suffix += 1;
+  }
+  const archetype = {
+    id,
+    icon: "✨",
+    label: trimmed,
+  };
+  customArchetypes.push(archetype);
+  saveCustomArchetypes();
+  return archetype;
 }
 
 function estimateTextMetrics(text) {
@@ -408,6 +450,7 @@ function boardCardTemplate(board) {
 
 function noteTemplate(note) {
   const archetype = archetypeById(note.archetype || "none");
+  const archetypes = getAllArchetypes();
   const characterUI =
     note.kind === "character"
       ? `
@@ -453,6 +496,7 @@ function noteTemplate(note) {
 }
 
 function columnMenuTemplate(columnIndex) {
+  const archetypes = getAllArchetypes();
   return `
     <div class="column-menu hidden" data-role="column-menu">
       <button class="menu-item" data-role="quick-add" data-kind="plot" data-column="${columnIndex}">
@@ -480,6 +524,9 @@ function columnMenuTemplate(columnIndex) {
         `,
           )
           .join("")}
+        <button class="menu-item" data-role="define-custom-archetype" data-column="${columnIndex}">
+          ✨ Define custom archetype...
+        </button>
       </div>
     </div>
   `;
@@ -988,6 +1035,7 @@ resetAppDataBtn.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(SETTINGS_KEY);
   localStorage.removeItem(CUSTOM_STRUCTURES_KEY);
+  localStorage.removeItem(CUSTOM_ARCHETYPES_KEY);
   window.location.assign(HOME_ROUTE);
 });
 
@@ -1068,6 +1116,16 @@ boardEl.addEventListener("click", (event) => {
 
   if (target.dataset.role === "quick-add-character") {
     addNote("character", Number(target.dataset.column), target.dataset.archetype);
+    closeAllColumnMenus();
+    return;
+  }
+
+  if (target.dataset.role === "define-custom-archetype") {
+    const newName = window.prompt("Custom archetype name:");
+    if (!newName) return;
+    const created = createCustomArchetype(newName);
+    if (!created) return;
+    addNote("character", Number(target.dataset.column), created.id);
     closeAllColumnMenus();
     return;
   }
