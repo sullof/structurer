@@ -1,0 +1,41 @@
+{
+  "title": "The Matrix",
+  "structure": "Hero's Journey",
+  "notes": [
+    { "kind": "plot", "column": 0, "order": 0, "text": "Neo feels disconnected from reality, living a double life as Thomas Anderson by day and hacker by night." },
+    { "kind": "character", "column": 0, "order": 1, "characterName": "Neo", "archetype": "hero", "text": "A talented but restless outsider searching for truth." },
+
+    { "kind": "plot", "column": 1, "order": 0, "text": "Neo receives strange signals about the Matrix and is contacted by Morpheus's network." },
+    { "kind": "character", "column": 1, "order": 1, "characterName": "Trinity", "archetype": "herald", "text": "She initiates Neo's path by confirming that his world is not what it seems." },
+
+    { "kind": "plot", "column": 2, "order": 0, "text": "Neo hesitates when asked to escape agents through the office window, choosing apparent safety." },
+    { "kind": "theme", "column": 2, "order": 1, "text": "Fear of the unknown delays transformation." },
+
+    { "kind": "plot", "column": 3, "order": 0, "text": "Morpheus offers Neo the red pill or blue pill, framing the real stakes." },
+    { "kind": "character", "column": 3, "order": 1, "characterName": "Morpheus", "archetype": "mentor", "text": "Guides Neo with conviction and belief in his potential." },
+
+    { "kind": "plot", "column": 4, "order": 0, "text": "Neo chooses the red pill and wakes in the real world, leaving his old identity behind." },
+    { "kind": "theme", "column": 4, "order": 1, "text": "Awakening has a cost: truth is harsher than illusion." },
+
+    { "kind": "plot", "column": 5, "order": 0, "text": "Training simulations, dojo fight, jump program, and early confrontations with danger test Neo's mindset." },
+    { "kind": "character", "column": 5, "order": 1, "characterName": "Cypher", "archetype": "shadow", "text": "An ally turned traitor who rejects the pain of reality." },
+
+    { "kind": "plot", "column": 6, "order": 0, "text": "The team visits the Oracle; hints about sacrifice and destiny increase pressure before the main conflict." },
+    { "kind": "character", "column": 6, "order": 1, "characterName": "Oracle", "archetype": "shapeshifter", "text": "Offers ambiguous guidance that forces Neo to choose who to become." },
+
+    { "kind": "plot", "column": 7, "order": 0, "text": "Morpheus is captured; Neo chooses to return to the Matrix and face Agents to rescue him." },
+    { "kind": "theme", "column": 7, "order": 1, "text": "The hero earns identity through action, not prophecy." },
+
+    { "kind": "plot", "column": 8, "order": 0, "text": "Neo and Trinity free Morpheus in a high-risk rescue mission and survive impossible odds." },
+    { "kind": "character", "column": 8, "order": 1, "characterName": "Trinity", "archetype": "ally", "text": "Critical partner in the rescue and emotional anchor for Neo." },
+
+    { "kind": "plot", "column": 9, "order": 0, "text": "Neo races to reach the exit while Agent Smith pursues him relentlessly." },
+    { "kind": "character", "column": 9, "order": 1, "characterName": "Agent Smith", "archetype": "shadow", "text": "Embodies systemic control and elimination of anomaly." },
+
+    { "kind": "plot", "column": 10, "order": 0, "text": "Neo is shot, dies, and returns to life with full awareness of his power in the Matrix." },
+    { "kind": "theme", "column": 10, "order": 1, "text": "Rebirth completes the internal transformation into The One." },
+
+    { "kind": "plot", "column": 11, "order": 0, "text": "Neo defeats Smith's immediate threat and sends a message promising liberation from the Matrix." },
+    { "kind": "theme", "column": 11, "order": 1, "text": "The gift returned is possibility: others can wake up too." }
+  ]
+}

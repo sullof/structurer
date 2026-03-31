@@ -1,9 +1,10 @@
 import { prepare, layout } from "@chenglou/pretext";
+import matrixDemo from "./data/matrix-demo.json";
 
 const STORAGE_KEY = "structurer.boards.v1";
 const SETTINGS_KEY = "structurer.settings.v1";
 const HOME_ROUTE = "/dashboard";
-const DEFAULT_COLUMN_WIDTH = 180;
+const DEFAULT_COLUMN_WIDTH = 260;
 
 const phases = [
   "Ordinary World",
@@ -21,6 +22,7 @@ const phases = [
 ];
 
 const archetypes = [
+  { id: "none", icon: "", label: "No specific role" },
   { id: "hero", icon: "🛡️", label: "Hero" },
   { id: "mentor", icon: "🧙", label: "Mentor" },
   { id: "ally", icon: "🤝", label: "Ally" },
@@ -31,12 +33,14 @@ const archetypes = [
   { id: "shapeshifter", icon: "🦊", label: "Shapeshifter" },
 ];
 
-let boards = loadBoards();
+const loadedBoards = loadBoards();
+let boards = loadedBoards || [];
 let currentBoardId = null;
 let draggedNoteId = null;
+let resizingNoteId = null;
 const initialSettings = loadSettings();
-let columnMinWidth = initialSettings.columnMinWidth || DEFAULT_COLUMN_WIDTH;
-let wrapColumns = initialSettings.wrapColumns || false;
+let columnMinWidth = initialSettings.columnMinWidth ?? DEFAULT_COLUMN_WIDTH;
+let wrapColumns = initialSettings.wrapColumns ?? true;
 
 const homeView = document.querySelector("#home-view");
 const editorView = document.querySelector("#editor-view");
@@ -46,10 +50,12 @@ const createBoardForm = document.querySelector("#create-board-form");
 const boardTitleInput = document.querySelector("#board-title");
 const backHomeBtn = document.querySelector("#back-home");
 const editorTitle = document.querySelector("#editor-title");
+const structureNameEl = document.querySelector("#structure-name");
 const optionsButton = document.querySelector("#options-button");
 const optionsMenu = document.querySelector("#options-menu");
 const openResizeModalBtn = document.querySelector("#open-resize-modal");
 const toggleWrapColumnsBtn = document.querySelector("#toggle-wrap-columns");
+const resetAppDataBtn = document.querySelector("#reset-app-data");
 const resizeModalOverlay = document.querySelector("#resize-modal-overlay");
 const closeResizeModalBtn = document.querySelector("#close-resize-modal");
 const columnWidthSlider = document.querySelector("#column-width-slider");
@@ -60,7 +66,9 @@ const insightsEl = document.querySelector("#insights");
 
 function loadBoards() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === null) return null;
+    const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed;
   } catch {
@@ -185,13 +193,16 @@ function boardCardTemplate(board) {
         <strong>${board.title}</strong>
         <div class="board-meta">${noteCount} notes • Updated ${formatDate(board.updatedAt)}</div>
       </div>
-      <button type="button" data-role="open-board">Open</button>
+      <div class="board-actions">
+        <button type="button" data-role="open-board">Open</button>
+        <button type="button" class="danger-button" data-role="delete-board">Delete</button>
+      </div>
     </article>
   `;
 }
 
 function noteTemplate(note) {
-  const archetype = archetypeById(note.archetype || "hero");
+  const archetype = archetypeById(note.archetype || "none");
   const characterUI =
     note.kind === "character"
       ? `
@@ -208,7 +219,7 @@ function noteTemplate(note) {
             .map(
               (a) =>
                 `<option value="${a.id}" ${
-                  a.id === (note.archetype || "hero") ? "selected" : ""
+                  a.id === (note.archetype || "none") ? "selected" : ""
                 }>${a.icon} ${a.label}</option>`,
             )
             .join("")}
@@ -221,12 +232,17 @@ function noteTemplate(note) {
     <article class="note" data-id="${note.id}" data-kind="${note.kind}" draggable="true">
       <div class="note-head">
         <span class="badge">${kindLabel(note.kind)} ${
-          note.kind === "character" ? archetype.icon : ""
+          note.kind === "character" && archetype.icon ? archetype.icon : ""
         }</span>
         <button class="delete" data-role="delete" title="Delete note">✕</button>
       </div>
       ${characterUI}
-      <textarea data-role="text" placeholder="Write your note...">${note.text || ""}</textarea>
+      <textarea
+        data-role="text"
+        data-note-id="${note.id}"
+        style="${note.customHeight ? `height: ${note.customHeight}px;` : ""}"
+        placeholder="Write your note..."
+      >${note.text || ""}</textarea>
     </article>
   `;
 }
@@ -275,6 +291,7 @@ function renderEditor() {
   if (!board) return;
 
   editorTitle.textContent = board.title;
+  structureNameEl.textContent = board.structure || "Hero's Journey";
   boardEl.innerHTML = phases
     .map((phase, columnIndex) => {
       const noteItems = getColumnNotes(board.notes, columnIndex);
@@ -290,6 +307,20 @@ function renderEditor() {
     `;
     })
     .join("");
+  autoResizeTextareas();
+}
+
+function autoResizeTextareas() {
+  const board = getCurrentBoard();
+  if (!board) return;
+
+  boardEl.querySelectorAll('textarea[data-role="text"]').forEach((textarea) => {
+    const noteId = Number(textarea.dataset.noteId);
+    const note = board.notes.find((item) => item.id === noteId);
+    if (!note || note.customHeight) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.max(textarea.scrollHeight, 74)}px`;
+  });
 }
 
 function renderInsights(note) {
@@ -300,7 +331,7 @@ function renderInsights(note) {
   const metrics = estimateTextMetrics(note.text || "");
   const archetypeText =
     note.kind === "character"
-      ? `Archetype: ${archetypeById(note.archetype || "hero").label}`
+      ? `Archetype: ${archetypeById(note.archetype || "none").label}`
       : "Archetype: -";
 
   insightsEl.textContent = `Note #${note.id} | Type: ${kindLabel(
@@ -344,6 +375,7 @@ function createBoard(title) {
     id: crypto.randomUUID(),
     title: title.trim(),
     slug,
+    structure: "Hero's Journey",
     nextNoteId: 1,
     notes: [],
     updatedAt: Date.now(),
@@ -351,6 +383,28 @@ function createBoard(title) {
   boards.push(newBoard);
   saveBoards();
   renderHome();
+}
+
+function createDemoBoard() {
+  const notes = (matrixDemo.notes || []).map((note, index) => ({
+    id: index + 1,
+    kind: note.kind || "plot",
+    column: Number.isInteger(note.column) ? note.column : 0,
+    order: Number.isInteger(note.order) ? note.order : index,
+    text: note.text || "",
+    characterName: note.characterName || "",
+    archetype: note.archetype || "none",
+  }));
+
+  return {
+    id: crypto.randomUUID(),
+    title: matrixDemo.title || "The Matrix",
+    slug: ensureUniqueSlug(slugifyTitle(matrixDemo.title || "The Matrix")),
+    structure: matrixDemo.structure || "Hero's Journey",
+    nextNoteId: notes.length + 1,
+    notes,
+    updatedAt: Date.now(),
+  };
 }
 
 function openBoard(boardId, replaceRoute = false) {
@@ -385,7 +439,7 @@ function syncRouteToState(replaceRoute = true) {
   showBoard(board.id);
 }
 
-function addNote(kind, column, archetype = "hero") {
+function addNote(kind, column, archetype = "none") {
   const board = getCurrentBoard();
   if (!board) return;
   const newOrder = getColumnNotes(board.notes, column).length;
@@ -455,10 +509,22 @@ createBoardForm.addEventListener("submit", (event) => {
 
 boardsList.addEventListener("click", (event) => {
   const target = event.target;
-  if (target.dataset.role !== "open-board") return;
   const boardCard = target.closest(".board-card");
   if (!boardCard) return;
-  openBoard(boardCard.dataset.boardId);
+  const boardId = boardCard.dataset.boardId;
+  if (target.dataset.role === "open-board") {
+    openBoard(boardId);
+    return;
+  }
+  if (target.dataset.role === "delete-board") {
+    const board = boards.find((item) => item.id === boardId);
+    if (!board) return;
+    const confirmed = window.confirm(`Delete board "${board.title}"? This action cannot be undone.`);
+    if (!confirmed) return;
+    boards = boards.filter((item) => item.id !== boardId);
+    saveBoards();
+    renderHome();
+  }
 });
 
 backHomeBtn.addEventListener("click", () => {
@@ -493,6 +559,18 @@ toggleWrapColumnsBtn.addEventListener("click", () => {
   saveSettings();
 });
 
+resetAppDataBtn.addEventListener("click", () => {
+  closeOptionsMenu();
+  const confirmed = window.confirm(
+    "Reset all app data? This will delete all boards and settings, then reload the app.",
+  );
+  if (!confirmed) return;
+
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SETTINGS_KEY);
+  window.location.assign(HOME_ROUTE);
+});
+
 closeResizeModalBtn.addEventListener("click", () => {
   closeResizeModal();
 });
@@ -524,6 +602,10 @@ boardEl.addEventListener("input", (event) => {
 
   if (target.dataset.role === "text") {
     note.text = target.value;
+    if (!note.customHeight) {
+      target.style.height = "auto";
+      target.style.height = `${Math.max(target.scrollHeight, 74)}px`;
+    }
   } else if (target.dataset.role === "character-name") {
     note.characterName = target.value;
   } else if (target.dataset.role === "archetype") {
@@ -637,6 +719,25 @@ boardEl.addEventListener("dragend", () => {
   boardEl.querySelectorAll(".note.is-dragging").forEach((note) => note.classList.remove("is-dragging"));
 });
 
+boardEl.addEventListener("mousedown", (event) => {
+  const target = event.target;
+  if (target.matches('textarea[data-role="text"]')) {
+    resizingNoteId = Number(target.dataset.noteId);
+  }
+});
+
+boardEl.addEventListener("mouseup", (event) => {
+  const target = event.target;
+  if (!target.matches('textarea[data-role="text"]') || resizingNoteId === null) return;
+  const board = getCurrentBoard();
+  if (!board) return;
+  const note = board.notes.find((item) => item.id === resizingNoteId);
+  if (!note) return;
+  note.customHeight = target.offsetHeight;
+  touchBoard(board);
+  resizingNoteId = null;
+});
+
 document.addEventListener("click", (event) => {
   if (!event.target.closest(".options-wrap")) {
     closeOptionsMenu();
@@ -646,6 +747,10 @@ document.addEventListener("click", (event) => {
   }
 });
 
+document.addEventListener("mouseup", () => {
+  resizingNoteId = null;
+});
+
 resizeModalOverlay.addEventListener("click", (event) => {
   if (event.target === resizeModalOverlay) {
     closeResizeModal();
@@ -653,6 +758,9 @@ resizeModalOverlay.addEventListener("click", (event) => {
 });
 
 boards.forEach((board) => normalizeOrders(board.notes));
+if (loadedBoards === null) {
+  boards = [createDemoBoard()];
+}
 boards.forEach((board) => {
   const baseSlug = slugifyTitle(board.title || "board");
   board.slug = ensureUniqueSlug(board.slug || baseSlug, board.id);
