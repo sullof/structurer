@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Structurer - Hero's Journey Board</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section id="home-view" class="view">
+        <header class="topbar">
+          <div>
+            <h1>Structurer</h1>
+            <p class="subtitle">Build stories using Hero's Journey boards</p>
+          </div>
+        </header>
+
+        <section class="home-create">
+          <h2>Create a new board</h2>
+          <form id="create-board-form" class="create-board-form">
+            <input id="board-title" type="text" maxlength="80" placeholder="Board name (e.g. Book One Draft)" required />
+            <button type="submit">Create board</button>
+          </form>
+        </section>
+
+        <section id="empty-state" class="empty-state">
+          <p>No boards yet. Create your first board to start mapping your story.</p>
+        </section>
+
+        <section id="boards-list" class="boards-list"></section>
+      </section>
+
+      <section id="editor-view" class="view hidden">
+        <header class="topbar editor-topbar">
+          <div class="editor-topbar-left">
+            <button id="back-home" class="ghost-button" type="button">Back to home</button>
+            <div class="options-wrap">
+              <button id="options-button" class="ghost-button" type="button">Options</button>
+              <div id="options-menu" class="options-menu hidden">
+                <button id="open-resize-modal" class="menu-item" type="button">Resize columns</button>
+              </div>
+            </div>
+          </div>
+          <div class="editor-topbar-center">
+            <h1 id="editor-title">Hero's Journey Board</h1>
+          </div>
+          <div class="editor-topbar-right">Hero's Journey</div>
+        </header>
+
+        <section id="board" class="board" aria-label="Hero's journey board"></section>
+        <aside id="insights" class="insights"></aside>
+      </section>
+
+      <div id="resize-modal-overlay" class="modal-overlay hidden">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Resize columns">
+          <h2>Resize columns</h2>
+          <p class="subtitle">Adjust the width for all columns.</p>
+          <input id="column-width-slider" type="range" min="140" max="360" step="10" />
+          <p id="column-width-value" class="board-meta"></p>
+          <div class="modal-actions">
+            <button id="close-resize-modal" class="ghost-button" type="button">Close</button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

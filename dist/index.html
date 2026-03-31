@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Structurer - Hero's Journey Board</title>
+    <script type="module" crossorigin src="/assets/index-khWmYcqo.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-J1FQ58yG.css">
+  </head>
+  <body>
+    <main class="app">
+      <section id="home-view" class="view">
+        <header class="topbar">
+          <div>
+            <h1>Structurer</h1>
+            <p class="subtitle">Build stories using Hero's Journey boards</p>
+          </div>
+        </header>
+
+        <section class="home-create">
+          <h2>Create a new board</h2>
+          <form id="create-board-form" class="create-board-form">
+            <input id="board-title" type="text" maxlength="80" placeholder="Board name (e.g. Book One Draft)" required />
+            <button type="submit">Create board</button>
+          </form>
+        </section>
+
+        <section id="empty-state" class="empty-state">
+          <p>No boards yet. Create your first board to start mapping your story.</p>
+        </section>
+
+        <section id="boards-list" class="boards-list"></section>
+      </section>
+
+      <section id="editor-view" class="view hidden">
+        <header class="topbar editor-topbar">
+          <div class="editor-topbar-left">
+            <button id="back-home" class="ghost-button" type="button">Back to home</button>
+          </div>
+          <div class="editor-topbar-center">
+            <h1 id="editor-title">Hero's Journey Board</h1>
+          </div>
+          <div class="editor-topbar-right">Hero's Journey</div>
+        </header>
+
+        <section id="board" class="board" aria-label="Hero's journey board"></section>
+        <aside id="insights" class="insights"></aside>
+      </section>
+    </main>
+  </body>
+</html>
