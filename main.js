@@ -1,25 +1,129 @@
 import { prepare, layout } from "@chenglou/pretext";
 import matrixDemo from "./data/matrix-demo.json";
+import jurassicParkThreeActDemo from "./data/jurassic-park-three-act-demo.json";
+import backToTheFutureSaveTheCatDemo from "./data/back-to-the-future-save-the-cat-demo.json";
+import findingNemoStoryCircleDemo from "./data/finding-nemo-story-circle-demo.json";
+import harryPotterSevenPointDemo from "./data/harry-potter-seven-point-demo.json";
+import prideAndPrejudiceRomancingDemo from "./data/pride-and-prejudice-romancing-the-beat-demo.json";
+import inceptionMiceDemo from "./data/inception-mice-quotient-demo.json";
 
 const STORAGE_KEY = "structurer.boards.v1";
 const SETTINGS_KEY = "structurer.settings.v1";
+const DEV_RESET_FLAG_KEY = "activate.reset";
 const HOME_ROUTE = "/dashboard";
 const DEFAULT_COLUMN_WIDTH = 260;
 
-const phases = [
-  "Ordinary World",
-  "Call to Adventure",
-  "Refusal of the Call",
-  "Meeting the Mentor",
-  "Crossing the Threshold",
-  "Tests, Allies, Enemies",
-  "Approach to the Inmost Cave",
-  "Ordeal",
-  "Reward",
-  "The Road Back",
-  "Resurrection",
-  "Return with the Elixir",
-];
+const STRUCTURES = {
+  hero_journey: {
+    id: "hero_journey",
+    name: "Hero's Journey",
+    phases: [
+      "Ordinary World",
+      "Call to Adventure",
+      "Refusal of the Call",
+      "Meeting the Mentor",
+      "Crossing the Threshold",
+      "Tests, Allies, Enemies",
+      "Approach to the Inmost Cave",
+      "Ordeal",
+      "Reward",
+      "The Road Back",
+      "Resurrection",
+      "Return with the Elixir",
+    ],
+  },
+  three_act: {
+    id: "three_act",
+    name: "Three-Act Structure",
+    phases: [
+      "Act I - Setup",
+      "Act I - Inciting Incident",
+      "Act II - Progressive Complications",
+      "Act II - Midpoint",
+      "Act II - Crisis",
+      "Act II - Break into Act III",
+      "Act III - Climax",
+      "Act III - Resolution",
+    ],
+  },
+  save_the_cat: {
+    id: "save_the_cat",
+    name: "Save the Cat",
+    phases: [
+      "Opening Image",
+      "Theme Stated",
+      "Set-Up",
+      "Catalyst",
+      "Debate",
+      "Break into Two",
+      "B Story",
+      "Fun and Games",
+      "Midpoint",
+      "Bad Guys Close In",
+      "All Is Lost",
+      "Dark Night of the Soul",
+      "Break into Three",
+      "Finale",
+      "Final Image",
+    ],
+  },
+  story_circle: {
+    id: "story_circle",
+    name: "Story Circle",
+    phases: [
+      "1. You (Comfort Zone)",
+      "2. Need",
+      "3. Go",
+      "4. Search",
+      "5. Find",
+      "6. Take",
+      "7. Return",
+      "8. Change",
+    ],
+  },
+  seven_point: {
+    id: "seven_point",
+    name: "7-Point Story Structure",
+    phases: [
+      "Hook",
+      "Plot Turn 1",
+      "Pinch Point 1",
+      "Midpoint",
+      "Pinch Point 2",
+      "Plot Turn 2",
+      "Resolution",
+    ],
+  },
+  romancing_the_beat: {
+    id: "romancing_the_beat",
+    name: "Romancing the Beat",
+    phases: [
+      "Setup and Need",
+      "Meet and Spark",
+      "No Way / Resistance",
+      "Adhesion / Forced Proximity",
+      "Deepening Desire",
+      "Retreat and Doubt",
+      "Breakup / Crisis",
+      "Grand Gesture",
+      "Commitment / HEA-HFN",
+    ],
+  },
+  mice_quotient: {
+    id: "mice_quotient",
+    name: "MICE Quotient",
+    phases: [
+      "Milieu Question Open",
+      "Idea Question Open",
+      "Character Question Open",
+      "Event Question Open",
+      "Event Question Close",
+      "Character Question Close",
+      "Idea Question Close",
+      "Milieu Question Close",
+    ],
+  },
+};
 
 const archetypes = [
   { id: "none", icon: "", label: "No specific role" },
@@ -42,13 +146,19 @@ const initialSettings = loadSettings();
 let columnMinWidth = initialSettings.columnMinWidth ?? DEFAULT_COLUMN_WIDTH;
 let wrapColumns = initialSettings.wrapColumns ?? true;
 
+const landingView = document.querySelector("#landing-view");
 const homeView = document.querySelector("#home-view");
 const editorView = document.querySelector("#editor-view");
 const boardsList = document.querySelector("#boards-list");
 const emptyState = document.querySelector("#empty-state");
 const createBoardForm = document.querySelector("#create-board-form");
 const boardTitleInput = document.querySelector("#board-title");
-const backHomeBtn = document.querySelector("#back-home");
+const boardStructureSelect = document.querySelector("#board-structure");
+const importBoardButton = document.querySelector("#import-board-button");
+const importBoardInput = document.querySelector("#import-board-input");
+const goLandingFromDashboardBtn = document.querySelector("#go-landing-from-dashboard");
+const goHomeFromBoardBtn = document.querySelector("#go-home-from-board");
+const goDashboardFromBoardBtn = document.querySelector("#go-dashboard-from-board");
 const editorTitle = document.querySelector("#editor-title");
 const structureNameEl = document.querySelector("#structure-name");
 const optionsButton = document.querySelector("#options-button");
@@ -60,6 +170,7 @@ const resizeModalOverlay = document.querySelector("#resize-modal-overlay");
 const closeResizeModalBtn = document.querySelector("#close-resize-modal");
 const columnWidthSlider = document.querySelector("#column-width-slider");
 const columnWidthValue = document.querySelector("#column-width-value");
+const goDashboardBtn = document.querySelector("#go-dashboard");
 
 const boardEl = document.querySelector("#board");
 const insightsEl = document.querySelector("#insights");
@@ -92,6 +203,14 @@ function loadSettings() {
 
 function saveSettings() {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify({ columnMinWidth, wrapColumns }));
+}
+
+function isDevResetEnabled() {
+  return localStorage.getItem(DEV_RESET_FLAG_KEY) === "true";
+}
+
+function applyDevFlags() {
+  resetAppDataBtn.style.display = isDevResetEnabled() ? "inline-block" : "none";
 }
 
 function applyColumnWidth() {
@@ -149,6 +268,10 @@ function getCurrentBoard() {
   return boards.find((board) => board.id === currentBoardId) || null;
 }
 
+function getStructureConfig(structureId) {
+  return STRUCTURES[structureId] || STRUCTURES.hero_journey;
+}
+
 function kindLabel(kind) {
   if (kind === "plot") return "Plot";
   if (kind === "character") return "Character";
@@ -172,8 +295,9 @@ function getColumnNotes(notes, column) {
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 }
 
-function normalizeOrders(notes) {
-  for (let columnIndex = 0; columnIndex < phases.length; columnIndex += 1) {
+function normalizeOrders(notes, structureId = "hero_journey") {
+  const structure = getStructureConfig(structureId);
+  for (let columnIndex = 0; columnIndex < structure.phases.length; columnIndex += 1) {
     const inColumn = getColumnNotes(notes, columnIndex);
     inColumn.forEach((note, index) => {
       note.order = index;
@@ -187,14 +311,16 @@ function formatDate(timestamp) {
 
 function boardCardTemplate(board) {
   const noteCount = board.notes.length;
+  const structure = getStructureConfig(board.structureId);
   return `
     <article class="board-card" data-board-id="${board.id}">
       <div>
         <strong>${board.title}</strong>
-        <div class="board-meta">${noteCount} notes • Updated ${formatDate(board.updatedAt)}</div>
+        <div class="board-meta">${structure.name} • ${noteCount} notes • Updated ${formatDate(board.updatedAt)}</div>
       </div>
       <div class="board-actions">
         <button type="button" data-role="open-board">Open</button>
+        <button type="button" data-role="export-board">Export</button>
         <button type="button" class="danger-button" data-role="delete-board">Delete</button>
       </div>
     </article>
@@ -289,9 +415,11 @@ function renderHome() {
 function renderEditor() {
   const board = getCurrentBoard();
   if (!board) return;
+  const structure = getStructureConfig(board.structureId);
+  const phases = structure.phases;
 
   editorTitle.textContent = board.title;
-  structureNameEl.textContent = board.structure || "Hero's Journey";
+  structureNameEl.textContent = structure.name;
   boardEl.innerHTML = phases
     .map((phase, columnIndex) => {
       const noteItems = getColumnNotes(board.notes, columnIndex);
@@ -343,9 +471,17 @@ function renderInsights(note) {
 
 function showHome() {
   currentBoardId = null;
+  landingView.classList.add("hidden");
   homeView.classList.remove("hidden");
   editorView.classList.add("hidden");
   renderHome();
+}
+
+function showLanding() {
+  currentBoardId = null;
+  landingView.classList.remove("hidden");
+  homeView.classList.add("hidden");
+  editorView.classList.add("hidden");
 }
 
 function showBoard(boardId) {
@@ -355,6 +491,7 @@ function showBoard(boardId) {
     return;
   }
   currentBoardId = boardId;
+  landingView.classList.add("hidden");
   homeView.classList.add("hidden");
   editorView.classList.remove("hidden");
   renderEditor();
@@ -368,14 +505,16 @@ function touchBoard(board) {
   saveBoards();
 }
 
-function createBoard(title) {
+function createBoard(title, structureId = "hero_journey") {
   const baseSlug = slugifyTitle(title);
   const slug = ensureUniqueSlug(baseSlug);
+  const structure = getStructureConfig(structureId);
   const newBoard = {
     id: crypto.randomUUID(),
     title: title.trim(),
     slug,
-    structure: "Hero's Journey",
+    structureId: structure.id,
+    structure: structure.name,
     nextNoteId: 1,
     notes: [],
     updatedAt: Date.now(),
@@ -385,8 +524,12 @@ function createBoard(title) {
   renderHome();
 }
 
-function createDemoBoard() {
-  const notes = (matrixDemo.notes || []).map((note, index) => ({
+function createDemoBoardFromJson(demoData) {
+  const structureEntry = Object.values(STRUCTURES).find(
+    (item) => item.name === (demoData.structure || "Hero's Journey"),
+  );
+  const structure = structureEntry || STRUCTURES.hero_journey;
+  const notes = (demoData.notes || []).map((note, index) => ({
     id: index + 1,
     kind: note.kind || "plot",
     column: Number.isInteger(note.column) ? note.column : 0,
@@ -398,13 +541,87 @@ function createDemoBoard() {
 
   return {
     id: crypto.randomUUID(),
-    title: matrixDemo.title || "The Matrix",
-    slug: ensureUniqueSlug(slugifyTitle(matrixDemo.title || "The Matrix")),
-    structure: matrixDemo.structure || "Hero's Journey",
+    title: demoData.title || "Demo Board",
+    slug: ensureUniqueSlug(slugifyTitle(demoData.title || "demo_board")),
+    structureId: structure.id,
+    structure: structure.name,
     nextNoteId: notes.length + 1,
     notes,
     updatedAt: Date.now(),
   };
+}
+
+function boardToExportPayload(board) {
+  const structure = getStructureConfig(board.structureId);
+  return {
+    title: board.title,
+    structure: structure.name,
+    notes: [...board.notes]
+      .sort((a, b) => (a.column - b.column) || ((a.order || 0) - (b.order || 0)))
+      .map((note) => ({
+        kind: note.kind || "plot",
+        column: Number.isInteger(note.column) ? note.column : 0,
+        order: Number.isInteger(note.order) ? note.order : 0,
+        text: note.text || "",
+        characterName: note.characterName || "",
+        archetype: note.archetype || "none",
+        customHeight: note.customHeight || undefined,
+      })),
+  };
+}
+
+function downloadBoard(board) {
+  const payload = boardToExportPayload(board);
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const filename = `${slugifyTitle(board.title || "board")}.json`;
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function importBoardFromJson(rawText) {
+  const parsed = JSON.parse(rawText);
+  if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.notes)) {
+    throw new Error("Invalid board JSON format.");
+  }
+
+  const structureEntry = Object.values(STRUCTURES).find((item) => item.name === parsed.structure);
+  const structure = structureEntry || STRUCTURES.hero_journey;
+  const title = typeof parsed.title === "string" && parsed.title.trim() ? parsed.title.trim() : "Imported Board";
+  const phaseCount = structure.phases.length;
+  const notes = parsed.notes.map((note, index) => {
+    const column = Number.isInteger(note.column) ? note.column : 0;
+    return {
+      id: index + 1,
+      kind: note.kind || "plot",
+      column: Math.max(0, Math.min(column, phaseCount - 1)),
+      order: Number.isInteger(note.order) ? note.order : index,
+      text: note.text || "",
+      characterName: note.characterName || "",
+      archetype: note.archetype || "none",
+      customHeight: Number.isFinite(note.customHeight) ? note.customHeight : undefined,
+    };
+  });
+
+  const newBoard = {
+    id: crypto.randomUUID(),
+    title,
+    slug: ensureUniqueSlug(slugifyTitle(title)),
+    structureId: structure.id,
+    structure: structure.name,
+    nextNoteId: notes.length + 1,
+    notes,
+    updatedAt: Date.now(),
+  };
+  normalizeOrders(newBoard.notes, newBoard.structureId);
+  boards.push(newBoard);
+  saveBoards();
+  renderHome();
 }
 
 function openBoard(boardId, replaceRoute = false) {
@@ -423,9 +640,18 @@ function openHome(replaceRoute = false) {
   navigateTo(HOME_ROUTE, replaceRoute);
 }
 
+function openLanding(replaceRoute = false) {
+  showLanding();
+  navigateTo("/", replaceRoute);
+}
+
 function syncRouteToState(replaceRoute = true) {
   const path = normalizePathname(window.location.pathname);
-  if (path === "/" || path === HOME_ROUTE) {
+  if (path === "/") {
+    openLanding(replaceRoute);
+    return;
+  }
+  if (path === HOME_ROUTE) {
     openHome(replaceRoute);
     return;
   }
@@ -433,7 +659,7 @@ function syncRouteToState(replaceRoute = true) {
   const slug = path.slice(1);
   const board = boards.find((item) => item.slug === slug);
   if (!board) {
-    openHome(replaceRoute);
+    openLanding(replaceRoute);
     return;
   }
   showBoard(board.id);
@@ -442,11 +668,13 @@ function syncRouteToState(replaceRoute = true) {
 function addNote(kind, column, archetype = "none") {
   const board = getCurrentBoard();
   if (!board) return;
-  const newOrder = getColumnNotes(board.notes, column).length;
+  const phaseCount = getStructureConfig(board.structureId).phases.length;
+  const safeColumn = Math.max(0, Math.min(column, phaseCount - 1));
+  const newOrder = getColumnNotes(board.notes, safeColumn).length;
   board.notes.push({
     id: board.nextNoteId++,
     kind,
-    column,
+    column: safeColumn,
     order: newOrder,
     text: "",
     characterName: "",
@@ -471,13 +699,15 @@ function getDropIndex(notesContainer, pointerY) {
 function moveNote(noteId, targetColumn, targetIndex) {
   const board = getCurrentBoard();
   if (!board) return;
+  const phaseCount = getStructureConfig(board.structureId).phases.length;
+  const safeTargetColumn = Math.max(0, Math.min(targetColumn, phaseCount - 1));
   const movingNote = board.notes.find((note) => note.id === noteId);
   if (!movingNote) return;
 
   const sourceColumn = movingNote.column;
   const clampedIndex = Math.max(0, targetIndex);
 
-  if (sourceColumn === targetColumn) {
+  if (sourceColumn === safeTargetColumn) {
     const reordered = getColumnNotes(board.notes, sourceColumn).filter((note) => note.id !== noteId);
     reordered.splice(clampedIndex, 0, movingNote);
     reordered.forEach((note, index) => {
@@ -491,8 +721,8 @@ function moveNote(noteId, targetColumn, targetIndex) {
     note.order = index;
   });
 
-  const targetList = getColumnNotes(board.notes, targetColumn);
-  movingNote.column = targetColumn;
+  const targetList = getColumnNotes(board.notes, safeTargetColumn);
+  movingNote.column = safeTargetColumn;
   targetList.splice(clampedIndex, 0, movingNote);
   targetList.forEach((note, index) => {
     note.order = index;
@@ -503,7 +733,7 @@ createBoardForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const title = boardTitleInput.value.trim();
   if (!title) return;
-  createBoard(title);
+  createBoard(title, boardStructureSelect.value);
   boardTitleInput.value = "";
 });
 
@@ -514,6 +744,12 @@ boardsList.addEventListener("click", (event) => {
   const boardId = boardCard.dataset.boardId;
   if (target.dataset.role === "open-board") {
     openBoard(boardId);
+    return;
+  }
+  if (target.dataset.role === "export-board") {
+    const board = boards.find((item) => item.id === boardId);
+    if (!board) return;
+    downloadBoard(board);
     return;
   }
   if (target.dataset.role === "delete-board") {
@@ -527,8 +763,38 @@ boardsList.addEventListener("click", (event) => {
   }
 });
 
-backHomeBtn.addEventListener("click", () => {
+goLandingFromDashboardBtn.addEventListener("click", () => {
+  openLanding();
+});
+
+goHomeFromBoardBtn.addEventListener("click", () => {
+  openLanding();
+});
+
+goDashboardFromBoardBtn.addEventListener("click", () => {
   openHome();
+});
+
+goDashboardBtn.addEventListener("click", () => {
+  openHome();
+});
+
+importBoardButton.addEventListener("click", () => {
+  importBoardInput.click();
+});
+
+importBoardInput.addEventListener("change", async (event) => {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    importBoardFromJson(text);
+    window.alert("Board imported successfully.");
+  } catch (error) {
+    window.alert("Import failed. Please use a valid Structurer board JSON.");
+  } finally {
+    importBoardInput.value = "";
+  }
 });
 
 function closeOptionsMenu() {
@@ -662,7 +928,7 @@ boardEl.addEventListener("click", (event) => {
 
   if (target.dataset.role === "delete") {
     board.notes = board.notes.filter((item) => item.id !== id);
-    normalizeOrders(board.notes);
+    normalizeOrders(board.notes, board.structureId);
     touchBoard(board);
     renderEditor();
     renderInsights(null);
@@ -757,9 +1023,24 @@ resizeModalOverlay.addEventListener("click", (event) => {
   }
 });
 
-boards.forEach((board) => normalizeOrders(board.notes));
+boards.forEach((board) => {
+  const guessedStructure = Object.values(STRUCTURES).find((item) => item.name === board.structure);
+  if (!board.structureId) {
+    board.structureId = guessedStructure ? guessedStructure.id : "hero_journey";
+  }
+  board.structure = getStructureConfig(board.structureId).name;
+  normalizeOrders(board.notes, board.structureId);
+});
 if (loadedBoards === null) {
-  boards = [createDemoBoard()];
+  boards = [
+    createDemoBoardFromJson(matrixDemo),
+    createDemoBoardFromJson(jurassicParkThreeActDemo),
+    createDemoBoardFromJson(backToTheFutureSaveTheCatDemo),
+    createDemoBoardFromJson(findingNemoStoryCircleDemo),
+    createDemoBoardFromJson(harryPotterSevenPointDemo),
+    createDemoBoardFromJson(prideAndPrejudiceRomancingDemo),
+    createDemoBoardFromJson(inceptionMiceDemo),
+  ];
 }
 boards.forEach((board) => {
   const baseSlug = slugifyTitle(board.title || "board");
@@ -771,4 +1052,5 @@ window.addEventListener("popstate", () => {
 });
 applyColumnWidth();
 applyWrapColumns();
+applyDevFlags();
 syncRouteToState(true);

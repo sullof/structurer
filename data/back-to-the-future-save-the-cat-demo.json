@@ -1,0 +1,21 @@
+{
+  "title": "Back to the Future (Save the Cat)",
+  "structure": "Save the Cat",
+  "notes": [
+    { "kind": "plot", "column": 0, "order": 0, "text": "Marty McFly is introduced as a bright but unfocused teen in a restless small-town life." },
+    { "kind": "theme", "column": 1, "order": 0, "text": "Doc hints that choices can reshape destiny, not just inherit it." },
+    { "kind": "plot", "column": 2, "order": 0, "text": "Marty's family dynamic and school frustrations establish what he wants to escape." },
+    { "kind": "plot", "column": 3, "order": 0, "text": "Doc's DeLorean experiment goes wrong when Marty is forced to flee in the time machine." },
+    { "kind": "plot", "column": 4, "order": 0, "text": "Marty realizes he is trapped in 1955 and must navigate unfamiliar rules." },
+    { "kind": "plot", "column": 5, "order": 0, "text": "Marty commits to getting back to 1985 by teaming up with younger Doc." },
+    { "kind": "character", "column": 6, "order": 0, "characterName": "George McFly", "archetype": "ally", "text": "B-story thread: helping his father become confident and win Lorraine authentically." },
+    { "kind": "plot", "column": 7, "order": 0, "text": "Comic and emotional set-pieces around school, romance, and Biff build momentum." },
+    { "kind": "plot", "column": 8, "order": 0, "text": "At the dance, timing and romance collide: Marty nearly erases himself before correcting the timeline." },
+    { "kind": "plot", "column": 9, "order": 0, "text": "Storm, sabotage, and last-minute failures threaten both the lightning plan and timeline repair." },
+    { "kind": "plot", "column": 10, "order": 0, "text": "Marty appears to lose Doc and his chance to return, with stakes at maximum." },
+    { "kind": "theme", "column": 11, "order": 0, "text": "Dark reflection: maybe the future is fixed and he cannot save anyone." },
+    { "kind": "plot", "column": 12, "order": 0, "text": "Marty executes the final plan and returns to 1985 with hard-earned clarity." },
+    { "kind": "plot", "column": 13, "order": 0, "text": "Doc survives, the family timeline improves, and Marty sees change is possible." },
+    { "kind": "plot", "column": 14, "order": 0, "text": "Final image mirrors the opening life but transformed: confidence, momentum, and new possibility." }
+  ]
+}

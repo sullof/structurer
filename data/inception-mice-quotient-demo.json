@@ -1,0 +1,14 @@
+{
+  "title": "Inception (MICE Quotient)",
+  "structure": "MICE Quotient",
+  "notes": [
+    { "kind": "plot", "column": 0, "order": 0, "text": "Cobb is exiled from normal life, unable to return home to his children." },
+    { "kind": "plot", "column": 1, "order": 0, "text": "The team takes on an inception job, raising the core idea-question: can an idea be planted reliably?" },
+    { "kind": "character", "column": 2, "order": 0, "characterName": "Cobb", "archetype": "hero", "text": "Cobb's internal arc centers on guilt, grief, and acceptance of Mal's loss." },
+    { "kind": "plot", "column": 3, "order": 0, "text": "The mission-trigger event escalates conflict across nested dream levels and time pressure." },
+    { "kind": "plot", "column": 4, "order": 0, "text": "The immediate event question closes as the team executes synchronized kicks and completes extraction/inception outcomes." },
+    { "kind": "theme", "column": 5, "order": 0, "text": "Character question closes as Cobb lets go of Mal's projection and chooses reality." },
+    { "kind": "plot", "column": 6, "order": 0, "text": "Idea question closes: inception appears successful as Fischer adopts the seeded belief." },
+    { "kind": "plot", "column": 7, "order": 0, "text": "Milieu question closes with Cobb returning home, though ambiguity lingers in the spinning top." }
+  ]
+}

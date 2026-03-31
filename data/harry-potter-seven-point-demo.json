@@ -1,0 +1,13 @@
+{
+  "title": "Harry Potter and the Sorcerer's Stone (7-Point)",
+  "structure": "7-Point Story Structure",
+  "notes": [
+    { "kind": "plot", "column": 0, "order": 0, "text": "Hook: Harry lives an unloved ordinary life with the Dursleys, unaware of his true identity." },
+    { "kind": "plot", "column": 1, "order": 0, "text": "Plot Turn 1: Harry enters Hogwarts and crosses into the wizarding world." },
+    { "kind": "plot", "column": 2, "order": 0, "text": "Pinch Point 1: Early dangers and Snape suspicion signal an active threat around the Stone." },
+    { "kind": "plot", "column": 3, "order": 0, "text": "Midpoint: Harry decides to pursue the truth with Ron and Hermione, not remain passive." },
+    { "kind": "plot", "column": 4, "order": 0, "text": "Pinch Point 2: Stakes sharpen as they realize someone is about to steal the Stone." },
+    { "kind": "plot", "column": 5, "order": 0, "text": "Plot Turn 2: Harry confronts Quirrell/Voldemort and is forced into direct conflict." },
+    { "kind": "plot", "column": 6, "order": 0, "text": "Resolution: Harry protects the Stone, survives, and returns changed to a life with belonging and purpose." }
+  ]
+}

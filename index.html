@@ -8,18 +8,65 @@
   </head>
   <body>
     <main class="app">
-      <section id="home-view" class="view">
-        <header class="topbar">
-          <div>
+      <section id="landing-view" class="view">
+        <header class="topbar landing-topbar">
+          <div class="landing-brand">
             <h1>Structurer</h1>
-            <p class="subtitle">Build stories using Hero's Journey boards</p>
+            <p class="subtitle">Shape stories with visual narrative boards</p>
           </div>
+        </header>
+
+        <section class="landing-hero">
+          <h2>A private workspace for story structure</h2>
+          <p>
+            Structurer helps writers build stories with visual boards, color-coded notes, characters, and narrative
+            phases such as Hero's Journey and Three-Act Structure.
+          </p>
+          <button id="go-dashboard" type="button">Open dashboard</button>
+        </section>
+
+        <section class="landing-grid">
+          <article class="landing-card">
+            <h3>Privacy first</h3>
+            <p>
+              Everything you write stays in your browser local storage. No server-side database is used, no user
+              accounts are created, and no cookies are required for app data.
+            </p>
+          </article>
+          <article class="landing-card">
+            <h3>Included demos</h3>
+            <p>
+              The app includes simple demo boards (The Matrix and Jurassic Park) to show the workflow. They are
+              intentionally lightweight examples: your own boards can be far more detailed and complex.
+            </p>
+          </article>
+        </section>
+      </section>
+
+      <section id="home-view" class="view hidden">
+        <header class="topbar dashboard-topbar">
+          <nav class="dashboard-topbar-left app-nav" aria-label="Dashboard navigation">
+            <button id="go-landing-from-dashboard" class="ghost-button" type="button">🏠 Home</button>
+          </nav>
+          <div class="dashboard-topbar-center">
+            <h1>Dashboard</h1>
+          </div>
+          <div class="dashboard-topbar-right"></div>
         </header>
 
         <section class="home-create">
           <h2>Create a new board</h2>
           <form id="create-board-form" class="create-board-form">
             <input id="board-title" type="text" maxlength="80" placeholder="Board name (e.g. Book One Draft)" required />
+            <select id="board-structure" aria-label="Story structure">
+              <option value="hero_journey">Hero's Journey</option>
+              <option value="three_act">Three-Act Structure</option>
+              <option value="save_the_cat">Save the Cat</option>
+              <option value="story_circle">Story Circle</option>
+              <option value="seven_point">7-Point Story Structure</option>
+              <option value="romancing_the_beat">Romancing the Beat</option>
+              <option value="mice_quotient">MICE Quotient</option>
+            </select>
             <button type="submit">Create board</button>
           </form>
           <button id="reset-app-data" class="ghost-button danger-menu-item" type="button">Reset app data (dev)</button>
@@ -30,14 +77,24 @@
         </section>
 
         <section id="boards-list" class="boards-list"></section>
+
+        <section class="home-import">
+          <h2>Import a saved board</h2>
+          <p class="subtitle">Load a board JSON exported from Structurer.</p>
+          <div class="import-actions">
+            <button id="import-board-button" class="ghost-button" type="button">Import board</button>
+            <input id="import-board-input" type="file" accept="application/json,.json" hidden />
+          </div>
+        </section>
       </section>
 
       <section id="editor-view" class="view hidden">
         <header class="topbar editor-topbar">
           <div class="editor-topbar-left">
-            <button id="back-home" class="ghost-button" type="button">Back to home</button>
+            <button id="go-home-from-board" class="ghost-button" type="button">🏠 Home</button>
+            <button id="go-dashboard-from-board" class="ghost-button" type="button">📚 Dashboard</button>
             <div class="options-wrap">
-              <button id="options-button" class="ghost-button" type="button">Options</button>
+              <button id="options-button" class="ghost-button" type="button">⚙️ Options</button>
               <div id="options-menu" class="options-menu hidden">
                 <button id="open-resize-modal" class="menu-item" type="button">Resize columns</button>
                 <button id="toggle-wrap-columns" class="menu-item" type="button">Wrap columns: Off</button>
@@ -65,6 +122,13 @@
           </div>
         </div>
       </div>
+
+      <footer class="app-footer">
+        Made with love by
+        <a href="https://github.com/sullof" target="_blank" rel="noopener noreferrer">Sullof</a> (the director)
+        and
+        <a href="https://www.cursor.com/" target="_blank" rel="noopener noreferrer">Cursor AI</a> (the scriptwriter)
+      </footer>
     </main>
     <script type="module" src="/main.js"></script>
   </body>

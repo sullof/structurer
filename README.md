@@ -76,5 +76,5 @@ No backend is currently used.
 
 ## Copyright
 
-2026 Francesco Sullo <francesco@sullo.co> — Built with the phenomenal help by Cursor AI in less than an hour
+2026 Francesco Sullo <francesco@sullo.co> — Built with Cursor AI in a couple of hours.
 

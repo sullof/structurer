@@ -1,0 +1,15 @@
+{
+  "title": "Pride and Prejudice (Romancing the Beat)",
+  "structure": "Romancing the Beat",
+  "notes": [
+    { "kind": "plot", "column": 0, "order": 0, "text": "Elizabeth Bennet seeks autonomy and clarity in a world pressuring her toward pragmatic marriage." },
+    { "kind": "plot", "column": 1, "order": 0, "text": "Elizabeth and Mr. Darcy meet with instant friction, attraction masked by pride and prejudice." },
+    { "kind": "plot", "column": 2, "order": 0, "text": "Both resist emotional vulnerability: Elizabeth distrusts Darcy, Darcy judges too quickly." },
+    { "kind": "plot", "column": 3, "order": 0, "text": "Social events and family ties repeatedly force them into each other's orbit." },
+    { "kind": "plot", "column": 4, "order": 0, "text": "Darcy's actions and Elizabeth's reflections reveal deeper respect and emotional truth." },
+    { "kind": "theme", "column": 5, "order": 0, "text": "Fear and misunderstanding trigger retreat before either can commit honestly." },
+    { "kind": "plot", "column": 6, "order": 0, "text": "Crisis peaks around Lydia's scandal and wounded trust, threatening any future together." },
+    { "kind": "plot", "column": 7, "order": 0, "text": "Darcy's quiet intervention and renewed proposal become the emotional grand gesture." },
+    { "kind": "plot", "column": 8, "order": 0, "text": "They choose each other with new humility and mutual respect." }
+  ]
+}

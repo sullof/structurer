@@ -1,0 +1,29 @@
+{
+  "title": "Jurassic Park (Three-Act)",
+  "structure": "Three-Act Structure",
+  "notes": [
+    { "kind": "plot", "column": 0, "order": 0, "text": "Experts are invited to inspect John Hammond's new dinosaur theme park before opening." },
+    { "kind": "character", "column": 0, "order": 1, "characterName": "Dr. Alan Grant", "archetype": "hero", "text": "A skeptical scientist forced into survival mode." },
+
+    { "kind": "plot", "column": 1, "order": 0, "text": "The visitors witness living dinosaurs and agree to tour the island despite ethical warnings." },
+    { "kind": "theme", "column": 1, "order": 1, "text": "Inciting event: human ambition crosses a natural boundary." },
+
+    { "kind": "plot", "column": 2, "order": 0, "text": "Park systems seem controlled at first, but tensions grow around security, weather, and corporate sabotage." },
+    { "kind": "character", "column": 2, "order": 1, "characterName": "John Hammond", "archetype": "shapeshifter", "text": "Visionary founder, torn between wonder and responsibility." },
+
+    { "kind": "plot", "column": 3, "order": 0, "text": "The first T-Rex attack destroys the illusion of control and shifts the story to pure survival." },
+    { "kind": "theme", "column": 3, "order": 1, "text": "Midpoint: nature reasserts dominance over engineered systems." },
+
+    { "kind": "plot", "column": 4, "order": 0, "text": "Power fails, staff are separated, and predators roam freely; every rescue attempt becomes riskier." },
+    { "kind": "character", "column": 4, "order": 1, "characterName": "Dennis Nedry", "archetype": "shadow", "text": "His betrayal triggers the collapse of the park's safety net." },
+
+    { "kind": "plot", "column": 5, "order": 0, "text": "The group commits to restoring power and escaping the island rather than waiting for rescue." },
+    { "kind": "theme", "column": 5, "order": 1, "text": "Break into Act III: survival demands collective responsibility." },
+
+    { "kind": "plot", "column": 6, "order": 0, "text": "Final clashes in the visitor center culminate with predators converging as the survivors race to escape." },
+    { "kind": "character", "column": 6, "order": 1, "characterName": "Dr. Ellie Sattler", "archetype": "ally", "text": "Pragmatic, courageous, and crucial in restoring systems and protecting others." },
+
+    { "kind": "plot", "column": 7, "order": 0, "text": "The survivors leave the island, and Hammond accepts that the park cannot be controlled or opened safely." },
+    { "kind": "theme", "column": 7, "order": 1, "text": "Resolution: scientific power without humility leads to catastrophe." }
+  ]
+}
