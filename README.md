@@ -72,3 +72,9 @@ No backend is currently used.
 
 - This is an early MVP and intentionally simple.
 - The architecture is ready to support additional story structures beyond Hero's Journey.
+- For suggestions or feature requests, drop me a line.
+
+## Copyright
+
+2026 Francesco Sullo <francesco@sullo.co> — Built with the phenomenal help by Cursor AI in less than an hour
+
