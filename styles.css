@@ -773,18 +773,29 @@ h1 {
 
   .editor-topbar-center {
     padding-top: 2px;
+    justify-self: end;
   }
 
   .editor-topbar-center h1 {
     font-size: 1.1rem;
+    text-align: right;
   }
 
   .editor-topbar-center .subtitle {
     margin-top: 2px;
     font-size: 0.88rem;
+    text-align: right;
   }
 
   .editor-topbar-right .options-wrap {
     display: none;
+  }
+
+  .dashboard-topbar-center {
+    justify-self: end;
+  }
+
+  .dashboard-topbar-center h1 {
+    text-align: right;
   }
 }
