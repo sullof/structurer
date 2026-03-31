@@ -258,6 +258,10 @@ function formatDate(timestamp) {
   return new Date(timestamp).toLocaleString();
 }
 
+function formatPhaseTitle(phase) {
+  return String(phase || "").trim();
+}
+
 function renderHome() {
   const sortedBoards = [...boards].sort((a, b) => b.updatedAt - a.updatedAt);
   boardsList.innerHTML = sortedBoards
@@ -284,7 +288,7 @@ function renderEditor() {
       return `
       <section class="column" data-column="${columnIndex}">
         <div class="phase-head">
-          <h2 class="phase-title">${columnIndex + 1}. ${phase}</h2>
+          <h2 class="phase-title">${formatPhaseTitle(phase)}</h2>
           <button class="phase-add" data-role="open-column-menu" title="Add note">+</button>
           ${columnMenuTemplate(columnIndex, archetypes)}
         </div>
