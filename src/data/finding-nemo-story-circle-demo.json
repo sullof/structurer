@@ -3,10 +3,13 @@
   "structure": "Story Circle",
   "notes": [
     { "kind": "plot", "column": 0, "order": 0, "text": "Marlin lives in anxious routine, overprotecting Nemo after traumatic loss." },
+    { "kind": "other", "column": 0, "order": 1, "text": "Pixar story discipline: every reef joke should also reinforce Marlin's fear or Nemo's need for agency." },
     { "kind": "plot", "column": 1, "order": 0, "text": "Nemo is taken by divers, forcing Marlin to confront his deepest fear." },
     { "kind": "plot", "column": 2, "order": 0, "text": "Marlin leaves safety and crosses the ocean with Dory to find Nemo." },
     { "kind": "plot", "column": 3, "order": 0, "text": "They face sharks, jellyfish, and uncertain clues while learning to trust others." },
+    { "kind": "detail", "column": 3, "order": 1, "text": "East Australian Current + sea turtle ride: visual breath before the story tightens again." },
     { "kind": "plot", "column": 4, "order": 0, "text": "Marlin finds a path toward Nemo's location and Nemo finds agency in the fish tank." },
+    { "kind": "subplot", "column": 4, "order": 1, "text": "Tank gang's escape plan mirrors Marlin's ocean crossing—two paths toward reunion." },
     { "kind": "theme", "column": 5, "order": 0, "text": "The cost: Marlin must release control and risk loss to truly connect." },
     { "kind": "plot", "column": 6, "order": 0, "text": "Marlin returns to Nemo and together they face the net crisis." },
     { "kind": "plot", "column": 7, "order": 0, "text": "Marlin changes: he trusts Nemo's capability, becoming a more open and resilient father." }

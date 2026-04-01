@@ -4,6 +4,7 @@
   "notes": [
     { "kind": "plot", "column": 0, "order": 0, "text": "Neo feels disconnected from reality, living a double life as Thomas Anderson by day and hacker by night." },
     { "kind": "character", "column": 0, "order": 1, "characterName": "Neo", "archetype": "hero", "text": "A talented but restless outsider searching for truth." },
+    { "kind": "detail", "column": 0, "order": 2, "text": "Opening green Matrix code rain and trace cascades on the monitor prime the audience for digital unreality before Neo speaks." },
 
     { "kind": "plot", "column": 1, "order": 0, "text": "Neo receives strange signals about the Matrix and is contacted by Morpheus's network." },
     { "kind": "character", "column": 1, "order": 1, "characterName": "Trinity", "archetype": "herald", "text": "She initiates Neo's path by confirming that his world is not what it seems." },
@@ -13,12 +14,14 @@
 
     { "kind": "plot", "column": 3, "order": 0, "text": "Morpheus offers Neo the red pill or blue pill, framing the real stakes." },
     { "kind": "character", "column": 3, "order": 1, "characterName": "Morpheus", "archetype": "mentor", "text": "Guides Neo with conviction and belief in his potential." },
+    { "kind": "other", "column": 3, "order": 2, "text": "Zion and ship politics stay mostly off-screen here; flag for expanded worldbuilding if you write a sequel beat sheet." },
 
     { "kind": "plot", "column": 4, "order": 0, "text": "Neo chooses the red pill and wakes in the real world, leaving his old identity behind." },
     { "kind": "theme", "column": 4, "order": 1, "text": "Awakening has a cost: truth is harsher than illusion." },
 
     { "kind": "plot", "column": 5, "order": 0, "text": "Training simulations, dojo fight, jump program, and early confrontations with danger test Neo's mindset." },
     { "kind": "character", "column": 5, "order": 1, "characterName": "Cypher", "archetype": "shadow", "text": "An ally turned traitor who rejects the pain of reality." },
+    { "kind": "subplot", "column": 5, "order": 2, "text": "Tank and Dozer's loyalty to Morpheus runs parallel to Neo's training—human warmth vs. Cypher's betrayal." },
 
     { "kind": "plot", "column": 6, "order": 0, "text": "The team visits the Oracle; hints about sacrifice and destiny increase pressure before the main conflict." },
     { "kind": "character", "column": 6, "order": 1, "characterName": "Oracle", "archetype": "shapeshifter", "text": "Offers ambiguous guidance that forces Neo to choose who to become." },

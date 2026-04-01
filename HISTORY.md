@@ -2,6 +2,7 @@
 
 **1.9.4**
 - **Empty phases:** columns with no notes use the same white background as filled columns (instead of a grey fill), and phase titles are no longer muted—so new boards and sparse grids read brighter in the editor and in group preview.
+- **Demo boards:** sample notes using **Subplot**, **Detail**, and **Other** (plus existing plot/character/theme) were added to the Matrix, Odyssey, Finding Nemo, and Jurassic Park demos so new installs and “reset demos” show the expanded palette; **Todo** is omitted there since it models the writer’s own tasks, not in-world story beats.
 
 **1.9.2**
 - **Group view clarity:** in the sequential group view, per-board **Actions** (⋯) are removed so they are not stacked next to group **Actions** in the header. Each board row keeps **Edit board**, which opens the editor where **Board actions** are available; dashboard board cards still open board actions as before.
