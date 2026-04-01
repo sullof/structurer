@@ -787,6 +787,12 @@ h1 {
   height: 100%;
 }
 
+.options-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .options-wrap {
   position: relative;
 }
@@ -1138,6 +1144,8 @@ h1 {
 .modal-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
   margin-top: 10px;
 }
 
@@ -1159,6 +1167,98 @@ h1 {
 .color-swatch.selected {
   outline: 3px solid #111827;
   outline-offset: 1px;
+}
+
+.modal-edit-note-types {
+  max-width: min(520px, calc(100vw - 32px));
+}
+
+.edit-note-types-list {
+  margin-top: 12px;
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 4px;
+}
+
+.edit-note-type-row {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fafafa;
+}
+
+.edit-note-type-row-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0 0 8px;
+  letter-spacing: 0.02em;
+}
+
+.edit-note-type-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.edit-note-type-label-field label,
+.edit-note-type-hex-field label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.edit-note-type-label-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.edit-note-type-hex-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.edit-note-type-hex-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+.edit-note-type-swatch-preview {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(17, 24, 39, 0.25);
+  flex-shrink: 0;
+}
+
+.color-grid.color-grid--edit-row {
+  margin-top: 8px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.edit-note-type-row-delete {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.color-grid.color-grid--edit-row .color-swatch {
+  aspect-ratio: 1 / 1;
 }
 
 .app-footer {
@@ -1260,7 +1360,11 @@ h1 {
     text-align: right;
   }
 
-  .editor-topbar-right .options-wrap {
+  .options-menu .menu-item-desktop-only {
+    display: none;
+  }
+
+  .options-button .options-button-label {
     display: none;
   }
 

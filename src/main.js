@@ -5,6 +5,7 @@ import {
   BUILTIN_STRUCTURES,
   CUSTOM_ARCHETYPES_KEY,
   CUSTOM_NOTE_TYPES_KEY,
+  NOTE_TYPE_OVERRIDES_KEY,
   CUSTOM_STRUCTURES_KEY,
   DEFAULT_COLUMN_WIDTH,
   DEV_RESET_FLAG_KEY,
@@ -131,6 +132,11 @@ const columnWidthValue = document.querySelector("#column-width-value");
 const noteTypeColorModalOverlay = document.querySelector("#note-type-color-modal-overlay");
 const noteTypeColorGrid = document.querySelector("#note-type-color-grid");
 const cancelNoteTypeColorBtn = document.querySelector("#cancel-note-type-color");
+const editNoteTypesModalOverlay = document.querySelector("#edit-note-types-modal-overlay");
+const editNoteTypesListEl = document.querySelector("#edit-note-types-list");
+const openEditNoteTypesModalBtn = document.querySelector("#open-edit-note-types-modal");
+const cancelEditNoteTypesBtn = document.querySelector("#cancel-edit-note-types");
+const saveEditNoteTypesBtn = document.querySelector("#save-edit-note-types");
 const goDashboardBtn = document.querySelector("#go-dashboard");
 
 const boardEl = document.querySelector("#board");
@@ -260,8 +266,61 @@ function saveCustomNoteTypes() {
   saveJsonItem(CUSTOM_NOTE_TYPES_KEY, customNoteTypes);
 }
 
+function isValidHexColor(s) {
+  if (typeof s !== "string") return false;
+  return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(s.trim());
+}
+
+function normalizeHexColor(s) {
+  const t = s.trim();
+  const shortForm = /^#([0-9A-Fa-f])([0-9A-Fa-f])([0-9A-Fa-f])$/;
+  const m = t.match(shortForm);
+  if (m) {
+    return `#${m[1]}${m[1]}${m[2]}${m[2]}${m[3]}${m[3]}`.toLowerCase();
+  }
+  return t.toLowerCase();
+}
+
+function parseHexColorInput(raw) {
+  let t = String(raw ?? "").trim();
+  if (!t) return null;
+  if (!t.startsWith("#")) t = `#${t}`;
+  if (!isValidHexColor(t)) return null;
+  return normalizeHexColor(t);
+}
+
+function loadNoteTypeOverrides() {
+  const parsed = loadJsonItem(NOTE_TYPE_OVERRIDES_KEY, {});
+  if (!parsed || typeof parsed !== "object") return {};
+  const out = {};
+  for (const [id, ov] of Object.entries(parsed)) {
+    if (typeof id !== "string" || !ov || typeof ov !== "object") continue;
+    const entry = {};
+    if (typeof ov.label === "string" && ov.label.trim()) entry.label = ov.label.trim();
+    if (typeof ov.color === "string" && isValidHexColor(ov.color)) entry.color = normalizeHexColor(ov.color);
+    if (Object.keys(entry).length) out[id] = entry;
+  }
+  return out;
+}
+
+let noteTypeOverrides = loadNoteTypeOverrides();
+
+function saveNoteTypeOverrides() {
+  saveJsonItem(NOTE_TYPE_OVERRIDES_KEY, noteTypeOverrides);
+}
+
+function applyBuiltinOverrides(base) {
+  const ov = noteTypeOverrides[base.id];
+  if (!ov) return { ...base };
+  return {
+    ...base,
+    label: typeof ov.label === "string" && ov.label.trim() ? ov.label.trim() : base.label,
+    color: typeof ov.color === "string" && isValidHexColor(ov.color) ? normalizeHexColor(ov.color) : base.color,
+  };
+}
+
 function getAllNoteTypes() {
-  return [...BUILTIN_NOTE_TYPES, ...customNoteTypes];
+  return [...BUILTIN_NOTE_TYPES.map(applyBuiltinOverrides), ...customNoteTypes];
 }
 
 function noteTypeById(id) {
@@ -371,6 +430,126 @@ function escapeHtml(text) {
     .replace(/</g, "&lt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function syncEditNoteTypeRowSwatches(row) {
+  const hexInput = row.querySelector(".edit-note-type-hex-input");
+  const preview = row.querySelector(".edit-note-type-swatch-preview");
+  if (!hexInput || !preview) return;
+  const parsed = parseHexColorInput(hexInput.value);
+  if (parsed) {
+    preview.style.backgroundColor = parsed;
+    hexInput.value = parsed;
+  }
+  row.querySelectorAll(".color-swatch").forEach((btn) => {
+    const c = btn.dataset.color;
+    btn.classList.toggle("selected", Boolean(parsed && normalizeHexColor(c) === parsed));
+  });
+}
+
+function isNoteTypeInUse(typeId) {
+  return boards.some((board) => board.notes.some((note) => note.kind === typeId));
+}
+
+function fillEditNoteTypesModal() {
+  if (!editNoteTypesListEl) return;
+  const types = getAllNoteTypes();
+  const palette = getNoteTypeColorPalette();
+  const paletteHtml = palette
+    .map(
+      (color) =>
+        `<button type="button" class="color-swatch" data-role="edit-note-type-swatch" data-color="${color}" aria-label="Pick ${color}" title="${color}" style="background:${color};"></button>`,
+    )
+    .join("");
+  editNoteTypesListEl.innerHTML = types
+    .map((t) => {
+      const isBuiltin = BUILTIN_NOTE_TYPES.some((b) => b.id === t.id);
+      const canDeleteCustom = !isBuiltin && !isNoteTypeInUse(t.id);
+      const idLabel = isBuiltin ? `Built-in · ${t.id}` : `Custom · ${t.id}`;
+      const baseColor = isValidHexColor(t.color) ? t.color : "#f3f4f6";
+      const currentColor = normalizeHexColor(baseColor);
+      const safeId = escapeHtml(t.id);
+      return `
+      <div class="edit-note-type-row" data-note-type-id="${safeId}" data-is-builtin="${isBuiltin}">
+        <p class="edit-note-type-row-title">${escapeHtml(idLabel)}</p>
+        <div class="edit-note-type-fields">
+          <div class="edit-note-type-label-field">
+            <label for="ntl-${safeId}">Label</label>
+            <input id="ntl-${safeId}" class="edit-note-type-label-input" type="text" maxlength="80" value="${escapeHtml(t.label)}" />
+          </div>
+          <div class="edit-note-type-hex-field">
+            <label for="ntc-${safeId}">Color (hex)</label>
+            <div class="edit-note-type-hex-row">
+              <input id="ntc-${safeId}" class="edit-note-type-hex-input" type="text" value="${escapeHtml(currentColor)}" placeholder="#RRGGBB or #RGB" autocomplete="off" />
+              <span class="edit-note-type-swatch-preview" style="background-color:${escapeHtml(currentColor)}"></span>
+            </div>
+          </div>
+          <div class="color-grid color-grid--edit-row">${paletteHtml}</div>
+          ${
+            canDeleteCustom
+              ? `<div class="edit-note-type-row-delete"><button type="button" class="ghost-button danger-menu-item" data-role="delete-custom-note-type" data-note-type-id="${safeId}">Delete this type</button></div>`
+              : ""
+          }
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  editNoteTypesListEl.querySelectorAll(".edit-note-type-row").forEach((row) => {
+    syncEditNoteTypeRowSwatches(row);
+  });
+}
+
+function openEditNoteTypesModal() {
+  if (!editNoteTypesModalOverlay) return;
+  fillEditNoteTypesModal();
+  editNoteTypesModalOverlay.classList.remove("hidden");
+}
+
+function closeEditNoteTypesModal() {
+  if (!editNoteTypesModalOverlay) return;
+  editNoteTypesModalOverlay.classList.add("hidden");
+}
+
+function saveEditNoteTypesFromModal() {
+  if (!editNoteTypesListEl) return;
+  const rows = editNoteTypesListEl.querySelectorAll(".edit-note-type-row");
+  for (const row of rows) {
+    const id = row.dataset.noteTypeId;
+    const labelInput = row.querySelector(".edit-note-type-label-input");
+    const hexInput = row.querySelector(".edit-note-type-hex-input");
+    const label = labelInput.value.trim();
+    const color = parseHexColorInput(hexInput.value);
+    if (!label) {
+      window.alert(`Please enter a label for note type "${id}".`);
+      labelInput.focus();
+      return;
+    }
+    if (!color) {
+      window.alert(`Please enter a valid hex color for "${label}" (e.g. #fef08a or #rgb).`);
+      hexInput.focus();
+      return;
+    }
+    const isBuiltin = row.dataset.isBuiltin === "true";
+    if (isBuiltin) {
+      noteTypeOverrides[id] = { label, color };
+    } else {
+      const ct = customNoteTypes.find((item) => item.id === id);
+      if (ct) {
+        ct.label = label;
+        ct.color = color;
+        ct.updatedAt = Date.now();
+      }
+    }
+  }
+  saveNoteTypeOverrides();
+  saveCustomNoteTypes();
+  closeEditNoteTypesModal();
+  renderEditor();
+  const board = getCurrentBoard();
+  const note =
+    board && editingNoteId !== null ? board.notes.find((item) => item.id === editingNoteId) : null;
+  renderInsights(note);
 }
 
 function slugifyTitle(title) {
@@ -1608,6 +1787,67 @@ if (cancelNoteTypeColorBtn) {
   });
 }
 
+if (editNoteTypesListEl) {
+  editNoteTypesListEl.addEventListener("click", (event) => {
+    const delBtn = event.target.closest('[data-role="delete-custom-note-type"]');
+    if (delBtn) {
+      const id = delBtn.dataset.noteTypeId;
+      if (!id || BUILTIN_NOTE_TYPES.some((b) => b.id === id) || isNoteTypeInUse(id)) return;
+      const typeLabel = noteTypeById(id).label;
+      const confirmed = window.confirm(`Delete note type "${typeLabel}"? This cannot be undone.`);
+      if (!confirmed) return;
+      customNoteTypes = customNoteTypes.filter((item) => item.id !== id);
+      delete noteTypeOverrides[id];
+      saveCustomNoteTypes();
+      saveNoteTypeOverrides();
+      fillEditNoteTypesModal();
+      renderEditor();
+      const board = getCurrentBoard();
+      const note =
+        board && editingNoteId !== null ? board.notes.find((item) => item.id === editingNoteId) : null;
+      renderInsights(note);
+      return;
+    }
+    const sw = event.target.closest('[data-role="edit-note-type-swatch"]');
+    if (!sw) return;
+    const row = sw.closest(".edit-note-type-row");
+    if (!row || !editNoteTypesListEl.contains(row)) return;
+    const hexInput = row.querySelector(".edit-note-type-hex-input");
+    hexInput.value = normalizeHexColor(sw.dataset.color);
+    syncEditNoteTypeRowSwatches(row);
+  });
+  editNoteTypesListEl.addEventListener("input", (event) => {
+    if (!event.target.classList.contains("edit-note-type-hex-input")) return;
+    const row = event.target.closest(".edit-note-type-row");
+    if (row) syncEditNoteTypeRowSwatches(row);
+  });
+  editNoteTypesListEl.addEventListener("focusout", (event) => {
+    if (!event.target.classList.contains("edit-note-type-hex-input")) return;
+    const parsed = parseHexColorInput(event.target.value);
+    if (parsed) event.target.value = parsed;
+    const row = event.target.closest(".edit-note-type-row");
+    if (row) syncEditNoteTypeRowSwatches(row);
+  });
+}
+
+if (openEditNoteTypesModalBtn) {
+  openEditNoteTypesModalBtn.addEventListener("click", () => {
+    closeOptionsMenu();
+    openEditNoteTypesModal();
+  });
+}
+if (cancelEditNoteTypesBtn) {
+  cancelEditNoteTypesBtn.addEventListener("click", () => closeEditNoteTypesModal());
+}
+if (saveEditNoteTypesBtn) {
+  saveEditNoteTypesBtn.addEventListener("click", () => saveEditNoteTypesFromModal());
+}
+if (editNoteTypesModalOverlay) {
+  editNoteTypesModalOverlay.addEventListener("click", (event) => {
+    if (event.target === editNoteTypesModalOverlay) closeEditNoteTypesModal();
+  });
+}
+
 if (homeCollapsiblePanels.length > 0) {
   homeCollapsiblePanels.forEach((panel) => {
     panel.addEventListener("toggle", () => {
@@ -1797,6 +2037,7 @@ resetAppDataBtn.addEventListener("click", () => {
     CUSTOM_STRUCTURES_KEY,
     CUSTOM_ARCHETYPES_KEY,
     CUSTOM_NOTE_TYPES_KEY,
+    NOTE_TYPE_OVERRIDES_KEY,
     GROUPS_KEY,
     DEMO_BOARD_IDS_KEY,
   ]);
