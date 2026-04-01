@@ -853,13 +853,41 @@ function renderGroup() {
                   ${noteItems
                     .map((note) => {
                       const type = noteTypeById(note.kind);
+                      const archetype = archetypeById(note.archetype || "none");
+                      const textPreview = (note.text || "").trim();
+                      const characterLabel =
+                        note.kind === "character"
+                          ? [archetype?.label || "", note.characterName || ""]
+                              .map((part) => part.trim())
+                              .filter(Boolean)
+                              .join(" - ") || "Character"
+                          : "";
+                      const collapsedPreview =
+                        note.kind === "character"
+                          ? characterLabel || textPreview || "Character note"
+                          : textPreview || "Empty note";
                       const header =
                         note.kind === "character"
-                          ? `${archetypeById(note.archetype || "none").label}${note.characterName ? ` - ${note.characterName}` : ""}`
+                          ? `${archetype.label}${note.characterName ? ` - ${note.characterName}` : ""}`
                           : type.label;
-                      return `<article class="note group-note-readonly" style="--note-bg:${type.color};">
-                        <div class="note-head"><span class="badge">${header}</span></div>
-                        <div class="group-note-text">${(note.text || "").trim() || "Empty note"}</div>
+                      const collapsed = Boolean(note.collapsed);
+                      return `<article class="note group-note-readonly${collapsed ? " is-collapsed" : ""}" data-note-id="${
+                        note.id
+                      }" data-board-id="${board.id}" style="--note-bg:${type.color};">
+                        <div class="note-head">
+                          ${
+                            collapsed
+                              ? `<div class="collapsed-preview" title="${escapeHtml(collapsedPreview)}">${escapeHtml(
+                                  collapsedPreview,
+                                )}</div>`
+                              : `<span class="badge">${escapeHtml(header)}</span>`
+                          }
+                        </div>
+                        ${
+                          collapsed
+                            ? ""
+                            : `<div class="group-note-text">${escapeHtml((note.text || "").trim() || "Empty note")}</div>`
+                        }
                       </article>`;
                     })
                     .join("")}
@@ -1537,6 +1565,24 @@ groupBoardStackEl.addEventListener("click", (event) => {
   const openBtn = event.target.closest('[data-role="open-board-from-group"]');
   if (!openBtn) return;
   openBoard(openBtn.dataset.boardId, false, currentGroupId);
+});
+
+groupBoardStackEl.addEventListener("dblclick", (event) => {
+  if (event.target.closest("button")) return;
+  const noteHead = event.target.closest(".group-note-readonly .note-head");
+  if (!noteHead) return;
+  const noteEl = noteHead.closest(".note.group-note-readonly");
+  if (!noteEl) return;
+  const boardId = noteEl.dataset.boardId;
+  const noteId = Number(noteEl.dataset.noteId);
+  const board = boards.find((item) => item.id === boardId);
+  if (!board) return;
+  const note = board.notes.find((item) => item.id === noteId);
+  if (!note) return;
+  note.collapsed = !note.collapsed;
+  note.updatedAt = Date.now();
+  touchBoard(board);
+  renderGroup();
 });
 
 if (noteTypeColorGrid) {

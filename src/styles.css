@@ -438,6 +438,11 @@ h1 {
   pointer-events: none;
 }
 
+/* Allow collapse toggle (double-click) on group preview notes while keeping the rest non-interactive */
+.group-board-preview .note.group-note-readonly {
+  pointer-events: auto;
+}
+
 .group-note-readonly .note-head {
   margin-bottom: 4px;
 }

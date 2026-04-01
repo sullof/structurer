@@ -119,6 +119,10 @@ No backend is currently used.
 
 ## History
 
+**1.8.2**
+- Fixed note collapse in group sequential view: the group board preview used `pointer-events: none`, so double-click never reached notes; preview notes now receive events, collapsed state renders like the board editor, and double-click on the note header toggles collapse (persisted on the board).
+- Added a Help FAQ entry about collapsing long notes; wording describes double-click on the note header without implying read-only mode.
+
 **1.8.1**
 - Fixed note collapse on double-click of the note header: entering edit mode on the first click had replaced the header area before the second click, so double-click no longer toggled collapse. Single-click to edit is now deferred briefly so a double-click can cancel it and collapse/expand the note as before.
 
