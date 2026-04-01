@@ -8,12 +8,14 @@ export function createGroupModalController({
   renderHome,
   renderGroup,
   openHome,
+  openGroup,
 }) {
   const {
     groupActionsModalOverlay,
     closeGroupActionsModalBtn,
     modalReorderGroupBoardsBtn,
     modalRemoveBoardFromGroupBtn,
+    modalDeleteGroupBtn,
     groupReorderModalOverlay,
     closeGroupReorderModalBtn,
     groupReorderListEl,
@@ -164,6 +166,24 @@ export function createGroupModalController({
       saveGroups();
       renderHome();
       if (getCurrentGroupId() === group.id) renderGroup();
+      closeGroupActionsModal();
+    });
+  }
+
+  if (modalDeleteGroupBtn) {
+    modalDeleteGroupBtn.addEventListener("click", () => {
+      const groups = getGroups();
+      const group = groups.find((item) => item.id === groupActionsModalGroupId);
+      if (!group) return;
+      const confirmed = window.confirm(`Delete group "${group.title}"? This action cannot be undone.`);
+      if (!confirmed) return;
+      const nextGroups = groups.filter((item) => item.id !== group.id);
+      setGroups(nextGroups);
+      saveGroups();
+      renderHome();
+      if (getCurrentGroupId() === group.id) {
+        openHome();
+      }
       closeGroupActionsModal();
     });
   }

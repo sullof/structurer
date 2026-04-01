@@ -85,8 +85,14 @@
           <p>No boards yet. Create your first board to start mapping your story.</p>
         </section>
 
-        <section id="groups-list" class="boards-list"></section>
-        <section id="boards-list" class="boards-list"></section>
+        <section class="dashboard-section">
+          <h2 class="dashboard-section-title">Groups</h2>
+          <section id="groups-list" class="boards-list"></section>
+        </section>
+        <section class="dashboard-section">
+          <h2 class="dashboard-section-title">Boards</h2>
+          <section id="boards-list" class="boards-list"></section>
+        </section>
         <div class="home-list-controls">
           <button id="toggle-demo-visibility" class="link-button" type="button">Hide demos</button>
         </div>
@@ -180,6 +186,7 @@
             <div class="board-actions-modal-list">
               <button id="modal-reorder-group-boards" class="ghost-button" type="button">Reorder boards</button>
               <button id="modal-remove-board-from-group" class="ghost-button danger-menu-item" type="button">Remove board</button>
+              <button id="modal-delete-group" class="ghost-button danger-menu-item" type="button">Delete group</button>
             </div>
             <div class="modal-actions">
               <button id="close-group-actions-modal" class="ghost-button" type="button">Close</button>

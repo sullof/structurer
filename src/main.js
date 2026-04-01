@@ -94,6 +94,7 @@ const groupActionsModalOverlay = document.querySelector("#group-actions-modal-ov
 const closeGroupActionsModalBtn = document.querySelector("#close-group-actions-modal");
 const modalReorderGroupBoardsBtn = document.querySelector("#modal-reorder-group-boards");
 const modalRemoveBoardFromGroupBtn = document.querySelector("#modal-remove-board-from-group");
+const modalDeleteGroupBtn = document.querySelector("#modal-delete-group");
 const groupReorderModalOverlay = document.querySelector("#group-reorder-modal-overlay");
 const closeGroupReorderModalBtn = document.querySelector("#close-group-reorder-modal");
 const groupReorderListEl = document.querySelector("#group-reorder-list");
@@ -583,13 +584,19 @@ function groupCardTemplate(group) {
   const boardTitles = group.boardIds
     .map((id) => boards.find((board) => board.id === id)?.title)
     .filter(Boolean);
+  const boardListHtml =
+    boardTitles.length > 0
+      ? `<ul class="group-board-list">${boardTitles
+          .map((title) => `<li class="group-board-list-item">${escapeHtml(title)}</li>`)
+          .join("")}</ul>`
+      : `<div class="board-meta-line">No boards yet</div>`;
   return `
     <article class="board-card" data-group-id="${group.id}" role="button" tabindex="0" aria-label="Open group ${group.title}">
       <div>
         <strong>${group.title}</strong>
         <div class="board-meta">
           <div class="board-meta-line">Group • ${group.boardIds.length} boards</div>
-          <div class="board-meta-line">${boardTitles.length > 0 ? boardTitles.join(" • ") : "No boards yet"}</div>
+          ${boardListHtml}
           <div class="board-meta-line">Updated ${formatDate(group.updatedAt)}</div>
         </div>
       </div>
@@ -875,6 +882,7 @@ const groupModalController = createGroupModalController({
     closeGroupActionsModalBtn,
     modalReorderGroupBoardsBtn,
     modalRemoveBoardFromGroupBtn,
+    modalDeleteGroupBtn,
     groupReorderModalOverlay,
     closeGroupReorderModalBtn,
     groupReorderListEl,
@@ -890,6 +898,7 @@ const groupModalController = createGroupModalController({
   renderHome,
   renderGroup,
   openHome,
+  openGroup,
 });
 
 function createBoard(title, structureId = "hero_journey") {
@@ -1617,9 +1626,11 @@ if (addBoardToGroupListEl) {
     const group = groups.find((item) => item.id === btn.dataset.groupId);
     const board = boards.find((item) => item.id === boardId);
     if (!group || !board) return;
-    if (!group.boardIds.includes(board.id)) {
-      group.boardIds.push(board.id);
+    if (group.boardIds.includes(board.id)) {
+      window.alert(`"${board.title}" is already in "${group.title}".`);
+      return;
     }
+    group.boardIds.push(board.id);
     group.updatedAt = Date.now();
     saveGroups();
     renderHome();
@@ -1665,6 +1676,7 @@ if (createGroupForm && createGroupNameInput) {
     saveGroups();
     createGroupForm.reset();
     renderHome();
+    openGroup(group.id);
   });
 }
 

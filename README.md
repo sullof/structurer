@@ -119,6 +119,16 @@ No backend is currently used.
 
 ## History
 
+**1.7.0**
+- Improved group creation UX with a dedicated dashboard panel (`Create group`) that collects group name and board selection via checkboxes.
+- Added immediate navigation to the newly created group after submit, so users get instant feedback and avoid accidental duplicate creation.
+- Updated board-to-group flow: `Add board to group` is enabled only when at least one group exists, and now uses a modal picker listing existing groups.
+- Added explicit feedback when trying to add a board to a group that already contains it.
+- Added `Delete group` action in group actions, with explicit confirmation before removal.
+- Improved dashboard clarity by separating the two collections with explicit section titles (`Groups` and `Boards`).
+- Improved group card readability by listing included boards one-per-line in bold.
+- Refined dashboard consistency for new controls (button alignment and panel behavior aligned with existing dashboard patterns).
+
 **1.6.0**
 - Added an in-app Help route (`/help`) with an expandable FAQ covering core concepts, workflows, import/merge strategy, and external references for story structures.
 - Improved dashboard information architecture with accordion behavior for collapsible panels (opening one closes the others).

@@ -363,6 +363,17 @@ h1 {
   gap: 10px;
 }
 
+.dashboard-section {
+  margin-bottom: 8px;
+}
+
+.dashboard-section-title {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #374151;
+}
+
 .home-list-controls {
   display: flex;
   justify-content: flex-start;
@@ -718,6 +729,21 @@ h1 {
 }
 
 .board-meta-line + .board-meta-line {
+  margin-top: 2px;
+}
+
+.group-board-list {
+  margin: 4px 0 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.group-board-list-item {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.group-board-list-item + .group-board-list-item {
   margin-top: 2px;
 }
 
