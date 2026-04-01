@@ -65,7 +65,6 @@ You can also create and save your own custom structures directly in the dashboar
 
 - Vanilla JavaScript
 - Vite
-- [`@chenglou/pretext`](https://www.npmjs.com/package/@chenglou/pretext) for text measurement insights
 
 ## Run Locally
 

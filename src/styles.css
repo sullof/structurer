@@ -1,6 +1,9 @@
 :root {
   color-scheme: light;
   --bg: #f5f5f7;
+  /* Subtle vertical pinstripes (1px line every 32px) — “paper / panel” feel */
+  --bg-stripe: rgba(17, 24, 39, 0.02);
+  --bg-stripe-period: 10px;
   --ink: #1f2937;
   --muted: #6b7280;
   --line: #d1d5db;
@@ -8,6 +11,10 @@
   --character: #bfdbfe;
   --theme: #bbf7d0;
   --column-min-width: 180px;
+  /* Slightly above page --bg, lighter than before — panel behind phase columns */
+  --board-surface: #f1f2f6;
+  /* Empty phase: barely off-white vs. #fff note columns */
+  --column-empty-bg: #f6f5f8;
 }
 
 * {
@@ -17,11 +24,19 @@
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(var(--bg-stripe-period) - 1px),
+    var(--bg-stripe) calc(var(--bg-stripe-period) - 1px),
+    var(--bg-stripe) var(--bg-stripe-period)
+  );
   color: var(--ink);
 }
 
 .app {
+  --app-padding-inline: 20px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -101,6 +116,18 @@ body {
   justify-self: end;
 }
 
+.editor-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.board-actions-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .back-arrow-button {
   min-width: 44px;
   font-size: 1.25rem;
@@ -127,7 +154,6 @@ h1 {
 
 .home-create,
 .empty-state,
-.boards-list,
 .home-import,
 .home-custom-structure,
 .home-create-group {
@@ -348,7 +374,7 @@ h1 {
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 0.92rem;
-  background: #f8f8f8;
+  background: #f0f5f8;
   cursor: pointer;
 }
 
@@ -364,7 +390,7 @@ h1 {
 }
 
 .dashboard-section {
-  margin-bottom: 8px;
+  margin-bottom: 18px;
 }
 
 .dashboard-section-title {
@@ -414,19 +440,39 @@ h1 {
   gap: 14px;
 }
 
+/* Group view: no grey frame — header + white phase grid sit on page --bg */
 .group-board-card {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
 }
 
+/* Group: stack full-bleed horizontally; extra gap between boards now that cards are frameless */
+#group-view:not(.hidden) .group-board-stack {
+  margin-left: calc(-1 * var(--app-padding-inline));
+  margin-right: calc(-1 * var(--app-padding-inline));
+  gap: 2.5rem;
+  padding-bottom: 8px;
+}
+
+/* Per-board row above full-bleed grid (group = reference inset: one step of --app-padding-inline vs viewport) */
 .group-board-head {
   display: flex;
   align-items: start;
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 10px;
+  padding-left: max(var(--app-padding-inline), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--app-padding-inline), env(safe-area-inset-right, 0px));
+}
+
+.group-board-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .group-board-head h2 {
@@ -436,6 +482,37 @@ h1 {
 
 .group-board-preview {
   pointer-events: none;
+}
+
+/* Contiguous phase grid: container top+left only; each cell right+bottom — one hairline on outer edges, no doubling */
+/* Grid bg transparent so implicit empty slots show page bg through frameless card */
+#group-view .group-board-preview.board {
+  gap: 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
+#group-view .group-board-preview .column {
+  border: none;
+  border-radius: 0;
+  padding: 16px 12px 18px;
+  min-height: 0;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+#group-view .group-board-preview .column.column-empty {
+  background: var(--column-empty-bg);
+}
+
+#group-view .group-board-preview .phase-head {
+  margin-bottom: 12px;
 }
 
 /* Allow collapse toggle (double-click) on group preview notes while keeping the rest non-interactive */
@@ -626,6 +703,20 @@ h1 {
   text-align: left;
 }
 
+#add-board-to-group-modal-overlay .add-board-to-group-intro {
+  margin-bottom: 14px;
+}
+
+#add-board-to-group-modal-overlay .add-board-to-group-empty {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
+#add-board-to-group-modal-overlay .add-board-to-group-list:empty {
+  margin: 0;
+  min-height: 0;
+}
+
 .board-actions-modal .ghost-button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -695,7 +786,7 @@ h1 {
 
 .board-card button {
   border: 1px solid #16a34a;
-  background: #f8f8f8;
+  background: #f0f5f8;
   color: #166534;
   border-radius: 8px;
   padding: 6px 10px;
@@ -776,6 +867,39 @@ h1 {
   padding-bottom: 12px;
 }
 
+/* Editor board: same language as group preview — no grey panel, contiguous grid, square phase cells */
+#editor-view:not(.hidden) #board.board {
+  margin-left: calc(-1 * var(--app-padding-inline));
+  margin-right: calc(-1 * var(--app-padding-inline));
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  padding: 0;
+  padding-bottom: 0;
+  gap: 0;
+  overflow-x: auto;
+}
+
+#editor-view:not(.hidden) #board.board .column {
+  border: none;
+  border-radius: 0;
+  padding: 16px 12px 18px;
+  min-height: 0;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+#editor-view:not(.hidden) #board.board .column.column-empty {
+  background: var(--column-empty-bg);
+}
+
+#editor-view:not(.hidden) #board.board .phase-head {
+  margin-bottom: 12px;
+}
+
 .board.wrap-columns {
   grid-template-columns: repeat(auto-fit, minmax(var(--column-min-width), 1fr));
   overflow-x: visible;
@@ -820,6 +944,14 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px;
+}
+
+.board .column.column-empty {
+  background: var(--column-empty-bg);
+}
+
+.board .column.column-empty .phase-title {
+  color: var(--muted);
 }
 
 .phase-title {
@@ -937,7 +1069,7 @@ h1 {
 }
 
 .note {
-  border-radius: 8px;
+  border-radius: 4px;
   padding: 8px;
   border: 1px solid rgba(17, 24, 39, 0.2);
   box-shadow: 0 1px 1px rgba(17, 24, 39, 0.1);
@@ -1042,12 +1174,6 @@ h1 {
   grid-template-columns: minmax(120px, 38%) minmax(0, 1fr);
   gap: 6px;
   margin-bottom: 6px;
-}
-
-.insights {
-  margin-top: 16px;
-  color: var(--muted);
-  font-size: 0.9rem;
 }
 
 .modal-overlay {
@@ -1286,6 +1412,7 @@ h1 {
 
 @media (max-width: 640px) {
   .app {
+    --app-padding-inline: 14px;
     padding: 14px;
   }
 
@@ -1365,6 +1492,15 @@ h1 {
   }
 
   .options-button .options-button-label {
+    display: none;
+  }
+
+  /* Mobile: layout columns + wrap — Options (resize/wrap) hidden; Actions modal carries the rest */
+  #editor-view .options-wrap-desktop-only {
+    display: none;
+  }
+
+  .board-actions-trigger-label {
     display: none;
   }
 

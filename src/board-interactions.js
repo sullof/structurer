@@ -7,7 +7,6 @@ export function createBoardInteractionsController({
   reorderPhaseAndNotes,
   touchBoard,
   renderEditor,
-  renderInsights,
   setEditingNoteId,
 }) {
   let draggedNoteId = null;
@@ -129,7 +128,6 @@ export function createBoardInteractionsController({
     setEditingNoteId(newNoteId);
     touchBoard(board);
     renderEditor();
-    renderInsights(board.notes[board.notes.length - 1]);
   }
 
   boardEl.addEventListener("dragstart", (event) => {
@@ -217,7 +215,6 @@ export function createBoardInteractionsController({
       clearPhaseDropPreview();
       touchBoard(board);
       renderEditor();
-      renderInsights(null);
       return;
     }
     if (draggedNoteId === null) return;
@@ -232,12 +229,10 @@ export function createBoardInteractionsController({
     moveNote(draggedNoteId, targetColumn, targetIndex);
 
     const board = getCurrentBoard();
-    const movedNote = board ? board.notes.find((note) => note.id === draggedNoteId) : null;
     draggedNoteId = null;
     clearNoteDropPreview();
     if (board) touchBoard(board);
     renderEditor();
-    renderInsights(movedNote || null);
   });
 
   boardEl.addEventListener("dragend", () => {

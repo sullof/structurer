@@ -11,7 +11,6 @@ export function createNavigationController({
   renderHome,
   renderEditor,
   renderGroup,
-  renderInsights,
   applyColumnWidth,
   applyWrapColumns,
 }) {
@@ -79,7 +78,6 @@ export function createNavigationController({
     editorView.classList.remove("hidden");
     helpView.classList.add("hidden");
     renderEditor();
-    renderInsights(null);
     applyColumnWidth();
     applyWrapColumns();
     requestAnimationFrame(() => {

@@ -155,77 +155,6 @@
           <button id="reset-demo-data" class="ghost-button" type="button">Reset demos only (dev)</button>
           <button id="reset-app-data" class="ghost-button danger-menu-item" type="button">Reset app data (dev)</button>
         </div>
-
-        <div id="board-actions-modal-overlay" class="modal-overlay hidden">
-          <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Board actions">
-            <h2>Board actions</h2>
-            <div class="board-actions-modal-list">
-              <button id="modal-rename-board" class="ghost-button" type="button">Rename board</button>
-              <button id="modal-add-board-to-group" class="ghost-button" type="button">Add board to group</button>
-              <button id="modal-export-board" class="ghost-button" type="button">Export the board</button>
-              <button id="modal-delete-board" class="ghost-button danger-menu-item" type="button">Delete the board</button>
-            </div>
-            <div class="modal-actions">
-              <button id="close-board-actions-modal" class="ghost-button" type="button">Close</button>
-            </div>
-          </div>
-        </div>
-        <div id="add-board-to-group-modal-overlay" class="modal-overlay hidden">
-          <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-labelledby="add-board-to-group-title">
-            <h2 id="add-board-to-group-title">Add to group</h2>
-            <p class="subtitle">Choose a group. The board will be added to the end of that group.</p>
-            <div id="add-board-to-group-list" class="board-actions-modal-list add-board-to-group-list"></div>
-            <div class="modal-actions">
-              <button id="close-add-board-to-group-modal" class="ghost-button" type="button">Cancel</button>
-            </div>
-          </div>
-        </div>
-        <div id="group-actions-modal-overlay" class="modal-overlay hidden">
-          <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Group actions">
-            <h2>Group actions</h2>
-            <div class="board-actions-modal-list">
-              <button id="modal-reorder-group-boards" class="ghost-button" type="button">Reorder boards</button>
-              <button id="modal-remove-board-from-group" class="ghost-button danger-menu-item" type="button">Remove board</button>
-              <button id="modal-delete-group" class="ghost-button danger-menu-item" type="button">Delete group</button>
-            </div>
-            <div class="modal-actions">
-              <button id="close-group-actions-modal" class="ghost-button" type="button">Close</button>
-            </div>
-          </div>
-        </div>
-        <div id="group-reorder-modal-overlay" class="modal-overlay hidden">
-          <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Reorder boards">
-            <h2>Reorder boards</h2>
-            <p class="subtitle">Drag boards to change their order in this group.</p>
-            <div id="group-reorder-list" class="reorder-list"></div>
-            <p id="group-reorder-status" class="reorder-status" aria-live="polite"></p>
-            <div class="modal-actions">
-              <button id="close-group-reorder-modal" class="ghost-button" type="button">Done</button>
-            </div>
-          </div>
-        </div>
-        <div id="phase-order-conflict-modal-overlay" class="modal-overlay hidden">
-          <div class="modal phase-order-conflict-modal" role="dialog" aria-modal="true" aria-label="Phase order conflict">
-            <h2>Cannot merge: phase order differs</h2>
-            <p class="subtitle" id="phase-order-conflict-title"></p>
-            <div class="phase-order-columns">
-              <section>
-                <h3>Current order</h3>
-                <ol id="phase-order-current-list"></ol>
-              </section>
-              <section>
-                <h3>Imported order</h3>
-                <ol id="phase-order-imported-list"></ol>
-              </section>
-            </div>
-            <p id="phase-order-conflict-hint" class="phase-order-conflict-hint">
-              Please manually align the current board phase order, then repeat the import.
-            </p>
-            <div class="modal-actions">
-              <button id="close-phase-order-conflict-modal" class="ghost-button" type="button">Close</button>
-            </div>
-          </div>
-        </div>
       </section>
 
       <section id="help-view" class="view hidden">
@@ -449,7 +378,12 @@
             <h1 id="group-title">Group</h1>
             <p id="group-subtitle" class="subtitle"></p>
           </div>
-          <div class="editor-topbar-right"></div>
+          <div class="editor-topbar-right editor-topbar-actions">
+            <button id="group-view-actions-btn" type="button" class="ghost-button board-actions-trigger" aria-label="Group actions">
+              <span aria-hidden="true">⋯</span>
+              <span class="board-actions-trigger-label">Actions</span>
+            </button>
+          </div>
         </header>
         <section id="group-board-stack" class="group-board-stack"></section>
       </section>
@@ -463,24 +397,25 @@
             <h1 id="editor-title">Hero's Journey Board</h1>
             <p id="structure-name" class="subtitle">Hero's Journey</p>
           </div>
-          <div class="editor-topbar-right">
-            <div class="options-wrap">
+          <div class="editor-topbar-right editor-topbar-actions">
+            <button id="editor-board-actions-btn" type="button" class="ghost-button board-actions-trigger" aria-label="Board actions">
+              <span aria-hidden="true">⋯</span>
+              <span class="board-actions-trigger-label">Actions</span>
+            </button>
+            <div class="options-wrap options-wrap-desktop-only">
               <button id="options-button" class="ghost-button options-button" type="button" aria-label="Options">
                 <span aria-hidden="true">⚙️</span>
                 <span class="options-button-label">Options</span>
               </button>
               <div id="options-menu" class="options-menu hidden">
                 <button id="open-resize-modal" class="menu-item menu-item-desktop-only" type="button">Resize columns</button>
-                <button id="open-edit-note-types-modal" class="menu-item" type="button">Edit note types</button>
                 <button id="toggle-wrap-columns" class="menu-item menu-item-desktop-only" type="button">Wrap columns: Off</button>
-                <button id="reset-phase-order" class="menu-item" type="button">Reset phase order</button>
               </div>
             </div>
           </div>
         </header>
 
         <section id="board" class="board" aria-label="Hero's journey board"></section>
-        <aside id="insights" class="insights"></aside>
       </section>
 
       <div id="resize-modal-overlay" class="modal-overlay hidden">
@@ -513,6 +448,81 @@
           <div class="modal-actions">
             <button id="cancel-edit-note-types" class="ghost-button" type="button">Cancel</button>
             <button id="save-edit-note-types" class="ghost-button" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Global modals: must stay outside .view so they work when home/group/editor help are hidden -->
+      <div id="board-actions-modal-overlay" class="modal-overlay hidden">
+        <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Board actions">
+          <h2>Board actions</h2>
+          <div class="board-actions-modal-list">
+            <button id="modal-rename-board" class="ghost-button" type="button">Rename board</button>
+            <button id="modal-add-board-to-group" class="ghost-button" type="button">Add board to group</button>
+            <button id="modal-export-board" class="ghost-button" type="button">Export the board</button>
+            <button id="modal-edit-note-types" class="ghost-button" type="button">Edit note types</button>
+            <button id="modal-reset-phase-order" class="ghost-button" type="button">Reset phase order</button>
+            <button id="modal-delete-board" class="ghost-button danger-menu-item" type="button">Delete the board</button>
+          </div>
+          <div class="modal-actions">
+            <button id="close-board-actions-modal" class="ghost-button" type="button">Close</button>
+          </div>
+        </div>
+      </div>
+      <div id="add-board-to-group-modal-overlay" class="modal-overlay hidden">
+        <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-labelledby="add-board-to-group-title">
+          <h2 id="add-board-to-group-title">Add to group</h2>
+          <p class="subtitle add-board-to-group-intro">Choose a group. The board will be added to the end of that group.</p>
+          <p id="add-board-to-group-empty" class="subtitle add-board-to-group-empty hidden" role="status"></p>
+          <div id="add-board-to-group-list" class="board-actions-modal-list add-board-to-group-list"></div>
+          <div class="modal-actions">
+            <button id="close-add-board-to-group-modal" class="ghost-button" type="button">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div id="group-actions-modal-overlay" class="modal-overlay hidden">
+        <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Group actions">
+          <h2>Group actions</h2>
+          <div class="board-actions-modal-list">
+            <button id="modal-reorder-group-boards" class="ghost-button" type="button">Reorder boards</button>
+            <button id="modal-remove-board-from-group" class="ghost-button danger-menu-item" type="button">Remove board</button>
+            <button id="modal-delete-group" class="ghost-button danger-menu-item" type="button">Delete group</button>
+          </div>
+          <div class="modal-actions">
+            <button id="close-group-actions-modal" class="ghost-button" type="button">Close</button>
+          </div>
+        </div>
+      </div>
+      <div id="group-reorder-modal-overlay" class="modal-overlay hidden">
+        <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Reorder boards">
+          <h2>Reorder boards</h2>
+          <p class="subtitle">Drag boards to change their order in this group.</p>
+          <div id="group-reorder-list" class="reorder-list"></div>
+          <p id="group-reorder-status" class="reorder-status" aria-live="polite"></p>
+          <div class="modal-actions">
+            <button id="close-group-reorder-modal" class="ghost-button" type="button">Done</button>
+          </div>
+        </div>
+      </div>
+      <div id="phase-order-conflict-modal-overlay" class="modal-overlay hidden">
+        <div class="modal phase-order-conflict-modal" role="dialog" aria-modal="true" aria-label="Phase order conflict">
+          <h2>Cannot merge: phase order differs</h2>
+          <p class="subtitle" id="phase-order-conflict-title"></p>
+          <div class="phase-order-columns">
+            <section>
+              <h3>Current order</h3>
+              <ol id="phase-order-current-list"></ol>
+            </section>
+            <section>
+              <h3>Imported order</h3>
+              <ol id="phase-order-imported-list"></ol>
+            </section>
+          </div>
+          <p id="phase-order-conflict-hint" class="phase-order-conflict-hint">
+            Please manually align the current board phase order, then repeat the import.
+          </p>
+          <div class="modal-actions">
+            <button id="close-phase-order-conflict-modal" class="ghost-button" type="button">Close</button>
           </div>
         </div>
       </div>

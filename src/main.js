@@ -1,4 +1,3 @@
-import { prepare, layout } from "@chenglou/pretext";
 import {
   BUILTIN_NOTE_TYPES,
   BUILTIN_ARCHETYPES,
@@ -122,7 +121,10 @@ const optionsButton = document.querySelector("#options-button");
 const optionsMenu = document.querySelector("#options-menu");
 const openResizeModalBtn = document.querySelector("#open-resize-modal");
 const toggleWrapColumnsBtn = document.querySelector("#toggle-wrap-columns");
-const resetPhaseOrderBtn = document.querySelector("#reset-phase-order");
+const editorBoardActionsBtn = document.querySelector("#editor-board-actions-btn");
+const groupViewActionsBtn = document.querySelector("#group-view-actions-btn");
+const modalEditNoteTypesBtn = document.querySelector("#modal-edit-note-types");
+const modalResetPhaseOrderBtn = document.querySelector("#modal-reset-phase-order");
 const resetDemoDataBtn = document.querySelector("#reset-demo-data");
 const resetAppDataBtn = document.querySelector("#reset-app-data");
 const resizeModalOverlay = document.querySelector("#resize-modal-overlay");
@@ -134,14 +136,12 @@ const noteTypeColorGrid = document.querySelector("#note-type-color-grid");
 const cancelNoteTypeColorBtn = document.querySelector("#cancel-note-type-color");
 const editNoteTypesModalOverlay = document.querySelector("#edit-note-types-modal-overlay");
 const editNoteTypesListEl = document.querySelector("#edit-note-types-list");
-const openEditNoteTypesModalBtn = document.querySelector("#open-edit-note-types-modal");
 const cancelEditNoteTypesBtn = document.querySelector("#cancel-edit-note-types");
 const saveEditNoteTypesBtn = document.querySelector("#save-edit-note-types");
 const goDashboardBtn = document.querySelector("#go-dashboard");
 
 const boardEl = document.querySelector("#board");
 const groupBoardStackEl = document.querySelector("#group-board-stack");
-const insightsEl = document.querySelector("#insights");
 const homeListControlsEl = document.querySelector(".home-list-controls");
 const toggleDemoVisibilityBtn = document.querySelector("#toggle-demo-visibility");
 const homeCollapsiblePanels = [...document.querySelectorAll("#home-view .collapsible-panel")];
@@ -546,10 +546,6 @@ function saveEditNoteTypesFromModal() {
   saveCustomNoteTypes();
   closeEditNoteTypesModal();
   renderEditor();
-  const board = getCurrentBoard();
-  const note =
-    board && editingNoteId !== null ? board.notes.find((item) => item.id === editingNoteId) : null;
-  renderInsights(note);
 }
 
 function slugifyTitle(title) {
@@ -630,13 +626,6 @@ function createCustomArchetype(label) {
   customArchetypes.push(archetype);
   saveCustomArchetypes();
   return archetype;
-}
-
-function estimateTextMetrics(text) {
-  const trimmed = text.trim();
-  if (!trimmed) return { height: 0, lineCount: 0 };
-  const prepared = prepare(trimmed, '14px "Helvetica Neue"');
-  return layout(prepared, 210, 20);
 }
 
 function getColumnNotes(notes, column) {
@@ -808,6 +797,14 @@ function getBoardPhaseOrder(board) {
   return identityPhaseOrder(phaseCount);
 }
 
+function isPhaseOrderModified(board) {
+  if (!board) return false;
+  const structure = getStructureConfig(board.structureId);
+  const defaultOrder = identityPhaseOrder(structure.phases.length);
+  const currentOrder = getBoardPhaseOrder(board);
+  return currentOrder.some((phaseIndex, index) => phaseIndex !== defaultOrder[index]);
+}
+
 function getBoardPhases(board) {
   const structure = getStructureConfig(board.structureId);
   const order = getBoardPhaseOrder(board);
@@ -890,17 +887,16 @@ function renderEditor() {
   const archetypes = getAllArchetypes();
   const noteTypes = getAllNoteTypes();
   const editingId = editingNoteId;
-  const defaultOrder = identityPhaseOrder(structure.phases.length);
-  const currentOrder = getBoardPhaseOrder(board);
-  const isModifiedOrder = currentOrder.some((phaseIndex, index) => phaseIndex !== defaultOrder[index]);
+  const isModifiedOrder = isPhaseOrderModified(board);
 
   editorTitle.textContent = board.title;
   structureNameEl.textContent = isModifiedOrder ? `${structure.name} (modified)` : structure.name;
   boardEl.innerHTML = phases
     .map((phase, columnIndex) => {
       const noteItems = getColumnNotes(board.notes, columnIndex);
+      const emptyClass = noteItems.length === 0 ? " column-empty" : "";
       return `
-      <section class="column" data-column="${columnIndex}">
+      <section class="column${emptyClass}" data-column="${columnIndex}">
         <div class="phase-head">
           <div class="phase-title-wrap">
             <button class="phase-drag" data-role="phase-drag-handle" title="Drag phase" draggable="true">⋮⋮</button>
@@ -940,24 +936,6 @@ function autoResizeTextareas() {
   });
 }
 
-function renderInsights(note) {
-  if (!note) {
-    insightsEl.textContent = "Select or edit a note to view writing metrics and details.";
-    return;
-  }
-  const metrics = estimateTextMetrics(note.text || "");
-  const archetypeText =
-    note.kind === "character"
-      ? `Archetype: ${archetypeById(note.archetype || "none").label}`
-      : "Archetype: -";
-
-  insightsEl.textContent = `Note #${note.id} | Type: ${noteTypeById(note.kind).label} | Estimated lines: ${
-    metrics.lineCount
-  } | Estimated height: ${Math.round(
-    metrics.height,
-  )}px | ${archetypeText}`;
-}
-
 const navigation = createNavigationController({
   views: { landingView, homeView, helpView, groupView, editorView },
   homeRoute: HOME_ROUTE,
@@ -979,7 +957,6 @@ const navigation = createNavigationController({
   renderHome,
   renderEditor,
   renderGroup,
-  renderInsights,
   applyColumnWidth,
   applyWrapColumns,
 });
@@ -1017,14 +994,21 @@ function renderGroup() {
             <h2>${board.title}</h2>
             <p class="subtitle">${structure.name}</p>
           </div>
-          <button class="ghost-button" data-role="open-board-from-group" data-board-id="${board.id}" type="button">Open board</button>
+          <div class="group-board-head-actions">
+            <button class="ghost-button" data-role="open-board-from-group" data-board-id="${board.id}" type="button">Edit board</button>
+            <button type="button" class="ghost-button board-actions-trigger" data-role="board-actions" data-board-id="${board.id}" aria-label="Board actions">
+              <span aria-hidden="true">⋯</span>
+              <span class="board-actions-trigger-label">Actions</span>
+            </button>
+          </div>
         </header>
         <section class="board wrap-columns group-board-preview">
           ${phases
             .map((phase, columnIndex) => {
               const noteItems = getColumnNotes(board.notes, columnIndex);
+              const emptyClass = noteItems.length === 0 ? " column-empty" : "";
               return `
-              <section class="column">
+              <section class="column${emptyClass}">
                 <div class="phase-head">
                   <h2 class="phase-title">${formatPhaseTitle(phase)}</h2>
                 </div>
@@ -1278,33 +1262,80 @@ function closeBoardActionsModal() {
   boardActionsModalBoardId = null;
 }
 
+function groupsEligibleForBoard(boardId) {
+  const board = boards.find((b) => b.id == boardId);
+  if (!board) return [];
+  return groups.filter((g) => !g.boardIds.some((bid) => bid == board.id));
+}
+
 function openBoardActionsModal(boardId) {
   boardActionsModalBoardId = boardId;
   boardActionsModalOverlay.classList.remove("hidden");
+  const board = boards.find((b) => b.id == boardId);
   if (modalAddBoardToGroupBtn) {
-    modalAddBoardToGroupBtn.disabled = groups.length === 0;
-    modalAddBoardToGroupBtn.title = groups.length === 0 ? "Create a group first" : "";
+    const eligible = groupsEligibleForBoard(boardId);
+    modalAddBoardToGroupBtn.disabled = groups.length === 0 || eligible.length === 0;
+    if (groups.length === 0) {
+      modalAddBoardToGroupBtn.title = "Create a group first";
+    } else if (eligible.length === 0) {
+      modalAddBoardToGroupBtn.title = "This board is already in every group";
+    } else {
+      modalAddBoardToGroupBtn.title = "";
+    }
+  }
+  if (modalResetPhaseOrderBtn) {
+    const canReset = Boolean(board && isPhaseOrderModified(board));
+    modalResetPhaseOrderBtn.disabled = !canReset;
+    modalResetPhaseOrderBtn.title = canReset ? "" : "Phase order already matches the structure";
   }
 }
 
 function closeAddBoardToGroupModal() {
   if (addBoardToGroupModalOverlay) addBoardToGroupModalOverlay.classList.add("hidden");
   addBoardToGroupTargetBoardId = null;
+  const emptyEl = document.querySelector("#add-board-to-group-empty");
+  if (emptyEl) {
+    emptyEl.classList.add("hidden");
+    emptyEl.textContent = "";
+  }
+  const introEl = document.querySelector("#add-board-to-group-modal-overlay .add-board-to-group-intro");
+  if (introEl) introEl.classList.remove("hidden");
+  if (addBoardToGroupListEl) {
+    addBoardToGroupListEl.classList.remove("hidden");
+  }
 }
 
 function openAddBoardToGroupModal(boardId) {
   if (!addBoardToGroupModalOverlay || !addBoardToGroupListEl) return;
   if (groups.length === 0) return;
   addBoardToGroupTargetBoardId = boardId;
-  const sorted = [...groups].sort((a, b) => b.updatedAt - a.updatedAt);
-  addBoardToGroupListEl.innerHTML = sorted
-    .map(
-      (group) => `
+  const eligible = groupsEligibleForBoard(boardId);
+  const emptyEl = document.querySelector("#add-board-to-group-empty");
+  const sorted = [...eligible].sort((a, b) => b.updatedAt - a.updatedAt);
+  if (sorted.length === 0) {
+    addBoardToGroupListEl.innerHTML = "";
+    addBoardToGroupListEl.classList.add("hidden");
+    const introEl = document.querySelector("#add-board-to-group-modal-overlay .add-board-to-group-intro");
+    if (introEl) introEl.classList.add("hidden");
+    if (emptyEl) {
+      emptyEl.textContent =
+        "This board is already in every group. Create a new group from the dashboard, or remove the board from a group first.";
+      emptyEl.classList.remove("hidden");
+    }
+  } else {
+    const introEl = document.querySelector("#add-board-to-group-modal-overlay .add-board-to-group-intro");
+    if (introEl) introEl.classList.remove("hidden");
+    if (emptyEl) emptyEl.classList.add("hidden");
+    addBoardToGroupListEl.classList.remove("hidden");
+    addBoardToGroupListEl.innerHTML = sorted
+      .map(
+        (group) => `
     <button type="button" class="ghost-button group-picker-item" data-group-id="${group.id}">
       ${escapeHtml(group.title)} <span class="board-meta">(${group.boardIds.length} boards)</span>
     </button>`,
-    )
-    .join("");
+      )
+      .join("");
+  }
   addBoardToGroupModalOverlay.classList.remove("hidden");
 }
 
@@ -1572,7 +1603,6 @@ const boardInteractions = createBoardInteractionsController({
   reorderPhaseAndNotes,
   touchBoard,
   renderEditor,
-  renderInsights,
   setEditingNoteId: (id) => {
     editingNoteId = id;
   },
@@ -1741,6 +1771,13 @@ importBoardInput.addEventListener("change", async (event) => {
 });
 
 groupBoardStackEl.addEventListener("click", (event) => {
+  const actionsBtn = event.target.closest('[data-role="board-actions"]');
+  if (actionsBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    openBoardActionsModal(actionsBtn.dataset.boardId);
+    return;
+  }
   const openBtn = event.target.closest('[data-role="open-board-from-group"]');
   if (!openBtn) return;
   openBoard(openBtn.dataset.boardId, false, currentGroupId);
@@ -1802,10 +1839,6 @@ if (editNoteTypesListEl) {
       saveNoteTypeOverrides();
       fillEditNoteTypesModal();
       renderEditor();
-      const board = getCurrentBoard();
-      const note =
-        board && editingNoteId !== null ? board.notes.find((item) => item.id === editingNoteId) : null;
-      renderInsights(note);
       return;
     }
     const sw = event.target.closest('[data-role="edit-note-type-swatch"]');
@@ -1830,12 +1863,6 @@ if (editNoteTypesListEl) {
   });
 }
 
-if (openEditNoteTypesModalBtn) {
-  openEditNoteTypesModalBtn.addEventListener("click", () => {
-    closeOptionsMenu();
-    openEditNoteTypesModal();
-  });
-}
 if (cancelEditNoteTypesBtn) {
   cancelEditNoteTypesBtn.addEventListener("click", () => closeEditNoteTypesModal());
 }
@@ -1898,7 +1925,41 @@ if (modalRenameBoardBtn) {
     board.slug = ensureUniqueSlug(slugifyTitle(trimmed), board.id);
     touchBoard(board);
     renderHome();
+    if (currentBoardId === board.id) {
+      renderEditor();
+    }
+    if (currentGroupId && groups.some((g) => g.id === currentGroupId && g.boardIds.includes(board.id))) {
+      renderGroup();
+    }
     closeBoardActionsModal();
+  });
+}
+
+if (modalEditNoteTypesBtn) {
+  modalEditNoteTypesBtn.addEventListener("click", () => {
+    closeBoardActionsModal();
+    openEditNoteTypesModal();
+  });
+}
+
+if (modalResetPhaseOrderBtn) {
+  modalResetPhaseOrderBtn.addEventListener("click", () => {
+    const boardId = boardActionsModalBoardId;
+    if (!boardId) return;
+    const board = boards.find((item) => item.id == boardId);
+    if (!board || !isPhaseOrderModified(board)) return;
+    applyPhaseOrder(board, identityPhaseOrder(getStructureConfig(board.structureId).phases.length));
+    touchBoard(board);
+    closeBoardActionsModal();
+    if (currentBoardId == boardId) {
+      renderEditor();
+    }
+    if (
+      currentGroupId &&
+      groups.some((g) => g.id === currentGroupId && g.boardIds.some((bid) => bid == boardId))
+    ) {
+      renderGroup();
+    }
   });
 }
 
@@ -1979,9 +2040,20 @@ modalDeleteBoardBtn.addEventListener("click", () => {
   if (!board) return;
   const confirmed = window.confirm(`Delete board "${board.title}"? This action cannot be undone.`);
   if (!confirmed) return;
-  boards = boards.filter((item) => item.id !== board.id);
+  const deletedId = board.id;
+  boards = boards.filter((item) => item.id !== deletedId);
+  groups.forEach((g) => {
+    g.boardIds = g.boardIds.filter((id) => id !== deletedId);
+  });
   saveBoards();
+  saveGroups();
   renderHome();
+  if (currentBoardId === deletedId) {
+    openHome();
+  }
+  if (currentGroupId) {
+    renderGroup();
+  }
   closeBoardActionsModal();
 });
 
@@ -2013,14 +2085,19 @@ toggleWrapColumnsBtn.addEventListener("click", () => {
   saveSettings();
 });
 
-if (resetPhaseOrderBtn) {
-  resetPhaseOrderBtn.addEventListener("click", () => {
-    closeOptionsMenu();
+if (editorBoardActionsBtn) {
+  editorBoardActionsBtn.addEventListener("click", () => {
     const board = getCurrentBoard();
     if (!board) return;
-    applyPhaseOrder(board, identityPhaseOrder(getStructureConfig(board.structureId).phases.length));
-    touchBoard(board);
-    renderEditor();
+    openBoardActionsModal(board.id);
+  });
+}
+
+if (groupViewActionsBtn) {
+  groupViewActionsBtn.addEventListener("click", () => {
+    if (currentGroupId) {
+      groupModalController.openGroupActionsModal(currentGroupId);
+    }
   });
 }
 
@@ -2101,7 +2178,6 @@ boardEl.addEventListener("input", (event) => {
   }
 
   touchBoard(board);
-  renderInsights(note);
 });
 const boardNoteActions = createBoardNoteActionsController({
   boardEl,
@@ -2114,7 +2190,6 @@ const boardNoteActions = createBoardNoteActionsController({
   normalizeOrders,
   touchBoard,
   renderEditor,
-  renderInsights,
   createCustomArchetype,
   openNoteTypeColorPicker,
   createCustomNoteType,

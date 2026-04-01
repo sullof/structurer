@@ -1,5 +1,13 @@
 # History
 
+**1.9.1**
+- **Page chrome:** subtle vertical pinstripes on the body background for a light “paper” feel; dashboard **Groups** and **Boards** lists no longer sit inside the same bordered card shell as create/import panels—board and group cards read directly on the page background.
+- **Board editor & group preview:** phase area is a contiguous grid (hairline outer borders, square cells) with white note columns; empty phases use the `column-empty` style (`--column-empty-bg`, muted phase title) in both views. Group sequential view drops the old framed “card around each board” in favor of full-bleed grids, per-board header row (**Edit board** + **Actions**), and **Actions** in the group top bar for group-level modals.
+- **Removed note insights:** the per-note writing-metrics strip and the `@chenglou/pretext` dependency are gone; the README tech stack list is updated accordingly.
+- **Actions & modals:** shared overlays (board actions, add-to-group, group actions, reorder, phase-order conflict) live outside individual views so modals work from the dashboard, editor, and group routes. The editor top bar adds **Board actions** (⋯); **Edit note types** and **Reset phase order** moved here from the options menu (resize/wrap stay under **Options** on desktop). **Reset phase order** is enabled only when the board’s phase order differs from the structure default (same condition as the “(modified)” structure label); when disabled, a short tooltip explains why.
+- **Add board to group:** the picker lists only groups that do not already include the board; the control is disabled with a clear tooltip when there are no eligible groups, and the modal can show an empty state if the board is already in every group.
+- **Delete board:** removing a board also removes its id from every group’s membership. **Rename board** updates open editor and group titles when they refer to that board.
+
 **1.9.0**
 - Added **Edit note types** under board options: a modal lists every note type (built-in and custom) with editable label, the same color palette as custom type creation, plus direct hex input (`#RGB` / `#RRGGBB`).
 - Built-in type display overrides (`label` / `color`) are stored in `localStorage` under `structurer.noteTypeOverrides.v1` without changing note `kind` ids; custom types are updated in the existing custom note types store.

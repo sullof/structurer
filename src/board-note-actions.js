@@ -7,7 +7,6 @@ export function createBoardNoteActionsController({
   normalizeOrders,
   touchBoard,
   renderEditor,
-  renderInsights,
   createCustomArchetype,
   openNoteTypeColorPicker,
   createCustomNoteType,
@@ -97,7 +96,6 @@ export function createBoardNoteActionsController({
       normalizeOrders(board.notes, board.structureId);
       touchBoard(board);
       renderEditor();
-      renderInsights(null);
       return;
     }
     if (!target.closest("textarea, input, select, button")) {
@@ -113,7 +111,6 @@ export function createBoardNoteActionsController({
         }, EDIT_CLICK_DELAY_MS);
       }
     }
-    renderInsights(note);
   });
 
   boardEl.addEventListener("dblclick", (event) => {
@@ -134,7 +131,6 @@ export function createBoardNoteActionsController({
     note.updatedAt = Date.now();
     touchBoard(board);
     renderEditor();
-    renderInsights(note);
   });
 
   return { closeAllColumnMenus };
