@@ -1,5 +1,9 @@
 # History
 
+**1.9.2**
+- **Group view clarity:** in the sequential group view, per-board **Actions** (⋯) are removed so they are not stacked next to group **Actions** in the header. Each board row keeps **Edit board**, which opens the editor where **Board actions** are available; dashboard board cards still open board actions as before.
+- **Built-in note types:** added **Subplot**, **Detail**, **Todo**, and **Other** alongside Plot, Character, and Theme (default colors in `BUILTIN_NOTE_TYPES`; labels and colors remain overridable like other built-ins).
+
 **1.9.1**
 - **Page chrome:** subtle vertical pinstripes on the body background for a light “paper” feel; dashboard **Groups** and **Boards** lists no longer sit inside the same bordered card shell as create/import panels—board and group cards read directly on the page background.
 - **Board editor & group preview:** phase area is a contiguous grid (hairline outer borders, square cells) with white note columns; empty phases use the `column-empty` style (`--column-empty-bg`, muted phase title) in both views. Group sequential view drops the old framed “card around each board” in favor of full-bleed grids, per-board header row (**Edit board** + **Actions**), and **Actions** in the group top bar for group-level modals.

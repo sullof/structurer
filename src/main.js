@@ -996,10 +996,6 @@ function renderGroup() {
           </div>
           <div class="group-board-head-actions">
             <button class="ghost-button" data-role="open-board-from-group" data-board-id="${board.id}" type="button">Edit board</button>
-            <button type="button" class="ghost-button board-actions-trigger" data-role="board-actions" data-board-id="${board.id}" aria-label="Board actions">
-              <span aria-hidden="true">⋯</span>
-              <span class="board-actions-trigger-label">Actions</span>
-            </button>
           </div>
         </header>
         <section class="board wrap-columns group-board-preview">
@@ -1771,13 +1767,6 @@ importBoardInput.addEventListener("change", async (event) => {
 });
 
 groupBoardStackEl.addEventListener("click", (event) => {
-  const actionsBtn = event.target.closest('[data-role="board-actions"]');
-  if (actionsBtn) {
-    event.preventDefault();
-    event.stopPropagation();
-    openBoardActionsModal(actionsBtn.dataset.boardId);
-    return;
-  }
   const openBtn = event.target.closest('[data-role="open-board-from-group"]');
   if (!openBtn) return;
   openBoard(openBtn.dataset.boardId, false, currentGroupId);

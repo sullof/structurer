@@ -159,4 +159,8 @@ export const BUILTIN_NOTE_TYPES = [
   { id: "plot", label: "Plot", color: "#fef08a" },
   { id: "character", label: "Character", color: "#bfdbfe" },
   { id: "theme", label: "Theme", color: "#bbf7d0" },
+  { id: "subplot", label: "Subplot", color: "#ddd6fe" },
+  { id: "detail", label: "Detail", color: "#a5f3fc" },
+  { id: "todo", label: "Todo", color: "#fed7aa" },
+  { id: "other", label: "Other", color: "#e5e7eb" },
 ];
