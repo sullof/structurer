@@ -38,6 +38,7 @@ import { createGroupModalController } from "./group-modals";
 import { createNavigationController } from "./navigation";
 import { createBoardInteractionsController } from "./board-interactions";
 import { createBoardNoteActionsController } from "./board-note-actions";
+import packageJson from "../package.json";
 
 const loadedBoards = loadBoards();
 let boards = loadedBoards || [];
@@ -2256,3 +2257,8 @@ applyDemoVisibilityControl();
 renderStructureOptions("hero_journey");
 renderStructurePhaseRows(["", "", ""]);
 syncRouteToState(true);
+
+const appVersionEl = document.querySelector("#app-version");
+if (appVersionEl && packageJson.version) {
+  appVersionEl.textContent = `v${packageJson.version}`;
+}

@@ -1391,9 +1391,22 @@ h1 {
   text-align: center;
 }
 
+.app-footer > p {
+  margin: 0;
+}
+
 .app-footer a {
   color: inherit;
   text-decoration: underline;
+}
+
+.app-footer-version {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+}
+
+.app-footer-version:empty {
+  display: none;
 }
 
 @media (max-width: 900px) {
