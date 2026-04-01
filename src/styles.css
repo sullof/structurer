@@ -271,6 +271,44 @@ h1 {
   gap: 10px;
 }
 
+.group-board-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.group-board-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.group-board-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.group-board-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.group-board-preview {
+  pointer-events: none;
+}
+
+.group-note-readonly .note-head {
+  margin-bottom: 4px;
+}
+
+.group-note-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .home-import h2 {
   margin: 0 0 6px;
   font-size: 1rem;
@@ -681,6 +719,13 @@ h1 {
   padding: 6px;
   font: inherit;
   background: rgba(255, 255, 255, 0.78);
+}
+
+.note-readonly-text {
+  margin-top: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.35;
 }
 
 .note textarea {

@@ -79,6 +79,7 @@
           <p>No boards yet. Create your first board to start mapping your story.</p>
         </section>
 
+        <section id="groups-list" class="boards-list"></section>
         <section id="boards-list" class="boards-list"></section>
 
         <details class="home-create collapsible-panel">
@@ -124,6 +125,7 @@
             <h2>Board actions</h2>
             <div class="board-actions-modal-list">
               <button id="modal-rename-board" class="ghost-button" type="button">Rename board</button>
+              <button id="modal-add-board-to-group" class="ghost-button" type="button">Add board to group</button>
               <button id="modal-export-board" class="ghost-button" type="button">Export the board</button>
               <button id="modal-delete-board" class="ghost-button danger-menu-item" type="button">Delete the board</button>
             </div>
@@ -132,6 +134,20 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <section id="group-view" class="view hidden">
+        <header class="topbar editor-topbar">
+          <div class="editor-topbar-left">
+            <button id="go-dashboard-from-group" class="ghost-button back-arrow-button" type="button" aria-label="Back to dashboard">←</button>
+          </div>
+          <div class="editor-topbar-center">
+            <h1 id="group-title">Group</h1>
+            <p id="group-subtitle" class="subtitle"></p>
+          </div>
+          <div class="editor-topbar-right"></div>
+        </header>
+        <section id="group-board-stack" class="group-board-stack"></section>
       </section>
 
       <section id="editor-view" class="view hidden">

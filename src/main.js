@@ -37,13 +37,18 @@ import {
 
 const loadedBoards = loadBoards();
 let boards = loadedBoards || [];
+const GROUPS_KEY = "structurer.groups.v1";
+let groups = loadGroups();
 let currentBoardId = null;
+let currentGroupId = null;
+let boardBackGroupId = null;
 let draggedNoteId = null;
 let draggedPhaseIndex = null;
 let armedNoteDragId = null;
 let noteDropPreview = null;
 let phaseDropPreviewIndex = null;
 let resizingNoteId = null;
+let editingNoteId = null;
 let boardActionsModalBoardId = null;
 let customStructures = loadCustomStructures();
 let customArchetypes = loadCustomArchetypes();
@@ -55,7 +60,9 @@ let wrapColumns = initialSettings.wrapColumns ?? true;
 
 const landingView = document.querySelector("#landing-view");
 const homeView = document.querySelector("#home-view");
+const groupView = document.querySelector("#group-view");
 const editorView = document.querySelector("#editor-view");
+const groupsList = document.querySelector("#groups-list");
 const boardsList = document.querySelector("#boards-list");
 const emptyState = document.querySelector("#empty-state");
 const createBoardForm = document.querySelector("#create-board-form");
@@ -70,12 +77,16 @@ const importBoardInput = document.querySelector("#import-board-input");
 const boardActionsModalOverlay = document.querySelector("#board-actions-modal-overlay");
 const closeBoardActionsModalBtn = document.querySelector("#close-board-actions-modal");
 const modalRenameBoardBtn = document.querySelector("#modal-rename-board");
+const modalAddBoardToGroupBtn = document.querySelector("#modal-add-board-to-group");
 const modalExportBoardBtn = document.querySelector("#modal-export-board");
 const modalDeleteBoardBtn = document.querySelector("#modal-delete-board");
 const goLandingFromDashboardBtn = document.querySelector("#go-landing-from-dashboard");
 const goDashboardFromBoardBtn = document.querySelector("#go-dashboard-from-board");
+const goDashboardFromGroupBtn = document.querySelector("#go-dashboard-from-group");
 const editorTitle = document.querySelector("#editor-title");
 const structureNameEl = document.querySelector("#structure-name");
+const groupTitleEl = document.querySelector("#group-title");
+const groupSubtitleEl = document.querySelector("#group-subtitle");
 const optionsButton = document.querySelector("#options-button");
 const optionsMenu = document.querySelector("#options-menu");
 const openResizeModalBtn = document.querySelector("#open-resize-modal");
@@ -92,6 +103,7 @@ const cancelNoteTypeColorBtn = document.querySelector("#cancel-note-type-color")
 const goDashboardBtn = document.querySelector("#go-dashboard");
 
 const boardEl = document.querySelector("#board");
+const groupBoardStackEl = document.querySelector("#group-board-stack");
 const insightsEl = document.querySelector("#insights");
 
 function loadBoards() {
@@ -100,6 +112,23 @@ function loadBoards() {
 
 function saveBoards() {
   saveBoardsToStorage(STORAGE_KEY, boards);
+}
+
+function loadGroups() {
+  const parsed = loadJsonItem(GROUPS_KEY, []);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(
+    (item) =>
+      item &&
+      typeof item.id === "string" &&
+      typeof item.title === "string" &&
+      typeof item.slug === "string" &&
+      Array.isArray(item.boardIds),
+  );
+}
+
+function saveGroups() {
+  saveJsonItem(GROUPS_KEY, groups);
 }
 
 function loadSettings() {
@@ -279,6 +308,16 @@ function ensureUniqueSlug(baseSlug, excludedBoardId = null) {
   return slug;
 }
 
+function ensureUniqueGroupSlug(baseSlug, excludedGroupId = null) {
+  let slug = baseSlug;
+  let suffix = 2;
+  while (groups.some((group) => group.slug === slug && group.id !== excludedGroupId)) {
+    slug = `${baseSlug}_${suffix}`;
+    suffix += 1;
+  }
+  return slug;
+}
+
 function normalizePathname(pathname) {
   if (!pathname || pathname === "/") return "/";
   return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
@@ -286,6 +325,10 @@ function normalizePathname(pathname) {
 
 function boardRoutePath(board) {
   return `/${board.slug}`;
+}
+
+function groupRoutePath(group) {
+  return `/group/${group.slug}`;
 }
 
 function navigateTo(path, replace = false) {
@@ -301,6 +344,10 @@ function navigateTo(path, replace = false) {
 
 function getCurrentBoard() {
   return boards.find((board) => board.id === currentBoardId) || null;
+}
+
+function getCurrentGroup() {
+  return groups.find((group) => group.id === currentGroupId) || null;
 }
 
 function getStructureConfig(structureId) {
@@ -374,6 +421,24 @@ function formatPhaseTitle(phase) {
   return String(phase || "").trim();
 }
 
+function groupCardTemplate(group) {
+  const boardTitles = group.boardIds
+    .map((id) => boards.find((board) => board.id === id)?.title)
+    .filter(Boolean);
+  return `
+    <article class="board-card" data-group-id="${group.id}" role="button" tabindex="0" aria-label="Open group ${group.title}">
+      <div>
+        <strong>${group.title}</strong>
+        <div class="board-meta">
+          <div class="board-meta-line">Group • ${group.boardIds.length} boards</div>
+          <div class="board-meta-line">${boardTitles.length > 0 ? boardTitles.join(" • ") : "No boards yet"}</div>
+          <div class="board-meta-line">Updated ${formatDate(group.updatedAt)}</div>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
 function identityPhaseOrder(length) {
   return Array.from({ length }, (_, index) => index);
 }
@@ -426,6 +491,16 @@ function applyPhaseOrder(board, newOrder) {
 }
 
 function renderHome() {
+  const validBoardIds = new Set(boards.map((board) => board.id));
+  groups.forEach((group) => {
+    group.boardIds = group.boardIds.filter((id) => validBoardIds.has(id));
+  });
+  saveGroups();
+
+  const sortedGroups = [...groups].sort((a, b) => b.updatedAt - a.updatedAt);
+  groupsList.innerHTML = sortedGroups.map(groupCardTemplate).join("");
+  groupsList.style.display = sortedGroups.length > 0 ? "grid" : "none";
+
   const sortedBoards = [...boards].sort((a, b) => b.updatedAt - a.updatedAt);
   boardsList.innerHTML = sortedBoards
     .map((board) => {
@@ -433,7 +508,7 @@ function renderHome() {
       return boardCardTemplate(board, structure.name, formatDate(board.updatedAt));
     })
     .join("");
-  emptyState.style.display = boards.length === 0 ? "block" : "none";
+  emptyState.style.display = boards.length === 0 && groups.length === 0 ? "block" : "none";
 }
 
 function renderEditor() {
@@ -443,6 +518,7 @@ function renderEditor() {
   const phases = getBoardPhases(board);
   const archetypes = getAllArchetypes();
   const noteTypes = getAllNoteTypes();
+  const editingId = editingNoteId;
 
   editorTitle.textContent = board.title;
   structureNameEl.textContent = structure.name;
@@ -461,7 +537,13 @@ function renderEditor() {
         </div>
         <div class="notes">${noteItems
           .map((note) =>
-            noteTemplate(note, archetypes, archetypeById(note.archetype || "none"), noteTypeById(note.kind)),
+            noteTemplate(
+              note,
+              archetypes,
+              archetypeById(note.archetype || "none"),
+              noteTypeById(note.kind),
+              note.id === editingId,
+            ),
           )
           .join("")}</div>
       </section>
@@ -504,16 +586,20 @@ function renderInsights(note) {
 
 function showHome() {
   currentBoardId = null;
+  currentGroupId = null;
   landingView.classList.add("hidden");
   homeView.classList.remove("hidden");
+  groupView.classList.add("hidden");
   editorView.classList.add("hidden");
   renderHome();
 }
 
 function showLanding() {
   currentBoardId = null;
+  currentGroupId = null;
   landingView.classList.remove("hidden");
   homeView.classList.add("hidden");
+  groupView.classList.add("hidden");
   editorView.classList.add("hidden");
 }
 
@@ -524,13 +610,85 @@ function showBoard(boardId) {
     return;
   }
   currentBoardId = boardId;
+  editingNoteId = null;
+  currentGroupId = null;
   landingView.classList.add("hidden");
   homeView.classList.add("hidden");
+  groupView.classList.add("hidden");
   editorView.classList.remove("hidden");
   renderEditor();
   renderInsights(null);
   applyColumnWidth();
   applyWrapColumns();
+}
+
+function renderGroup() {
+  const group = getCurrentGroup();
+  if (!group) return;
+  const groupBoards = group.boardIds.map((id) => boards.find((board) => board.id === id)).filter(Boolean);
+  groupTitleEl.textContent = group.title;
+  groupSubtitleEl.textContent = `${groupBoards.length} boards`;
+  groupBoardStackEl.innerHTML = groupBoards
+    .map((board) => {
+      const structure = getStructureConfig(board.structureId);
+      const phases = getBoardPhases(board);
+      return `
+      <section class="group-board-card">
+        <header class="group-board-head">
+          <div>
+            <h2>${board.title}</h2>
+            <p class="subtitle">${structure.name}</p>
+          </div>
+          <button class="ghost-button" data-role="open-board-from-group" data-board-id="${board.id}" type="button">Open board</button>
+        </header>
+        <section class="board wrap-columns group-board-preview">
+          ${phases
+            .map((phase, columnIndex) => {
+              const noteItems = getColumnNotes(board.notes, columnIndex);
+              return `
+              <section class="column">
+                <div class="phase-head">
+                  <h2 class="phase-title">${formatPhaseTitle(phase)}</h2>
+                </div>
+                <div class="notes">
+                  ${noteItems
+                    .map((note) => {
+                      const type = noteTypeById(note.kind);
+                      const header =
+                        note.kind === "character"
+                          ? `${archetypeById(note.archetype || "none").label}${note.characterName ? ` - ${note.characterName}` : ""}`
+                          : type.label;
+                      return `<article class="note group-note-readonly" style="--note-bg:${type.color};">
+                        <div class="note-head"><span class="badge">${header}</span></div>
+                        <div class="group-note-text">${(note.text || "").trim() || "Empty note"}</div>
+                      </article>`;
+                    })
+                    .join("")}
+                </div>
+              </section>
+            `;
+            })
+            .join("")}
+        </section>
+      </section>
+    `;
+    })
+    .join("");
+}
+
+function showGroup(groupId) {
+  const group = groups.find((item) => item.id === groupId);
+  if (!group) {
+    showHome();
+    return;
+  }
+  currentGroupId = groupId;
+  currentBoardId = null;
+  landingView.classList.add("hidden");
+  homeView.classList.add("hidden");
+  groupView.classList.remove("hidden");
+  editorView.classList.add("hidden");
+  renderGroup();
 }
 
 function touchBoard(board) {
@@ -690,13 +848,15 @@ function importBoardFromJson(rawText) {
   renderHome();
 }
 
-function openBoard(boardId, replaceRoute = false) {
+function openBoard(boardId, replaceRoute = false, fromGroupId = null) {
   const board = boards.find((item) => item.id === boardId);
   if (!board) {
+    boardBackGroupId = null;
     showHome();
     navigateTo(HOME_ROUTE, replaceRoute);
     return;
   }
+  boardBackGroupId = fromGroupId;
   showBoard(boardId);
   navigateTo(boardRoutePath(board), replaceRoute);
 }
@@ -711,6 +871,16 @@ function openLanding(replaceRoute = false) {
   navigateTo("/", replaceRoute);
 }
 
+function openGroup(groupId, replaceRoute = false) {
+  const group = groups.find((item) => item.id === groupId);
+  if (!group) {
+    openHome(replaceRoute);
+    return;
+  }
+  showGroup(groupId);
+  navigateTo(groupRoutePath(group), replaceRoute);
+}
+
 function syncRouteToState(replaceRoute = true) {
   const path = normalizePathname(window.location.pathname);
   if (path === "/") {
@@ -721,6 +891,16 @@ function syncRouteToState(replaceRoute = true) {
     openHome(replaceRoute);
     return;
   }
+  if (path.startsWith("/group/")) {
+    const slug = path.replace("/group/", "");
+    const group = groups.find((item) => item.slug === slug);
+    if (!group) {
+      openHome(replaceRoute);
+      return;
+    }
+    showGroup(group.id);
+    return;
+  }
 
   const slug = path.slice(1);
   const board = boards.find((item) => item.slug === slug);
@@ -728,6 +908,7 @@ function syncRouteToState(replaceRoute = true) {
     openLanding(replaceRoute);
     return;
   }
+  boardBackGroupId = null;
   showBoard(board.id);
 }
 
@@ -918,11 +1099,34 @@ boardsList.addEventListener("keydown", (event) => {
   }
 });
 
+groupsList.addEventListener("click", (event) => {
+  const groupCard = event.target.closest("[data-group-id]");
+  if (!groupCard) return;
+  openGroup(groupCard.dataset.groupId);
+});
+
+groupsList.addEventListener("keydown", (event) => {
+  const groupCard = event.target.closest("[data-group-id]");
+  if (!groupCard) return;
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    openGroup(groupCard.dataset.groupId);
+  }
+});
+
 goLandingFromDashboardBtn.addEventListener("click", () => {
   openLanding();
 });
 
 goDashboardFromBoardBtn.addEventListener("click", () => {
+  if (boardBackGroupId && groups.some((group) => group.id === boardBackGroupId)) {
+    openGroup(boardBackGroupId);
+    return;
+  }
+  openHome();
+});
+
+goDashboardFromGroupBtn.addEventListener("click", () => {
   openHome();
 });
 
@@ -946,6 +1150,12 @@ importBoardInput.addEventListener("change", async (event) => {
   } finally {
     importBoardInput.value = "";
   }
+});
+
+groupBoardStackEl.addEventListener("click", (event) => {
+  const openBtn = event.target.closest('[data-role="open-board-from-group"]');
+  if (!openBtn) return;
+  openBoard(openBtn.dataset.boardId, false, currentGroupId);
 });
 
 if (noteTypeColorGrid) {
@@ -993,6 +1203,36 @@ if (modalRenameBoardBtn) {
     board.title = trimmed;
     board.slug = ensureUniqueSlug(slugifyTitle(trimmed), board.id);
     touchBoard(board);
+    renderHome();
+    closeBoardActionsModal();
+  });
+}
+
+if (modalAddBoardToGroupBtn) {
+  modalAddBoardToGroupBtn.addEventListener("click", () => {
+    const board = boards.find((item) => item.id === boardActionsModalBoardId);
+    if (!board) return;
+    const hint = groups.length > 0 ? `Existing: ${groups.map((g) => g.title).join(", ")}` : "No groups yet.";
+    const groupName = window.prompt(`Group name to add this board.\n${hint}`);
+    if (!groupName) return;
+    const trimmed = groupName.trim();
+    if (!trimmed) return;
+    let group = groups.find((item) => item.title.toLowerCase() === trimmed.toLowerCase());
+    if (!group) {
+      group = {
+        id: crypto.randomUUID(),
+        title: trimmed,
+        slug: ensureUniqueGroupSlug(slugifyTitle(trimmed)),
+        boardIds: [],
+        updatedAt: Date.now(),
+      };
+      groups.push(group);
+    }
+    if (!group.boardIds.includes(board.id)) {
+      group.boardIds.push(board.id);
+    }
+    group.updatedAt = Date.now();
+    saveGroups();
     renderHome();
     closeBoardActionsModal();
   });
@@ -1055,7 +1295,7 @@ resetAppDataBtn.addEventListener("click", () => {
   );
   if (!confirmed) return;
 
-  clearKeys([STORAGE_KEY, SETTINGS_KEY, CUSTOM_STRUCTURES_KEY, CUSTOM_ARCHETYPES_KEY, CUSTOM_NOTE_TYPES_KEY]);
+  clearKeys([STORAGE_KEY, SETTINGS_KEY, CUSTOM_STRUCTURES_KEY, CUSTOM_ARCHETYPES_KEY, CUSTOM_NOTE_TYPES_KEY, GROUPS_KEY]);
   window.location.assign(HOME_ROUTE);
 });
 
@@ -1173,11 +1413,16 @@ boardEl.addEventListener("click", (event) => {
 
   if (target.dataset.role === "delete") {
     board.notes = board.notes.filter((item) => item.id !== id);
+    if (editingNoteId === id) editingNoteId = null;
     normalizeOrders(board.notes, board.structureId);
     touchBoard(board);
     renderEditor();
     renderInsights(null);
     return;
+  }
+  if (!target.closest("textarea, input, select, button")) {
+    editingNoteId = id;
+    renderEditor();
   }
   renderInsights(note);
 });
@@ -1354,6 +1599,12 @@ document.addEventListener("click", (event) => {
   if (!event.target.closest(".phase-head")) {
     closeAllColumnMenus();
   }
+  if (!event.target.closest(".note")) {
+    if (editingNoteId !== null) {
+      editingNoteId = null;
+      renderEditor();
+    }
+  }
 });
 
 document.addEventListener("mouseup", () => {
@@ -1391,7 +1642,13 @@ boards.forEach((board) => {
   const baseSlug = slugifyTitle(board.title || "board");
   board.slug = ensureUniqueSlug(board.slug || baseSlug, board.id);
 });
+groups.forEach((group) => {
+  const baseSlug = slugifyTitle(group.title || "group");
+  group.slug = ensureUniqueGroupSlug(group.slug || baseSlug, group.id);
+  group.boardIds = group.boardIds.filter((boardId) => boards.some((board) => board.id === boardId));
+});
 saveBoards();
+saveGroups();
 window.addEventListener("popstate", () => {
   syncRouteToState(false);
 });

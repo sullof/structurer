@@ -45,7 +45,7 @@ export function boardCardTemplate(board, structureName, updatedAtText) {
   `;
 }
 
-export function noteTemplate(note, archetypes, archetype, noteType) {
+export function noteTemplate(note, archetypes, archetype, noteType, isEditing = false) {
   const collapsed = Boolean(note.collapsed);
   const textPreview = (note.text || "").trim();
   const collapsedPreview =
@@ -57,7 +57,7 @@ export function noteTemplate(note, archetypes, archetype, noteType) {
       : textPreview || "Empty note";
 
   const characterUI =
-    !collapsed && note.kind === "character"
+    isEditing && !collapsed && note.kind === "character"
       ? `
       <div class="character-fields">
         <input
@@ -87,27 +87,30 @@ export function noteTemplate(note, archetypes, archetype, noteType) {
   };">
       <div class="note-head">
         <button class="phase-drag" data-role="note-drag-handle" title="Drag note">⋮⋮</button>
+        ${collapsed ? `<div class="collapsed-preview" title="${collapsedPreview}">${collapsedPreview}</div>` : ""}
         ${
-          collapsed
-            ? `<div class="collapsed-preview" title="${collapsedPreview}">${collapsedPreview}</div>`
-            : `<span class="badge">${noteType?.label || "Note"} ${
+          !collapsed
+            ? `<span class="badge">${noteType?.label || "Note"} ${
                 note.kind === "character" && archetype.icon ? archetype.icon : ""
               }</span>`
+            : ""
         }
         <div class="note-head-actions">
-          <button class="delete" data-role="delete" title="Delete note">✕</button>
+          ${isEditing ? '<button class="delete" data-role="delete" title="Delete note">✕</button>' : ""}
         </div>
       </div>
       ${characterUI}
       ${
         collapsed
           ? ""
-          : `<textarea
+          : isEditing
+            ? `<textarea
         data-role="text"
         data-note-id="${note.id}"
         style="${note.customHeight ? `height: ${note.customHeight}px;` : ""}"
         placeholder="Write your note..."
       >${note.text || ""}</textarea>`
+            : `<div class="note-readonly-text">${(note.text || "").trim() || " "}</div>`
       }
     </article>
   `;

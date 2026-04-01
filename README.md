@@ -124,6 +124,9 @@ No backend is currently used.
 - Included collapsed state in board import/export payloads.
 - Added phase drag-and-drop reordering per board with reset-to-default action.
 - Added drag handles for notes/phases and clearer live drop placeholders during dragging.
+- Added board grouping (create group from boards, group route, sequential group view, contextual back navigation).
+- Added custom note types with color selection via visual color grid (non-technical UX).
+- Added readable note-first UX: notes render in read mode by default and switch to full edit mode on click.
 
 **1.2.0**
 - Reorganized project structure by introducing `src/` entrypoints (`/src/main.js`, `/src/styles.css`).
@@ -138,5 +141,5 @@ No backend is currently used.
 
 ## Copyright
 
-2026 Francesco Sullo <francesco@sullo.co> — Built with Cursor AI in a couple of hours.
+2026 Francesco Sullo <francesco@sullo.co> — Built with Cursor AI.
 
