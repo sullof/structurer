@@ -21,6 +21,10 @@ export function createBoardNoteActionsController({
     });
   }
 
+  /** Lets double-click on the note header toggle collapse before read→edit switches the DOM. */
+  let pendingEditTimer = null;
+  const EDIT_CLICK_DELAY_MS = 280;
+
   boardEl.addEventListener("click", (event) => {
     const target = event.target;
 
@@ -97,13 +101,26 @@ export function createBoardNoteActionsController({
       return;
     }
     if (!target.closest("textarea, input, select, button")) {
-      setEditingNoteId(id);
-      renderEditor();
+      if (pendingEditTimer) {
+        clearTimeout(pendingEditTimer);
+        pendingEditTimer = null;
+      }
+      if (event.detail < 2) {
+        pendingEditTimer = window.setTimeout(() => {
+          pendingEditTimer = null;
+          setEditingNoteId(id);
+          renderEditor();
+        }, EDIT_CLICK_DELAY_MS);
+      }
     }
     renderInsights(note);
   });
 
   boardEl.addEventListener("dblclick", (event) => {
+    if (pendingEditTimer) {
+      clearTimeout(pendingEditTimer);
+      pendingEditTimer = null;
+    }
     if (event.target.closest("button, textarea, input, select")) return;
     const noteHead = event.target.closest(".note-head");
     if (!noteHead) return;
