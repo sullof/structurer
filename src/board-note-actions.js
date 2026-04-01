@@ -114,6 +114,7 @@ export function createBoardNoteActionsController({
     const note = board.notes.find((item) => item.id === id);
     if (!note) return;
     note.collapsed = !note.collapsed;
+    note.updatedAt = Date.now();
     touchBoard(board);
     renderEditor();
     renderInsights(note);

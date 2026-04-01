@@ -15,7 +15,7 @@ export function createNavigationController({
   applyColumnWidth,
   applyWrapColumns,
 }) {
-  const { landingView, homeView, groupView, editorView } = views;
+  const { landingView, homeView, groupView, editorView, helpView } = views;
 
   function normalizePathname(pathname) {
     if (!pathname || pathname === "/") return "/";
@@ -40,6 +40,7 @@ export function createNavigationController({
     homeView.classList.remove("hidden");
     groupView.classList.add("hidden");
     editorView.classList.add("hidden");
+    helpView.classList.add("hidden");
     renderHome();
   }
 
@@ -50,6 +51,17 @@ export function createNavigationController({
     homeView.classList.add("hidden");
     groupView.classList.add("hidden");
     editorView.classList.add("hidden");
+    helpView.classList.add("hidden");
+  }
+
+  function showHelp() {
+    setCurrentBoardId(null);
+    setCurrentGroupId(null);
+    landingView.classList.add("hidden");
+    homeView.classList.add("hidden");
+    groupView.classList.add("hidden");
+    editorView.classList.add("hidden");
+    helpView.classList.remove("hidden");
   }
 
   function showBoard(boardId) {
@@ -65,6 +77,7 @@ export function createNavigationController({
     homeView.classList.add("hidden");
     groupView.classList.add("hidden");
     editorView.classList.remove("hidden");
+    helpView.classList.add("hidden");
     renderEditor();
     renderInsights(null);
     applyColumnWidth();
@@ -83,6 +96,7 @@ export function createNavigationController({
     homeView.classList.add("hidden");
     groupView.classList.remove("hidden");
     editorView.classList.add("hidden");
+    helpView.classList.add("hidden");
     renderGroup();
   }
 
@@ -116,6 +130,12 @@ export function createNavigationController({
     showGroup(group.id);
   }
 
+  function openHelp(replaceRoute = false) {
+    setBoardBackGroupId(null);
+    navigateTo("/help", replaceRoute);
+    showHelp();
+  }
+
   function syncRouteToState(replaceRoute = true) {
     const path = normalizePathname(window.location.pathname);
     if (path === "/") {
@@ -124,6 +144,10 @@ export function createNavigationController({
     }
     if (path === homeRoute) {
       showHome();
+      return;
+    }
+    if (path === "/help") {
+      showHelp();
       return;
     }
     if (path.startsWith("/group/")) {
@@ -146,5 +170,17 @@ export function createNavigationController({
     showBoard(board.id);
   }
 
-  return { showHome, showLanding, showBoard, showGroup, openBoard, openHome, openLanding, openGroup, syncRouteToState };
+  return {
+    showHome,
+    showLanding,
+    showHelp,
+    showBoard,
+    showGroup,
+    openBoard,
+    openHome,
+    openLanding,
+    openHelp,
+    openGroup,
+    syncRouteToState,
+  };
 }

@@ -42,7 +42,10 @@ import { createBoardNoteActionsController } from "./board-note-actions";
 const loadedBoards = loadBoards();
 let boards = loadedBoards || [];
 const GROUPS_KEY = "structurer.groups.v1";
+const DEMO_BOARD_IDS_KEY = "structurer.demoBoardIds.v1";
+const issuedUids = new Set();
 let groups = loadGroups();
+let demoBoardIds = loadDemoBoardIds();
 let currentBoardId = null;
 let currentGroupId = null;
 let boardBackGroupId = null;
@@ -58,6 +61,7 @@ let wrapColumns = initialSettings.wrapColumns ?? true;
 
 const landingView = document.querySelector("#landing-view");
 const homeView = document.querySelector("#home-view");
+const helpView = document.querySelector("#help-view");
 const groupView = document.querySelector("#group-view");
 const editorView = document.querySelector("#editor-view");
 const groupsList = document.querySelector("#groups-list");
@@ -86,7 +90,16 @@ const groupReorderModalOverlay = document.querySelector("#group-reorder-modal-ov
 const closeGroupReorderModalBtn = document.querySelector("#close-group-reorder-modal");
 const groupReorderListEl = document.querySelector("#group-reorder-list");
 const groupReorderStatusEl = document.querySelector("#group-reorder-status");
+const phaseOrderConflictModalOverlay = document.querySelector("#phase-order-conflict-modal-overlay");
+const closePhaseOrderConflictModalBtn = document.querySelector("#close-phase-order-conflict-modal");
+const phaseOrderConflictTitleEl = document.querySelector("#phase-order-conflict-title");
+const phaseOrderCurrentListEl = document.querySelector("#phase-order-current-list");
+const phaseOrderImportedListEl = document.querySelector("#phase-order-imported-list");
+const phaseOrderConflictHintEl = document.querySelector("#phase-order-conflict-hint");
 const goLandingFromDashboardBtn = document.querySelector("#go-landing-from-dashboard");
+const goHelpBtn = document.querySelector("#go-help");
+const goHelpFromDashboardBtn = document.querySelector("#go-help-from-dashboard");
+const goDashboardFromHelpBtn = document.querySelector("#go-dashboard-from-help");
 const goDashboardFromBoardBtn = document.querySelector("#go-dashboard-from-board");
 const goDashboardFromGroupBtn = document.querySelector("#go-dashboard-from-group");
 const editorTitle = document.querySelector("#editor-title");
@@ -98,6 +111,7 @@ const optionsMenu = document.querySelector("#options-menu");
 const openResizeModalBtn = document.querySelector("#open-resize-modal");
 const toggleWrapColumnsBtn = document.querySelector("#toggle-wrap-columns");
 const resetPhaseOrderBtn = document.querySelector("#reset-phase-order");
+const resetDemoDataBtn = document.querySelector("#reset-demo-data");
 const resetAppDataBtn = document.querySelector("#reset-app-data");
 const resizeModalOverlay = document.querySelector("#resize-modal-overlay");
 const closeResizeModalBtn = document.querySelector("#close-resize-modal");
@@ -135,6 +149,44 @@ function loadGroups() {
 
 function saveGroups() {
   saveJsonItem(GROUPS_KEY, groups);
+}
+
+function loadDemoBoardIds() {
+  const parsed = loadJsonItem(DEMO_BOARD_IDS_KEY, []);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter((id) => typeof id === "string");
+}
+
+function saveDemoBoardIds() {
+  saveJsonItem(DEMO_BOARD_IDS_KEY, demoBoardIds);
+}
+
+function generateShortUid(length = 8) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  let value = "";
+  for (let index = 0; index < length; index += 1) {
+    value += alphabet[bytes[index] % alphabet.length];
+  }
+  return value;
+}
+
+function hasUidInData(uid) {
+  if (boards.some((board) => board.uid === uid || (board.notes || []).some((note) => note.uid === uid))) return true;
+  if (groups.some((group) => group.uid === uid)) return true;
+  if (customStructures.some((item) => item.uid === uid)) return true;
+  if (customArchetypes.some((item) => item.uid === uid)) return true;
+  if (customNoteTypes.some((item) => item.uid === uid)) return true;
+  return false;
+}
+
+function generateUniqueUid() {
+  let uid = generateShortUid();
+  while (hasUidInData(uid) || issuedUids.has(uid)) {
+    uid = generateShortUid();
+  }
+  issuedUids.add(uid);
+  return uid;
 }
 
 function loadSettings() {
@@ -242,8 +294,10 @@ function createCustomNoteType(label, color) {
   }
   const noteType = {
     id,
+    uid: generateUniqueUid(),
     label: trimmed,
     color: color || "#f3f4f6",
+    updatedAt: Date.now(),
   };
   customNoteTypes.push(noteType);
   saveCustomNoteTypes();
@@ -280,7 +334,9 @@ function isDevResetEnabled() {
 }
 
 function applyDevFlags() {
-  resetAppDataBtn.style.display = isDevResetEnabled() ? "inline-block" : "none";
+  const visible = isDevResetEnabled() ? "inline-block" : "none";
+  if (resetAppDataBtn) resetAppDataBtn.style.display = visible;
+  if (resetDemoDataBtn) resetDemoDataBtn.style.display = visible;
 }
 
 function applyColumnWidth() {
@@ -364,8 +420,10 @@ function createCustomArchetype(label) {
   }
   const archetype = {
     id,
+    uid: generateUniqueUid(),
     icon: "✨",
     label: trimmed,
+    updatedAt: Date.now(),
   };
   customArchetypes.push(archetype);
   saveCustomArchetypes();
@@ -392,6 +450,84 @@ function normalizeOrders(notes, structureId = "hero_journey") {
     inColumn.forEach((note, index) => {
       note.order = index;
     });
+  }
+}
+
+function migrateUniqueUids() {
+  let changed = false;
+  const now = Date.now();
+
+  boards.forEach((board) => {
+    if (typeof board.uid !== "string" || !board.uid) {
+      board.uid = generateUniqueUid();
+      changed = true;
+    }
+    if (!Number.isFinite(board.updatedAt)) {
+      board.updatedAt = now;
+      changed = true;
+    }
+    (board.notes || []).forEach((note) => {
+      if (typeof note.uid !== "string" || !note.uid) {
+        note.uid = generateUniqueUid();
+        changed = true;
+      }
+      if (!Number.isFinite(note.updatedAt)) {
+        note.updatedAt = board.updatedAt || now;
+        changed = true;
+      }
+    });
+  });
+
+  groups.forEach((group) => {
+    if (typeof group.uid !== "string" || !group.uid) {
+      group.uid = generateUniqueUid();
+      changed = true;
+    }
+    if (!Number.isFinite(group.updatedAt)) {
+      group.updatedAt = now;
+      changed = true;
+    }
+  });
+
+  customStructures.forEach((item) => {
+    if (typeof item.uid !== "string" || !item.uid) {
+      item.uid = generateUniqueUid();
+      changed = true;
+    }
+    if (!Number.isFinite(item.updatedAt)) {
+      item.updatedAt = now;
+      changed = true;
+    }
+  });
+
+  customArchetypes.forEach((item) => {
+    if (typeof item.uid !== "string" || !item.uid) {
+      item.uid = generateUniqueUid();
+      changed = true;
+    }
+    if (!Number.isFinite(item.updatedAt)) {
+      item.updatedAt = now;
+      changed = true;
+    }
+  });
+
+  customNoteTypes.forEach((item) => {
+    if (typeof item.uid !== "string" || !item.uid) {
+      item.uid = generateUniqueUid();
+      changed = true;
+    }
+    if (!Number.isFinite(item.updatedAt)) {
+      item.updatedAt = now;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    saveBoards();
+    saveGroups();
+    saveCustomStructures();
+    saveCustomArchetypes();
+    saveCustomNoteTypes();
   }
 }
 
@@ -466,13 +602,17 @@ function applyPhaseOrder(board, newOrder) {
   if (!isValidPhaseOrder(newOrder, phaseCount)) return;
   const oldOrder = getBoardPhaseOrder(board);
   const phaseIdToNewVisualIndex = new Map();
+  const now = Date.now();
   newOrder.forEach((phaseId, visualIndex) => phaseIdToNewVisualIndex.set(phaseId, visualIndex));
 
   board.notes.forEach((note) => {
     const phaseId = oldOrder[note.column];
     if (phaseId === undefined) return;
     const nextColumn = phaseIdToNewVisualIndex.get(phaseId);
-    if (Number.isInteger(nextColumn)) note.column = nextColumn;
+    if (Number.isInteger(nextColumn)) {
+      note.column = nextColumn;
+      note.updatedAt = now;
+    }
   });
   normalizeOrders(board.notes, board.structureId);
   board.phaseOrder = newOrder;
@@ -576,7 +716,7 @@ function renderInsights(note) {
 }
 
 const navigation = createNavigationController({
-  views: { landingView, homeView, groupView, editorView },
+  views: { landingView, homeView, helpView, groupView, editorView },
   homeRoute: HOME_ROUTE,
   getBoards: () => boards,
   getGroups: () => groups,
@@ -607,6 +747,10 @@ function showHome() {
 
 function showLanding() {
   navigation.showLanding();
+}
+
+function showHelp() {
+  navigation.showHelp();
 }
 
 function showBoard(boardId) {
@@ -705,6 +849,7 @@ function createBoard(title, structureId = "hero_journey") {
   const structure = getStructureConfig(structureId);
   const newBoard = {
     id: crypto.randomUUID(),
+    uid: generateUniqueUid(),
     title: title.trim(),
     slug,
     structureId: structure.id,
@@ -726,6 +871,7 @@ function createDemoBoardFromJson(demoData) {
   const structure = structureEntry || BUILTIN_STRUCTURES.hero_journey;
   const notes = (demoData.notes || []).map((note, index) => ({
     id: index + 1,
+    uid: typeof note.uid === "string" ? note.uid : generateUniqueUid(),
     kind: note.kind || "plot",
     column: Number.isInteger(note.column) ? note.column : 0,
     order: Number.isInteger(note.order) ? note.order : index,
@@ -733,10 +879,12 @@ function createDemoBoardFromJson(demoData) {
     characterName: note.characterName || "",
     archetype: note.archetype || "none",
     collapsed: Boolean(note.collapsed),
+    updatedAt: Number.isFinite(note.updatedAt) ? note.updatedAt : Date.now(),
   }));
 
   return {
     id: crypto.randomUUID(),
+    uid: typeof demoData.uid === "string" ? demoData.uid : generateUniqueUid(),
     title: demoData.title || "Demo Board",
     slug: ensureUniqueSlug(slugifyTitle(demoData.title || "demo_board")),
     structureId: structure.id,
@@ -746,8 +894,45 @@ function createDemoBoardFromJson(demoData) {
       : identityPhaseOrder(structure.phases.length),
     nextNoteId: notes.length + 1,
     notes,
-    updatedAt: Date.now(),
+    isDemo: true,
+    updatedAt: Number.isFinite(demoData.updatedAt) ? demoData.updatedAt : Date.now(),
   };
+}
+
+function isLikelyDemoBoard(board) {
+  if (!board) return false;
+  if (board.isDemo === true) return true;
+  const boardSlug = board.slug || slugifyTitle(board.title || "");
+  return DEMO_BOARD_DATA.some((demo) => {
+    const demoSlug = slugifyTitle(demo.title || "");
+    return demoSlug === boardSlug && demo.structure === board.structure;
+  });
+}
+
+function replaceDemoBoardsOnly() {
+  const currentDemoIds = new Set(
+    boards
+      .filter((board) => demoBoardIds.includes(board.id) || isLikelyDemoBoard(board))
+      .map((board) => board.id),
+  );
+  boards = boards.filter((board) => !currentDemoIds.has(board.id));
+  const createdDemoBoards = [];
+  DEMO_BOARD_DATA.forEach((demo) => {
+    const board = createDemoBoardFromJson(demo);
+    boards.push(board);
+    createdDemoBoards.push(board);
+  });
+  demoBoardIds = createdDemoBoards.map((board) => board.id);
+  saveDemoBoardIds();
+  const validBoardIds = new Set(boards.map((board) => board.id));
+  groups = groups
+    .map((group) => ({
+      ...group,
+      boardIds: group.boardIds.filter((id) => validBoardIds.has(id)),
+    }))
+    .filter((group) => group.boardIds.length > 0);
+  saveGroups();
+  saveBoards();
 }
 
 function boardToExportPayload(board) {
@@ -766,6 +951,8 @@ function boardToExportPayload(board) {
       usedArchetypeIds.has(archetype.id) && !BUILTIN_ARCHETYPES.some((builtin) => builtin.id === archetype.id),
   );
   return {
+    uid: board.uid,
+    updatedAt: board.updatedAt,
     title: board.title,
     structure: structure.name,
     phaseOrder: getBoardPhaseOrder(board),
@@ -774,6 +961,8 @@ function boardToExportPayload(board) {
     notes: [...board.notes]
       .sort((a, b) => (a.column - b.column) || ((a.order || 0) - (b.order || 0)))
       .map((note) => ({
+        uid: note.uid,
+        updatedAt: note.updatedAt,
         kind: note.kind || "plot",
         column: Number.isInteger(note.column) ? note.column : 0,
         order: Number.isInteger(note.order) ? note.order : 0,
@@ -810,6 +999,44 @@ function openBoardActionsModal(boardId) {
   boardActionsModalOverlay.classList.remove("hidden");
 }
 
+function closePhaseOrderConflictModal() {
+  if (phaseOrderConflictModalOverlay) phaseOrderConflictModalOverlay.classList.add("hidden");
+}
+
+function openPhaseOrderConflictModal(payload) {
+  if (
+    !phaseOrderConflictModalOverlay ||
+    !phaseOrderConflictTitleEl ||
+    !phaseOrderCurrentListEl ||
+    !phaseOrderImportedListEl
+  ) {
+    return;
+  }
+  const currentOrder = payload?.currentOrder || [];
+  const importedOrder = payload?.importedOrder || [];
+  const firstMismatchIndex = currentOrder.findIndex((item, index) => item !== importedOrder[index]);
+  const renderList = (items, mismatchIndex) =>
+    items
+      .map((item, index) => {
+        const indexLabel = String(index + 1).padStart(2, "0");
+        const mismatchClass = index === mismatchIndex ? "is-first-mismatch" : "";
+        return `<li class="phase-order-item ${mismatchClass}">
+          <span class="phase-order-index">${indexLabel}</span>
+          <span>${item}</span>
+        </li>`;
+      })
+      .join("");
+
+  phaseOrderConflictTitleEl.textContent = payload?.boardTitle ? `Board: ${payload.boardTitle}` : "";
+  phaseOrderCurrentListEl.innerHTML = renderList(currentOrder, firstMismatchIndex);
+  phaseOrderImportedListEl.innerHTML = renderList(importedOrder, firstMismatchIndex);
+  if (phaseOrderConflictHintEl) {
+    phaseOrderConflictHintEl.textContent =
+      "Please manually align the current board phase order, then repeat the import.";
+  }
+  phaseOrderConflictModalOverlay.classList.remove("hidden");
+}
+
 function importBoardFromJson(rawText) {
   const parsed = JSON.parse(rawText);
   if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.notes)) {
@@ -843,7 +1070,13 @@ function importBoardFromJson(rawText) {
       const idAlreadyExists = getAllNoteTypes().some((item) => item.id === type.id);
       const importedType = idAlreadyExists
         ? createCustomNoteType(type.label, type.color)
-        : { id: type.id, label: type.label.trim(), color: type.color };
+        : {
+            id: type.id,
+            uid: typeof type.uid === "string" ? type.uid : generateUniqueUid(),
+            label: type.label.trim(),
+            color: type.color,
+            updatedAt: Number.isFinite(type.updatedAt) ? type.updatedAt : Date.now(),
+          };
       if (!importedType) return;
       if (!idAlreadyExists) {
         customNoteTypes.push(importedType);
@@ -876,8 +1109,10 @@ function importBoardFromJson(rawText) {
       }
       customArchetypes.push({
         id,
+        uid: typeof archetype.uid === "string" ? archetype.uid : generateUniqueUid(),
         icon: typeof archetype.icon === "string" ? archetype.icon : "✨",
         label: archetype.label.trim(),
+        updatedAt: Number.isFinite(archetype.updatedAt) ? archetype.updatedAt : Date.now(),
       });
       archetypesChanged = true;
       archetypeIdMap.set(archetype.id, id);
@@ -887,13 +1122,19 @@ function importBoardFromJson(rawText) {
     }
   }
   const title = typeof parsed.title === "string" && parsed.title.trim() ? parsed.title.trim() : "Imported Board";
+  const importedBoardUpdatedAt = Number.isFinite(parsed.updatedAt) ? parsed.updatedAt : Date.now();
   const phaseCount = structure.phases.length;
+  const importedPhaseOrder = isValidPhaseOrder(parsed.phaseOrder, structure.phases.length)
+    ? [...parsed.phaseOrder]
+    : identityPhaseOrder(structure.phases.length);
   const notes = parsed.notes.map((note, index) => {
     const column = Number.isInteger(note.column) ? note.column : 0;
     const importedKind = note.kind || "plot";
     const importedArchetype = note.archetype || "none";
     return {
       id: index + 1,
+      uid: typeof note.uid === "string" ? note.uid : generateUniqueUid(),
+      updatedAt: Number.isFinite(note.updatedAt) ? note.updatedAt : Date.now(),
       kind: noteTypeIdMap.get(importedKind) || importedKind,
       column: Math.max(0, Math.min(column, phaseCount - 1)),
       order: Number.isInteger(note.order) ? note.order : index,
@@ -905,18 +1146,83 @@ function importBoardFromJson(rawText) {
     };
   });
 
+  const existingByUid =
+    typeof parsed.uid === "string" && parsed.uid
+      ? boards.find((board) => board.uid === parsed.uid)
+      : null;
+  if (existingByUid) {
+    const existingPhaseOrder = getBoardPhaseOrder(existingByUid);
+    if (existingByUid.structureId !== structure.id) {
+      throw new Error(
+        `Cannot merge board "${existingByUid.title}": structure mismatch (${existingByUid.structure} vs ${structure.name}).`,
+      );
+    }
+    const sameOrder =
+      existingPhaseOrder.length === importedPhaseOrder.length &&
+      existingPhaseOrder.every((value, index) => value === importedPhaseOrder[index]);
+    if (!sameOrder) {
+      const structurePhases = getStructureConfig(existingByUid.structureId).phases;
+      const error = new Error(`Cannot merge board "${existingByUid.title}" because phase order differs.`);
+      error.code = "PHASE_ORDER_CONFLICT";
+      error.phaseOrderConflict = {
+        boardTitle: existingByUid.title,
+        currentOrder: existingPhaseOrder.map((phaseIndex) => structurePhases[phaseIndex] || "-"),
+        importedOrder: importedPhaseOrder.map((phaseIndex) => structurePhases[phaseIndex] || "-"),
+      };
+      throw error;
+    }
+
+    const localByUid = new Map(existingByUid.notes.map((note) => [note.uid, note]));
+    notes.forEach((importedNote) => {
+      const localNote = localByUid.get(importedNote.uid);
+      if (!localNote) {
+        const nextId =
+          existingByUid.notes.reduce((max, note) => Math.max(max, Number(note.id) || 0), 0) + 1;
+        existingByUid.notes.push({
+          ...importedNote,
+          id: nextId,
+        });
+        return;
+      }
+      if ((importedNote.updatedAt || 0) > (localNote.updatedAt || 0)) {
+        localNote.kind = importedNote.kind;
+        localNote.column = importedNote.column;
+        localNote.order = importedNote.order;
+        localNote.text = importedNote.text;
+        localNote.characterName = importedNote.characterName;
+        localNote.archetype = importedNote.archetype;
+        localNote.customHeight = importedNote.customHeight;
+        localNote.collapsed = importedNote.collapsed;
+        localNote.updatedAt = importedNote.updatedAt;
+      }
+    });
+
+    if (importedBoardUpdatedAt > (existingByUid.updatedAt || 0)) {
+      existingByUid.title = title;
+      existingByUid.slug = ensureUniqueSlug(slugifyTitle(title), existingByUid.id);
+      existingByUid.updatedAt = importedBoardUpdatedAt;
+    } else {
+      existingByUid.updatedAt = Math.max(existingByUid.updatedAt || 0, importedBoardUpdatedAt);
+    }
+    normalizeOrders(existingByUid.notes, existingByUid.structureId);
+    existingByUid.nextNoteId =
+      existingByUid.notes.reduce((max, note) => Math.max(max, Number(note.id) || 0), 0) + 1;
+    saveBoards();
+    renderHome();
+    return;
+  }
+
   const newBoard = {
     id: crypto.randomUUID(),
+    uid: typeof parsed.uid === "string" ? parsed.uid : generateUniqueUid(),
+    updatedAt: importedBoardUpdatedAt,
     title,
     slug: ensureUniqueSlug(slugifyTitle(title)),
     structureId: structure.id,
     structure: structure.name,
-    phaseOrder: isValidPhaseOrder(parsed.phaseOrder, structure.phases.length)
-      ? [...parsed.phaseOrder]
-      : identityPhaseOrder(structure.phases.length),
+    phaseOrder: importedPhaseOrder,
     nextNoteId: notes.length + 1,
     notes,
-    updatedAt: Date.now(),
   };
   normalizeOrders(newBoard.notes, newBoard.structureId);
   boards.push(newBoard);
@@ -936,6 +1242,10 @@ function openLanding(replaceRoute = false) {
   navigation.openLanding(replaceRoute);
 }
 
+function openHelp(replaceRoute = false) {
+  navigation.openHelp(replaceRoute);
+}
+
 function openGroup(groupId, replaceRoute = false) {
   navigation.openGroup(groupId, replaceRoute);
 }
@@ -949,6 +1259,7 @@ const boardInteractions = createBoardInteractionsController({
   getCurrentBoard,
   getStructureConfig,
   getColumnNotes,
+  generateUniqueUid,
   reorderPhaseAndNotes,
   touchBoard,
   renderEditor,
@@ -1006,8 +1317,10 @@ createStructureForm.addEventListener("submit", (event) => {
 
   customStructures.push({
     id,
+    uid: generateUniqueUid(),
     name,
     phases: phaseValues,
+    updatedAt: Date.now(),
   });
   saveCustomStructures();
   renderStructureOptions(id);
@@ -1062,6 +1375,24 @@ goLandingFromDashboardBtn.addEventListener("click", () => {
   openLanding();
 });
 
+if (goHelpBtn) {
+  goHelpBtn.addEventListener("click", () => {
+    openHelp();
+  });
+}
+
+if (goHelpFromDashboardBtn) {
+  goHelpFromDashboardBtn.addEventListener("click", () => {
+    openHelp();
+  });
+}
+
+if (goDashboardFromHelpBtn) {
+  goDashboardFromHelpBtn.addEventListener("click", () => {
+    openHome();
+  });
+}
+
 goDashboardFromBoardBtn.addEventListener("click", () => {
   if (boardBackGroupId && groups.some((group) => group.id === boardBackGroupId)) {
     openGroup(boardBackGroupId);
@@ -1090,7 +1421,11 @@ importBoardInput.addEventListener("change", async (event) => {
     importBoardFromJson(text);
     window.alert("Board imported successfully.");
   } catch (error) {
-    window.alert("Import failed. Please use a valid Structurer board JSON.");
+    if (error instanceof Error && error.code === "PHASE_ORDER_CONFLICT" && error.phaseOrderConflict) {
+      openPhaseOrderConflictModal(error.phaseOrderConflict);
+    } else {
+      window.alert(error instanceof Error ? error.message : "Import failed. Please use a valid Structurer board JSON.");
+    }
   } finally {
     importBoardInput.value = "";
   }
@@ -1129,6 +1464,20 @@ closeBoardActionsModalBtn.addEventListener("click", () => {
   closeBoardActionsModal();
 });
 
+if (closePhaseOrderConflictModalBtn) {
+  closePhaseOrderConflictModalBtn.addEventListener("click", () => {
+    closePhaseOrderConflictModal();
+  });
+}
+
+if (phaseOrderConflictModalOverlay) {
+  phaseOrderConflictModalOverlay.addEventListener("click", (event) => {
+    if (event.target === phaseOrderConflictModalOverlay) {
+      closePhaseOrderConflictModal();
+    }
+  });
+}
+
 modalExportBoardBtn.addEventListener("click", () => {
   const board = boards.find((item) => item.id === boardActionsModalBoardId);
   if (!board) return;
@@ -1165,6 +1514,7 @@ if (modalAddBoardToGroupBtn) {
     if (!group) {
       group = {
         id: crypto.randomUUID(),
+        uid: generateUniqueUid(),
         title: trimmed,
         slug: ensureUniqueGroupSlug(slugifyTitle(trimmed)),
         boardIds: [],
@@ -1239,9 +1589,29 @@ resetAppDataBtn.addEventListener("click", () => {
   );
   if (!confirmed) return;
 
-  clearKeys([STORAGE_KEY, SETTINGS_KEY, CUSTOM_STRUCTURES_KEY, CUSTOM_ARCHETYPES_KEY, CUSTOM_NOTE_TYPES_KEY, GROUPS_KEY]);
+  clearKeys([
+    STORAGE_KEY,
+    SETTINGS_KEY,
+    CUSTOM_STRUCTURES_KEY,
+    CUSTOM_ARCHETYPES_KEY,
+    CUSTOM_NOTE_TYPES_KEY,
+    GROUPS_KEY,
+    DEMO_BOARD_IDS_KEY,
+  ]);
   window.location.assign(HOME_ROUTE);
 });
+
+if (resetDemoDataBtn) {
+  resetDemoDataBtn.addEventListener("click", () => {
+    closeOptionsMenu();
+    const confirmed = window.confirm(
+      "Reset demo boards only? Your personal boards and custom settings/types/archetypes will be kept.",
+    );
+    if (!confirmed) return;
+    replaceDemoBoardsOnly();
+    openHome();
+  });
+}
 
 closeResizeModalBtn.addEventListener("click", () => {
   closeResizeModal();
@@ -1265,14 +1635,17 @@ boardEl.addEventListener("input", (event) => {
 
   if (target.dataset.role === "text") {
     note.text = target.value;
+    note.updatedAt = Date.now();
     if (!note.customHeight) {
       target.style.height = "auto";
       target.style.height = `${Math.max(target.scrollHeight, 74)}px`;
     }
   } else if (target.dataset.role === "character-name") {
     note.characterName = target.value;
+    note.updatedAt = Date.now();
   } else if (target.dataset.role === "archetype") {
     note.archetype = target.value;
+    note.updatedAt = Date.now();
     renderEditor();
   }
 
@@ -1340,6 +1713,11 @@ boards.forEach((board) => {
 });
 if (loadedBoards === null) {
   boards = DEMO_BOARD_DATA.map((demo) => createDemoBoardFromJson(demo));
+  demoBoardIds = boards.map((board) => board.id);
+  saveDemoBoardIds();
+} else if (demoBoardIds.length === 0) {
+  demoBoardIds = boards.filter((board) => isLikelyDemoBoard(board)).map((board) => board.id);
+  saveDemoBoardIds();
 }
 boards.forEach((board) => {
   const baseSlug = slugifyTitle(board.title || "board");
@@ -1350,6 +1728,7 @@ groups.forEach((group) => {
   group.slug = ensureUniqueGroupSlug(group.slug || baseSlug, group.id);
   group.boardIds = group.boardIds.filter((boardId) => boards.some((board) => board.id === boardId));
 });
+migrateUniqueUids();
 saveBoards();
 saveGroups();
 window.addEventListener("popstate", () => {

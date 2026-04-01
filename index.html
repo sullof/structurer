@@ -22,7 +22,10 @@
             Structurer helps writers build stories with visual boards, color-coded notes, characters, and narrative
             phases across built-in and custom structures.
           </p>
-          <button id="go-dashboard" type="button">Open dashboard</button>
+          <div class="landing-hero-actions">
+            <button id="go-dashboard" type="button">Open dashboard</button>
+            <button id="go-help" class="ghost-button" type="button">Help</button>
+          </div>
         </section>
 
         <section class="landing-grid">
@@ -73,7 +76,9 @@
           <div class="dashboard-topbar-center">
             <h1>Dashboard</h1>
           </div>
-          <div class="dashboard-topbar-right"></div>
+          <div class="dashboard-topbar-right">
+            <button id="go-help-from-dashboard" class="ghost-button" type="button">Help</button>
+          </div>
         </header>
 
         <section id="empty-state" class="empty-state">
@@ -121,6 +126,7 @@
         </details>
 
         <div class="home-dev-reset">
+          <button id="reset-demo-data" class="ghost-button" type="button">Reset demos only (dev)</button>
           <button id="reset-app-data" class="ghost-button danger-menu-item" type="button">Reset app data (dev)</button>
         </div>
 
@@ -161,6 +167,99 @@
             </div>
           </div>
         </div>
+        <div id="phase-order-conflict-modal-overlay" class="modal-overlay hidden">
+          <div class="modal phase-order-conflict-modal" role="dialog" aria-modal="true" aria-label="Phase order conflict">
+            <h2>Cannot merge: phase order differs</h2>
+            <p class="subtitle" id="phase-order-conflict-title"></p>
+            <div class="phase-order-columns">
+              <section>
+                <h3>Current order</h3>
+                <ol id="phase-order-current-list"></ol>
+              </section>
+              <section>
+                <h3>Imported order</h3>
+                <ol id="phase-order-imported-list"></ol>
+              </section>
+            </div>
+            <p id="phase-order-conflict-hint" class="phase-order-conflict-hint">
+              Please manually align the current board phase order, then repeat the import.
+            </p>
+            <div class="modal-actions">
+              <button id="close-phase-order-conflict-modal" class="ghost-button" type="button">Close</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="help-view" class="view hidden">
+        <header class="topbar dashboard-topbar">
+          <nav class="dashboard-topbar-left app-nav" aria-label="Help navigation">
+            <button id="go-dashboard-from-help" class="ghost-button back-arrow-button" type="button" aria-label="Back to dashboard">
+              ←
+            </button>
+          </nav>
+          <div class="dashboard-topbar-center">
+            <h1>Help</h1>
+          </div>
+          <div class="dashboard-topbar-right"></div>
+        </header>
+
+        <section class="help-card">
+          <h2>Core concepts</h2>
+          <ul>
+            <li><strong>Board:</strong> your story workspace built on one structure.</li>
+            <li><strong>Phases:</strong> columns of the selected structure.</li>
+            <li><strong>Notes:</strong> color-coded cards (plot, theme, character, custom types).</li>
+            <li><strong>Groups:</strong> ordered collections of boards for multi-board planning.</li>
+          </ul>
+        </section>
+
+        <section class="help-card">
+          <h2>How to add notes</h2>
+          <ul>
+            <li>In a phase, click <strong>+</strong> then choose note type.</li>
+            <li>For character notes, choose an archetype first.</li>
+            <li>Drag notes with the handle (<strong>⋮⋮</strong>) to reorder or move across phases.</li>
+          </ul>
+        </section>
+
+        <section class="help-card">
+          <h2>Custom note types and archetypes</h2>
+          <ul>
+            <li>From the phase <strong>+</strong> menu, choose <strong>Define custom note type...</strong></li>
+            <li>Pick a visual color from the color grid.</li>
+            <li>For custom archetypes, choose <strong>Define custom archetype...</strong> in the character submenu.</li>
+          </ul>
+        </section>
+
+        <section class="help-card">
+          <h2>Custom structures</h2>
+          <ul>
+            <li>In dashboard, open <strong>Create custom structure</strong>.</li>
+            <li>Add phase rows and save. The structure becomes selectable for new boards.</li>
+          </ul>
+        </section>
+
+        <section class="help-card">
+          <h2>Export, import, and merge</h2>
+          <ul>
+            <li>Export from board actions in dashboard.</li>
+            <li>Import from <strong>Import a saved board</strong>.</li>
+            <li>If imported board UID is new, a new board is created.</li>
+            <li>If imported board UID already exists, notes are merged by note UID using most recent update.</li>
+            <li><strong>Best practice for multi-device sync:</strong> do one initial export/import first to align IDs, then continue with incremental export/import merges.</li>
+            <li>If phase order differs, merge is blocked and a comparison modal is shown.</li>
+          </ul>
+        </section>
+
+        <section class="help-card">
+          <h2>Groups</h2>
+          <ul>
+            <li>Create a group by opening board actions and selecting <strong>Add board to group</strong>.</li>
+            <li>Open a group from dashboard to review boards in sequence.</li>
+            <li>Use group actions to reorder boards or remove a board from the group.</li>
+          </ul>
+        </section>
       </section>
 
       <section id="group-view" class="view hidden">

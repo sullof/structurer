@@ -3,6 +3,7 @@ export function createBoardInteractionsController({
   getCurrentBoard,
   getStructureConfig,
   getColumnNotes,
+  generateUniqueUid,
   reorderPhaseAndNotes,
   touchBoard,
   renderEditor,
@@ -72,6 +73,7 @@ export function createBoardInteractionsController({
   function moveNote(noteId, targetColumn, targetIndex) {
     const board = getCurrentBoard();
     if (!board) return;
+    const now = Date.now();
     const phaseCount = getStructureConfig(board.structureId).phases.length;
     const safeTargetColumn = Math.max(0, Math.min(targetColumn, phaseCount - 1));
     const movingNote = board.notes.find((note) => note.id === noteId);
@@ -85,6 +87,7 @@ export function createBoardInteractionsController({
       reordered.splice(clampedIndex, 0, movingNote);
       reordered.forEach((note, index) => {
         note.order = index;
+        note.updatedAt = now;
       });
       return;
     }
@@ -92,6 +95,7 @@ export function createBoardInteractionsController({
     const sourceList = getColumnNotes(board.notes, sourceColumn).filter((note) => note.id !== noteId);
     sourceList.forEach((note, index) => {
       note.order = index;
+      note.updatedAt = now;
     });
 
     const targetList = getColumnNotes(board.notes, safeTargetColumn);
@@ -99,6 +103,7 @@ export function createBoardInteractionsController({
     targetList.splice(clampedIndex, 0, movingNote);
     targetList.forEach((note, index) => {
       note.order = index;
+      note.updatedAt = now;
     });
   }
 
@@ -111,6 +116,8 @@ export function createBoardInteractionsController({
     const newNoteId = board.nextNoteId++;
     board.notes.push({
       id: newNoteId,
+      uid: generateUniqueUid(),
+      updatedAt: Date.now(),
       kind,
       column: safeColumn,
       order: newOrder,
@@ -263,6 +270,7 @@ export function createBoardInteractionsController({
     const note = board.notes.find((item) => item.id === resizingNoteId);
     if (!note) return;
     note.customHeight = target.offsetHeight;
+    note.updatedAt = Date.now();
     touchBoard(board);
     resizingNoteId = null;
   });

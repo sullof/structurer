@@ -108,17 +108,27 @@ All data is stored in browser `localStorage`:
 - boards: `structurer.boards.v1`
 - UI settings (column width, wrap mode): `structurer.settings.v1`
 - custom structures: `structurer.customStructures.v1`
-- optional dev reset flag: `activate.reset` (legacy alias supported: `activate-reset`)
+- optional dev reset flag: `activate.reset`
 
 No backend is currently used.
 
 ## Notes
 
 - This is an early MVP and intentionally simple.
-- The architecture is ready to support additional story structures beyond Hero's Journey.
 - For suggestions or feature requests, drop me a line.
 
 ## History
+
+**1.5.0**
+- Added stable short `uid` identifiers with automatic migration for boards, notes, groups, custom structures, custom archetypes, and custom note types.
+- Added `updatedAt` migration and tracking for notes and custom entities, laying the foundation for deterministic merge behavior.
+- Upgraded import behavior from "always create new board" to merge-by-board-uid when possible.
+- Implemented note-level merge by `uid` with last-write-wins based on `updatedAt`.
+- Added merge safety checks that block import when structure or phase order is incompatible.
+- Replaced the phase-order conflict alert with a centered comparison modal (two columns: current vs imported).
+- Improved conflict readability with `01, 02, ...` indexing, first-mismatch highlighting, and a guided message to realign and retry.
+- Improved dev tooling with split reset actions: full reset and "reset demos only".
+- Made the dev reset flag backward compatible (`activate.reset` and legacy `activate-reset`).
 
 **1.4.0**
 - Added a new pre-built structure: Hero with a Thousand Faces (Campbell monomyth phases).
