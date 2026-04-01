@@ -1401,8 +1401,8 @@ h1 {
 }
 
 .app-footer-version {
-  margin: 8px 0 0;
-  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .app-footer-version:empty {

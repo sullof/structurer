@@ -2260,5 +2260,5 @@ syncRouteToState(true);
 
 const appVersionEl = document.querySelector("#app-version");
 if (appVersionEl && packageJson.version) {
-  appVersionEl.textContent = `v${packageJson.version}`;
+  appVersionEl.textContent = packageJson.version;
 }
