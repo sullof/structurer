@@ -787,6 +787,12 @@ h1 {
   height: 100%;
 }
 
+.options-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .options-wrap {
   position: relative;
 }
@@ -1354,7 +1360,11 @@ h1 {
     text-align: right;
   }
 
-  .editor-topbar-right .options-wrap {
+  .options-menu .menu-item-desktop-only {
+    display: none;
+  }
+
+  .options-button .options-button-label {
     display: none;
   }
 

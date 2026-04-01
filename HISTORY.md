@@ -5,6 +5,9 @@
 - Built-in type display overrides (`label` / `color`) are stored in `localStorage` under `structurer.noteTypeOverrides.v1` without changing note `kind` ids; custom types are updated in the existing custom note types store.
 - **Delete this type** appears only for custom types that are not referenced by any note on any board; built-in types cannot be removed. Full app reset clears overrides too.
 - Modal layout polish: primary actions use `ghost-button` styling, spacing between Cancel/Save, and a dedicated row style for destructive delete.
+- **Mobile board options:** the options menu is visible again on small viewports; **Resize columns** and **Wrap columns** are hidden there (less relevant on narrow screens), while **Edit note types** and **Reset phase order** stay available.
+- On narrow viewports the board **Options** control shows the gear icon only (label hidden); the button keeps `aria-label="Options"` for accessibility.
+- When opening a board (from the dashboard, a link, or group navigation), the window scrolls to the top so the editor is not left at the previous page’s scroll position.
 
 **1.8.2**
 - Fixed note collapse in group sequential view: the group board preview used `pointer-events: none`, so double-click never reached notes; preview notes now receive events, collapsed state renders like the board editor, and double-click on the note header toggles collapse (persisted on the board).

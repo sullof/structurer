@@ -82,6 +82,9 @@ export function createNavigationController({
     renderInsights(null);
     applyColumnWidth();
     applyWrapColumns();
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
   }
 
   function showGroup(groupId) {
