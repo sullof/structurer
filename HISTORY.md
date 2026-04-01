@@ -1,5 +1,11 @@
 # History
 
+**1.9.0**
+- Added **Edit note types** under board options: a modal lists every note type (built-in and custom) with editable label, the same color palette as custom type creation, plus direct hex input (`#RGB` / `#RRGGBB`).
+- Built-in type display overrides (`label` / `color`) are stored in `localStorage` under `structurer.noteTypeOverrides.v1` without changing note `kind` ids; custom types are updated in the existing custom note types store.
+- **Delete this type** appears only for custom types that are not referenced by any note on any board; built-in types cannot be removed. Full app reset clears overrides too.
+- Modal layout polish: primary actions use `ghost-button` styling, spacing between Cancel/Save, and a dedicated row style for destructive delete.
+
 **1.8.2**
 - Fixed note collapse in group sequential view: the group board preview used `pointer-events: none`, so double-click never reached notes; preview notes now receive events, collapsed state renders like the board editor, and double-click on the note header toggles collapse (persisted on the board).
 - Added a Help FAQ entry about collapsing long notes; wording describes double-click on the note header without implying read-only mode.

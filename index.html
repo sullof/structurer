@@ -468,6 +468,7 @@
               <button id="options-button" class="ghost-button" type="button">⚙️ Options</button>
               <div id="options-menu" class="options-menu hidden">
                 <button id="open-resize-modal" class="menu-item" type="button">Resize columns</button>
+                <button id="open-edit-note-types-modal" class="menu-item" type="button">Edit note types</button>
                 <button id="toggle-wrap-columns" class="menu-item" type="button">Wrap columns: Off</button>
                 <button id="reset-phase-order" class="menu-item" type="button">Reset phase order</button>
               </div>
@@ -497,6 +498,18 @@
           <div id="note-type-color-grid" class="color-grid"></div>
           <div class="modal-actions">
             <button id="cancel-note-type-color" class="ghost-button" type="button">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="edit-note-types-modal-overlay" class="modal-overlay hidden">
+        <div class="modal modal-edit-note-types" role="dialog" aria-modal="true" aria-labelledby="edit-note-types-title">
+          <h2 id="edit-note-types-title">Edit note types</h2>
+          <p class="subtitle">Change labels and colors for each type. Built-in types keep the same id in your data; only the display label and color change.</p>
+          <div id="edit-note-types-list" class="edit-note-types-list"></div>
+          <div class="modal-actions">
+            <button id="cancel-edit-note-types" class="ghost-button" type="button">Cancel</button>
+            <button id="save-edit-note-types" class="ghost-button" type="button">Save</button>
           </div>
         </div>
       </div>
