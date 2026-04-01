@@ -79,6 +79,7 @@
           <p>No boards yet. Create your first board to start mapping your story.</p>
         </section>
 
+        <section id="groups-list" class="boards-list"></section>
         <section id="boards-list" class="boards-list"></section>
 
         <details class="home-create collapsible-panel">
@@ -123,6 +124,8 @@
           <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Board actions">
             <h2>Board actions</h2>
             <div class="board-actions-modal-list">
+              <button id="modal-rename-board" class="ghost-button" type="button">Rename board</button>
+              <button id="modal-add-board-to-group" class="ghost-button" type="button">Add board to group</button>
               <button id="modal-export-board" class="ghost-button" type="button">Export the board</button>
               <button id="modal-delete-board" class="ghost-button danger-menu-item" type="button">Delete the board</button>
             </div>
@@ -131,6 +134,43 @@
             </div>
           </div>
         </div>
+        <div id="group-actions-modal-overlay" class="modal-overlay hidden">
+          <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Group actions">
+            <h2>Group actions</h2>
+            <div class="board-actions-modal-list">
+              <button id="modal-reorder-group-boards" class="ghost-button" type="button">Reorder boards</button>
+              <button id="modal-remove-board-from-group" class="ghost-button danger-menu-item" type="button">Remove board</button>
+            </div>
+            <div class="modal-actions">
+              <button id="close-group-actions-modal" class="ghost-button" type="button">Close</button>
+            </div>
+          </div>
+        </div>
+        <div id="group-reorder-modal-overlay" class="modal-overlay hidden">
+          <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Reorder boards">
+            <h2>Reorder boards</h2>
+            <p class="subtitle">Drag boards to change their order in this group.</p>
+            <div id="group-reorder-list" class="reorder-list"></div>
+            <p id="group-reorder-status" class="reorder-status" aria-live="polite"></p>
+            <div class="modal-actions">
+              <button id="close-group-reorder-modal" class="ghost-button" type="button">Done</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="group-view" class="view hidden">
+        <header class="topbar editor-topbar">
+          <div class="editor-topbar-left">
+            <button id="go-dashboard-from-group" class="ghost-button back-arrow-button" type="button" aria-label="Back to dashboard">←</button>
+          </div>
+          <div class="editor-topbar-center">
+            <h1 id="group-title">Group</h1>
+            <p id="group-subtitle" class="subtitle"></p>
+          </div>
+          <div class="editor-topbar-right"></div>
+        </header>
+        <section id="group-board-stack" class="group-board-stack"></section>
       </section>
 
       <section id="editor-view" class="view hidden">
@@ -148,6 +188,7 @@
               <div id="options-menu" class="options-menu hidden">
                 <button id="open-resize-modal" class="menu-item" type="button">Resize columns</button>
                 <button id="toggle-wrap-columns" class="menu-item" type="button">Wrap columns: Off</button>
+                <button id="reset-phase-order" class="menu-item" type="button">Reset phase order</button>
               </div>
             </div>
           </div>
@@ -165,6 +206,16 @@
           <p id="column-width-value" class="board-meta"></p>
           <div class="modal-actions">
             <button id="close-resize-modal" class="ghost-button" type="button">Close</button>
+          </div>
+        </div>
+      </div>
+      <div id="note-type-color-modal-overlay" class="modal-overlay hidden">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Choose note type color">
+          <h2>Choose a color</h2>
+          <p class="subtitle">Pick a color for this custom note type.</p>
+          <div id="note-type-color-grid" class="color-grid"></div>
+          <div class="modal-actions">
+            <button id="cancel-note-type-color" class="ghost-button" type="button">Cancel</button>
           </div>
         </div>
       </div>

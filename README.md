@@ -23,12 +23,18 @@ The web version keeps your work private in your browser `localStorage`: no user 
 - Structure-driven boards with variable phase count
 - Quick-add note menu on each phase
 - Character notes with archetype selection
-- Drag-and-drop notes across columns and within the same column
+- Drag-and-drop notes across columns and within the same column (via drag handle)
+- Drag-and-drop phase reordering per board (via drag handle)
+- Live drag preview with visible drop placeholders for both notes and phases
+- Reset phase order to the original structure order
 - Open a board by clicking its tile (desktop and mobile)
+- Rename board from dashboard board actions
 - Export a board to JSON and import saved boards from JSON
+- Note collapse/expand with one-line preview (double click header), including persisted collapsed state
 - Options menu:
   - Resize all columns with a slider
   - Toggle wrapped columns (multi-row) vs horizontal scroll
+  - Reset phase order
 - Persistence via `localStorage`
 
 ## Pre-Built Structures
@@ -112,6 +118,20 @@ No backend is currently used.
 
 ## History
 
+**1.3.0**
+- Added board rename action from dashboard board actions modal.
+- Added note collapse/expand with single-line preview and persisted collapsed state.
+- Included collapsed state in board import/export payloads.
+- Added phase drag-and-drop reordering per board with reset-to-default action.
+- Added drag handles for notes/phases and clearer live drop placeholders during dragging.
+- Added board grouping (create group from boards, group route, sequential group view, contextual back navigation).
+- Added custom note types with color selection via visual color grid (non-technical UX).
+- Added readable note-first UX: notes render in read mode by default and switch to full edit mode on click.
+- Improved group board reorder reliability with a robust drop/dragend commit fallback.
+- Added subtle reorder animations and a short "Order saved" feedback in the group reorder modal.
+- Refactored the app into additional focused modules (`group-modals`, `navigation`, `board-interactions`, `board-note-actions`) to keep `main.js` maintainable.
+- Improved character note readability by compacting archetype and character name into a single header label in board view.
+
 **1.2.0**
 - Reorganized project structure by introducing `src/` entrypoints (`/src/main.js`, `/src/styles.css`).
 - Moved app modules and demo datasets under `src/` for a cleaner, more scalable layout.
@@ -125,5 +145,5 @@ No backend is currently used.
 
 ## Copyright
 
-2026 Francesco Sullo <francesco@sullo.co> — Built with Cursor AI in a couple of hours.
+2026 Francesco Sullo <francesco@sullo.co> — Built with Cursor AI.
 

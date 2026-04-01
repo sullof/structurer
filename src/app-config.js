@@ -2,6 +2,7 @@ export const STORAGE_KEY = "structurer.boards.v1";
 export const SETTINGS_KEY = "structurer.settings.v1";
 export const CUSTOM_STRUCTURES_KEY = "structurer.customStructures.v1";
 export const CUSTOM_ARCHETYPES_KEY = "structurer.customArchetypes.v1";
+export const CUSTOM_NOTE_TYPES_KEY = "structurer.customNoteTypes.v1";
 export const DEV_RESET_FLAG_KEY = "activate.reset";
 export const HOME_ROUTE = "/dashboard";
 export const DEFAULT_COLUMN_WIDTH = 260;
@@ -128,4 +129,10 @@ export const BUILTIN_ARCHETYPES = [
   { id: "shadow", icon: "🕶️", label: "Shadow/Antagonist" },
   { id: "trickster", icon: "🃏", label: "Trickster" },
   { id: "shapeshifter", icon: "🦊", label: "Shapeshifter" },
+];
+
+export const BUILTIN_NOTE_TYPES = [
+  { id: "plot", label: "Plot", color: "#fef08a" },
+  { id: "character", label: "Character", color: "#bfdbfe" },
+  { id: "theme", label: "Theme", color: "#bbf7d0" },
 ];
