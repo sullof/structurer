@@ -7,9 +7,11 @@
 
     { "kind": "plot", "column": 1, "order": 0, "text": "The visitors witness living dinosaurs and agree to tour the island despite ethical warnings." },
     { "kind": "theme", "column": 1, "order": 1, "text": "Inciting event: human ambition crosses a natural boundary." },
+    { "kind": "subplot", "column": 1, "order": 2, "text": "Malcolm vs. Gennaro: chaos theory skepticism vs. legal liability—foreshadows who survives chaos." },
 
     { "kind": "plot", "column": 2, "order": 0, "text": "Park systems seem controlled at first, but tensions grow around security, weather, and corporate sabotage." },
     { "kind": "character", "column": 2, "order": 1, "characterName": "John Hammond", "archetype": "shapeshifter", "text": "Visionary founder, torn between wonder and responsibility." },
+    { "kind": "detail", "column": 2, "order": 2, "text": "Goat on chain + absent T-Rex: classic suspense beat—absence of the monster is scarier than the money shot." },
 
     { "kind": "plot", "column": 3, "order": 0, "text": "The first T-Rex attack destroys the illusion of control and shifts the story to pure survival." },
     { "kind": "theme", "column": 3, "order": 1, "text": "Midpoint: nature reasserts dominance over engineered systems." },
@@ -22,6 +24,7 @@
 
     { "kind": "plot", "column": 6, "order": 0, "text": "Final clashes in the visitor center culminate with predators converging as the survivors race to escape." },
     { "kind": "character", "column": 6, "order": 1, "characterName": "Dr. Ellie Sattler", "archetype": "ally", "text": "Pragmatic, courageous, and crucial in restoring systems and protecting others." },
+    { "kind": "other", "column": 6, "order": 2, "text": "Visitor center set piece: flag for production notes (practical vs. VFX) if you storyboard a remake." },
 
     { "kind": "plot", "column": 7, "order": 0, "text": "The survivors leave the island, and Hammond accepts that the park cannot be controlled or opened safely." },
     { "kind": "theme", "column": 7, "order": 1, "text": "Resolution: scientific power without humility leads to catastrophe." }
