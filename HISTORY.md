@@ -1,5 +1,8 @@
 # History
 
+**1.9.4**
+- **Empty phases:** columns with no notes use the same white background as filled columns (instead of a grey fill), and phase titles are no longer muted—so new boards and sparse grids read brighter in the editor and in group preview.
+
 **1.9.2**
 - **Group view clarity:** in the sequential group view, per-board **Actions** (⋯) are removed so they are not stacked next to group **Actions** in the header. Each board row keeps **Edit board**, which opens the editor where **Board actions** are available; dashboard board cards still open board actions as before.
 - **Built-in note types:** added **Subplot**, **Detail**, **Todo**, and **Other** alongside Plot, Character, and Theme (default colors in `BUILTIN_NOTE_TYPES`; labels and colors remain overridable like other built-ins).

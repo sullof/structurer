@@ -13,8 +13,8 @@
   --column-min-width: 180px;
   /* Slightly above page --bg, lighter than before — panel behind phase columns */
   --board-surface: #f1f2f6;
-  /* Empty phase: barely off-white vs. #fff note columns */
-  --column-empty-bg: #f6f5f8;
+  /* Empty phase columns use the same white as note columns (avoids a “grey slab” on new boards) */
+  --column-empty-bg: #fff;
 }
 
 * {
@@ -948,10 +948,6 @@ h1 {
 
 .board .column.column-empty {
   background: var(--column-empty-bg);
-}
-
-.board .column.column-empty .phase-title {
-  color: var(--muted);
 }
 
 .phase-title {
