@@ -1043,6 +1043,38 @@ a:hover {
   font-weight: 700;
 }
 
+.phase-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.phase-expand {
+  border: 1px solid var(--line);
+  background: #f8f8f8;
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.phase-comments-summary {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phase-comments-summary:hover {
+  color: #111827;
+  text-decoration: underline;
+}
+
 .column-menu {
   position: absolute;
   top: 34px;
@@ -1351,6 +1383,171 @@ a:hover {
 
 .modal-edit-note-types {
   max-width: min(520px, calc(100vw - 32px));
+}
+
+.phase-detail-layout {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  height: calc(100vh - 140px);
+}
+
+.phase-detail-notes-pane,
+.phase-detail-comments-pane {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.phase-detail-notes-pane h2,
+.phase-detail-comments-pane h2 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.phase-notes-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-content: start;
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 2px;
+}
+
+.phase-note-item {
+  border-radius: 8px;
+  border: 1px solid rgba(17, 24, 39, 0.2);
+  background: var(--note-bg, #f3f4f6);
+  padding: 10px;
+}
+
+.phase-note-item-head {
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #1f2937;
+}
+
+.phase-note-item-text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.phase-comments-list {
+  display: grid;
+  align-content: start;
+  align-items: start;
+  gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 2px;
+}
+
+.phase-comment-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f9fafb;
+  padding: 10px;
+  display: block;
+}
+
+.phase-comment-item::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.phase-comment-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.phase-comment-actions {
+  float: right;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-left: 8px;
+  margin-bottom: 6px;
+}
+
+.icon-action-button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f8f8;
+  color: #111827;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-action-button:hover:not(:disabled) {
+  background: #e5edf5;
+}
+
+.phase-comment-item.is-editing .phase-comment-actions {
+  float: none;
+  justify-content: flex-end;
+  width: 100%;
+  margin: 8px 0 0;
+}
+
+.phase-comment-form {
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.phase-comment-form textarea,
+.phase-comment-edit-input {
+  width: 100%;
+  min-height: 110px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  font: inherit;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.phase-comment-form-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .phase-detail-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .phase-detail-notes-pane,
+  .phase-detail-comments-pane {
+    min-height: 320px;
+  }
 }
 
 .edit-note-types-list {

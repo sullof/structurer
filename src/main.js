@@ -49,6 +49,8 @@ let currentBoardId = null;
 let currentGroupId = null;
 let boardBackGroupId = null;
 let editingNoteId = null;
+let activePhaseCommentsColumn = null;
+let editingPhaseCommentUid = null;
 let boardActionsModalBoardId = null;
 let customStructures = loadCustomStructures();
 let customArchetypes = loadCustomArchetypes();
@@ -66,6 +68,7 @@ const privacyView = document.querySelector("#privacy-view");
 const termsView = document.querySelector("#terms-view");
 const groupView = document.querySelector("#group-view");
 const editorView = document.querySelector("#editor-view");
+const phaseView = document.querySelector("#phase-view");
 const groupsList = document.querySelector("#groups-list");
 const boardsList = document.querySelector("#boards-list");
 const dashboardGroupsHeading = document.querySelector("#dashboard-groups-heading");
@@ -112,6 +115,13 @@ const factoryResetModalOverlay = document.querySelector("#factory-reset-modal-ov
 const cancelFactoryResetBtn = document.querySelector("#cancel-factory-reset");
 const confirmFactoryResetBtn = document.querySelector("#confirm-factory-reset");
 const factoryResetConfirmCheckbox = document.querySelector("#factory-reset-confirm-checkbox");
+const resetDemosModalOverlay = document.querySelector("#reset-demos-modal-overlay");
+const cancelResetDemosBtn = document.querySelector("#cancel-reset-demos");
+const confirmResetDemosBtn = document.querySelector("#confirm-reset-demos");
+const restoreBackupModalOverlay = document.querySelector("#restore-backup-modal-overlay");
+const cancelRestoreBackupBtn = document.querySelector("#cancel-restore-backup");
+const confirmRestoreBackupBtn = document.querySelector("#confirm-restore-backup");
+const restoreBackupConfirmCheckbox = document.querySelector("#restore-backup-confirm-checkbox");
 const dashboardActionsBtn = document.querySelector("#dashboard-actions-btn");
 const dashboardActionsModalOverlay = document.querySelector("#dashboard-actions-modal-overlay");
 const closeDashboardActionsModalBtn = document.querySelector("#close-dashboard-actions-modal");
@@ -123,6 +133,9 @@ const dashboardCreateStructureModalOverlay = document.querySelector("#dashboard-
 const closeDashboardCreateStructureModalBtn = document.querySelector("#close-dashboard-create-structure-modal");
 const dashboardResetDemoActionBtn = document.querySelector("#dashboard-reset-demo-action");
 const dashboardFactoryResetActionBtn = document.querySelector("#dashboard-factory-reset-action");
+const dashboardExportBackupActionBtn = document.querySelector("#dashboard-export-backup-action");
+const dashboardRestoreBackupActionBtn = document.querySelector("#dashboard-restore-backup-action");
+const restoreAppBackupInput = document.querySelector("#restore-app-backup-input");
 const openImportStoryActionBtn = document.querySelector("#open-import-story-action");
 const dashboardImportModalOverlay = document.querySelector("#dashboard-import-modal-overlay");
 const closeDashboardImportModalBtn = document.querySelector("#close-dashboard-import-modal");
@@ -166,6 +179,17 @@ const editNoteTypesListEl = document.querySelector("#edit-note-types-list");
 const cancelEditNoteTypesBtn = document.querySelector("#cancel-edit-note-types");
 const saveEditNoteTypesBtn = document.querySelector("#save-edit-note-types");
 const goDashboardBtn = document.querySelector("#go-dashboard");
+const goBoardFromPhaseBtn = document.querySelector("#go-board-from-phase");
+const phaseCommentsTitleEl = document.querySelector("#phase-comments-title");
+const phaseCommentsSubtitleEl = document.querySelector("#phase-comments-subtitle");
+const phaseNotesListEl = document.querySelector("#phase-notes-list");
+const phaseNotesEmptyEl = document.querySelector("#phase-notes-empty");
+const phaseCommentsListEl = document.querySelector("#phase-comments-list");
+const phaseCommentsEmptyEl = document.querySelector("#phase-comments-empty");
+const phaseCommentForm = document.querySelector("#phase-comment-form");
+const phaseCommentInput = document.querySelector("#phase-comment-input");
+const phaseCommentCharCountEl = document.querySelector("#phase-comment-char-count");
+const savePhaseCommentBtn = document.querySelector("#save-phase-comment-btn");
 
 const boardEl = document.querySelector("#board");
 const groupBoardStackEl = document.querySelector("#group-board-stack");
@@ -173,6 +197,7 @@ const homeListControlsEl = document.querySelector(".home-list-controls");
 const toggleDemoVisibilityBtn = document.querySelector("#toggle-demo-visibility");
 const homeCollapsiblePanels = [...document.querySelectorAll("#home-view .collapsible-panel")];
 let addBoardToGroupTargetBoardId = null;
+let pendingRestoreBackupText = null;
 
 function loadBoards() {
   return loadBoardsFromStorage(STORAGE_KEY);
@@ -603,6 +628,97 @@ function getCurrentBoard() {
   return boards.find((board) => board.id === currentBoardId) || null;
 }
 
+function ensureBoardPhaseUids(board) {
+  if (!board) return [];
+  const phaseCount = getStructureConfig(board.structureId).phases.length;
+  if (!Array.isArray(board.phaseUids)) {
+    board.phaseUids = [];
+  }
+  for (let phaseId = 0; phaseId < phaseCount; phaseId += 1) {
+    const current = board.phaseUids[phaseId];
+    if (typeof current !== "string" || !current) {
+      board.phaseUids[phaseId] = generateUniqueUid();
+    }
+  }
+  if (board.phaseUids.length > phaseCount) {
+    board.phaseUids = board.phaseUids.slice(0, phaseCount);
+  }
+  return board.phaseUids;
+}
+
+function getPhaseUidByVisualColumn(board, columnIndex) {
+  if (!board || !Number.isInteger(columnIndex) || columnIndex < 0) return null;
+  const order = getBoardPhaseOrder(board);
+  const phaseId = order[columnIndex];
+  if (!Number.isInteger(phaseId) || phaseId < 0) return null;
+  const phaseUids = ensureBoardPhaseUids(board);
+  return phaseUids[phaseId] || null;
+}
+
+function normalizeBoardPhaseComments(board) {
+  if (!board || !Number.isInteger(board.nextCommentId)) {
+    board.nextCommentId = 1;
+  }
+  if (!board || !board.phaseComments || typeof board.phaseComments !== "object" || Array.isArray(board.phaseComments)) {
+    board.phaseComments = {};
+  }
+
+  const phaseUids = ensureBoardPhaseUids(board);
+  const currentOrder = getBoardPhaseOrder(board);
+  const normalizedByPhaseUid = {};
+  let maxCommentId = 0;
+
+  Object.entries(board.phaseComments).forEach(([phaseKey, comments]) => {
+    if (!Array.isArray(comments)) return;
+    let targetPhaseUid = null;
+    if (phaseUids.includes(phaseKey)) {
+      targetPhaseUid = phaseKey;
+    } else {
+      // Backward compatibility: legacy data used visual column index as object key.
+      const numericColumn = Number(phaseKey);
+      const legacyPhaseId = currentOrder[numericColumn];
+      if (Number.isInteger(legacyPhaseId) && legacyPhaseId >= 0) {
+        targetPhaseUid = phaseUids[legacyPhaseId] || null;
+      }
+    }
+    if (!targetPhaseUid) return;
+    normalizedByPhaseUid[targetPhaseUid] = (normalizedByPhaseUid[targetPhaseUid] || []).concat(
+      comments
+      .filter((comment) => comment && typeof comment === "object")
+      .map((comment) => {
+        const id = Number.isInteger(comment.id) ? comment.id : board.nextCommentId++;
+        maxCommentId = Math.max(maxCommentId, id);
+        return {
+          id,
+          uid: typeof comment.uid === "string" && comment.uid ? comment.uid : generateUniqueUid(),
+          text: typeof comment.text === "string" ? comment.text : "",
+          createdAt: Number.isFinite(comment.createdAt) ? comment.createdAt : Date.now(),
+          updatedAt: Number.isFinite(comment.updatedAt) ? comment.updatedAt : Date.now(),
+        };
+      }),
+    );
+  });
+
+  Object.keys(normalizedByPhaseUid).forEach((phaseUid) => {
+    normalizedByPhaseUid[phaseUid] = normalizedByPhaseUid[phaseUid].sort(
+      (a, b) => a.createdAt - b.createdAt || a.id - b.id,
+    );
+  });
+
+  board.phaseComments = normalizedByPhaseUid;
+  board.phaseCommentsVersion = 2;
+  board.nextCommentId = Math.max(board.nextCommentId || 1, maxCommentId + 1);
+}
+
+function getPhaseComments(board, columnIndex) {
+  if (!board) return [];
+  normalizeBoardPhaseComments(board);
+  const phaseUid = getPhaseUidByVisualColumn(board, columnIndex);
+  if (!phaseUid) return [];
+  const items = Array.isArray(board.phaseComments[phaseUid]) ? board.phaseComments[phaseUid] : [];
+  return [...items].sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
+}
+
 function getCurrentGroup() {
   return groups.find((group) => group.id === currentGroupId) || null;
 }
@@ -670,6 +786,7 @@ function migrateUniqueUids() {
   const now = Date.now();
 
   boards.forEach((board) => {
+    normalizeBoardPhaseComments(board);
     if (typeof board.uid !== "string" || !board.uid) {
       board.uid = generateUniqueUid();
       changed = true;
@@ -921,6 +1038,8 @@ function renderEditor() {
   boardEl.innerHTML = phases
     .map((phase, columnIndex) => {
       const noteItems = getColumnNotes(board.notes, columnIndex);
+      const phaseComments = getPhaseComments(board, columnIndex);
+      const commentCount = phaseComments.length;
       const emptyClass = noteItems.length === 0 ? " column-empty" : "";
       return `
       <section class="column${emptyClass}" data-column="${columnIndex}">
@@ -929,7 +1048,10 @@ function renderEditor() {
             <button class="phase-drag" data-role="phase-drag-handle" title="Drag phase" draggable="true">⋮⋮</button>
             <h2 class="phase-title">${formatPhaseTitle(phase)}</h2>
           </div>
-          <button class="phase-add" data-role="open-column-menu" title="Add note">+</button>
+          <div class="phase-head-actions">
+            <button class="phase-expand" data-role="open-phase-comments" data-column="${columnIndex}" title="Open phase details">🔍</button>
+            <button class="phase-add" data-role="open-column-menu" title="Add note">+</button>
+          </div>
           ${columnMenuTemplate(columnIndex, archetypes, noteTypes)}
         </div>
         <div class="notes">${noteItems
@@ -943,6 +1065,13 @@ function renderEditor() {
             ),
           )
           .join("")}</div>
+        ${
+          commentCount > 0
+            ? `<button class="phase-comments-summary" data-role="open-phase-comments" data-column="${columnIndex}" type="button">${commentCount} ${
+                commentCount === 1 ? "comment" : "comments"
+              }</button>`
+            : ""
+        }
       </section>
     `;
     })
@@ -964,10 +1093,11 @@ function autoResizeTextareas() {
 }
 
 const navigation = createNavigationController({
-  views: { landingView, homeView, helpView, privacyView, termsView, groupView, editorView },
+  views: { landingView, homeView, helpView, privacyView, termsView, groupView, editorView, phaseView },
   homeRoute: HOME_ROUTE,
   getBoards: () => boards,
   getGroups: () => groups,
+  getStructureConfig,
   getCurrentBoardId: () => currentBoardId,
   setCurrentBoardId: (id) => {
     currentBoardId = id;
@@ -984,6 +1114,12 @@ const navigation = createNavigationController({
   renderHome,
   renderEditor,
   renderGroup,
+  renderPhaseDetail: (boardId, phaseIndex) => {
+    currentBoardId = boardId;
+    activePhaseCommentsColumn = phaseIndex;
+    editingPhaseCommentUid = null;
+    renderPhaseDetailView();
+  },
   applyColumnWidth,
   applyWrapColumns,
 });
@@ -1135,8 +1271,12 @@ function createBoard(title, structureId = "hero_journey") {
     structureId: structure.id,
     structure: structure.name,
     phaseOrder: identityPhaseOrder(structure.phases.length),
+    phaseUids: identityPhaseOrder(structure.phases.length).map(() => generateUniqueUid()),
     nextNoteId: 1,
+    nextCommentId: 1,
     notes: [],
+    phaseComments: {},
+    phaseCommentsVersion: 2,
     updatedAt: Date.now(),
   };
   boards.push(newBoard);
@@ -1172,8 +1312,12 @@ function createDemoBoardFromJson(demoData) {
     phaseOrder: isValidPhaseOrder(demoData.phaseOrder, structure.phases.length)
       ? [...demoData.phaseOrder]
       : identityPhaseOrder(structure.phases.length),
+    phaseUids: identityPhaseOrder(structure.phases.length).map(() => generateUniqueUid()),
     nextNoteId: notes.length + 1,
+    nextCommentId: 1,
     notes,
+    phaseComments: {},
+    phaseCommentsVersion: 2,
     isDemo: true,
     updatedAt: Number.isFinite(demoData.updatedAt) ? demoData.updatedAt : Date.now(),
   };
@@ -1282,6 +1426,21 @@ function ensureMatrixTrilogySeriesDemo() {
 
 function boardToExportPayload(board) {
   const structure = getStructureConfig(board.structureId);
+  const phaseUids = ensureBoardPhaseUids(board);
+  normalizeBoardPhaseComments(board);
+  const exportedPhaseComments = {};
+  phaseUids.forEach((phaseUid) => {
+    const comments = Array.isArray(board.phaseComments[phaseUid]) ? board.phaseComments[phaseUid] : [];
+    exportedPhaseComments[phaseUid] = comments
+      .map((comment) => ({
+        id: Number.isInteger(comment.id) ? comment.id : undefined,
+        uid: typeof comment.uid === "string" && comment.uid ? comment.uid : generateUniqueUid(),
+        text: typeof comment.text === "string" ? comment.text : "",
+        createdAt: Number.isFinite(comment.createdAt) ? comment.createdAt : Date.now(),
+        updatedAt: Number.isFinite(comment.updatedAt) ? comment.updatedAt : Date.now(),
+      }))
+      .sort((a, b) => a.createdAt - b.createdAt || (a.id || 0) - (b.id || 0));
+  });
   const usedNoteTypeIds = new Set(board.notes.map((note) => note.kind || "plot"));
   const usedArchetypeIds = new Set(
     board.notes
@@ -1301,6 +1460,9 @@ function boardToExportPayload(board) {
     title: board.title,
     structure: structure.name,
     phaseOrder: getBoardPhaseOrder(board),
+    phaseUids,
+    phaseCommentsVersion: 2,
+    phaseComments: exportedPhaseComments,
     noteTypes: exportedNoteTypes,
     archetypes: exportedArchetypes,
     notes: [...board.notes]
@@ -1332,6 +1494,85 @@ function downloadBoard(board) {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+function downloadJsonFile(payload, filename) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function exportFullAppBackup() {
+  const backup = {
+    backupType: "structurer.full-backup",
+    schemaVersion: 1,
+    exportedAt: Date.now(),
+    appVersion: packageJson.version || "",
+    data: {
+      boards,
+      settings: { columnMinWidth, wrapColumns, showDemoBoards },
+      customStructures,
+      customArchetypes,
+      customNoteTypes,
+      noteTypeOverrides,
+      groups,
+      demoBoardIds,
+    },
+  };
+  const stamp = new Date().toISOString().replace(/[:]/g, "-").slice(0, 19);
+  downloadJsonFile(backup, `structurer-full-backup-${stamp}.json`);
+}
+
+function restoreFullAppBackupFromText(rawText) {
+  const parsed = JSON.parse(rawText);
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Invalid backup JSON.");
+  }
+  if (parsed.backupType !== "structurer.full-backup") {
+    throw new Error("This file is not a Structurer full backup.");
+  }
+  const data = parsed.data;
+  if (!data || typeof data !== "object") {
+    throw new Error("Invalid backup payload: missing data block.");
+  }
+
+  const nextBoards = Array.isArray(data.boards) ? data.boards : [];
+  const nextSettings = data.settings && typeof data.settings === "object" ? data.settings : {};
+  const nextCustomStructures = Array.isArray(data.customStructures) ? data.customStructures : [];
+  const nextCustomArchetypes = Array.isArray(data.customArchetypes) ? data.customArchetypes : [];
+  const nextCustomNoteTypes = Array.isArray(data.customNoteTypes) ? data.customNoteTypes : [];
+  const nextNoteTypeOverrides =
+    data.noteTypeOverrides && typeof data.noteTypeOverrides === "object" ? data.noteTypeOverrides : {};
+  const nextGroups = Array.isArray(data.groups) ? data.groups : [];
+  const nextDemoBoardIds = Array.isArray(data.demoBoardIds) ? data.demoBoardIds : [];
+
+  clearKeys([
+    STORAGE_KEY,
+    SETTINGS_KEY,
+    CUSTOM_STRUCTURES_KEY,
+    CUSTOM_ARCHETYPES_KEY,
+    CUSTOM_NOTE_TYPES_KEY,
+    NOTE_TYPE_OVERRIDES_KEY,
+    GROUPS_KEY,
+    DEMO_BOARD_IDS_KEY,
+  ]);
+  saveJsonItem(STORAGE_KEY, nextBoards);
+  saveJsonItem(SETTINGS_KEY, nextSettings);
+  saveJsonItem(CUSTOM_STRUCTURES_KEY, nextCustomStructures);
+  saveJsonItem(CUSTOM_ARCHETYPES_KEY, nextCustomArchetypes);
+  saveJsonItem(CUSTOM_NOTE_TYPES_KEY, nextCustomNoteTypes);
+  saveJsonItem(NOTE_TYPE_OVERRIDES_KEY, nextNoteTypeOverrides);
+  saveJsonItem(GROUPS_KEY, nextGroups);
+  saveJsonItem(DEMO_BOARD_IDS_KEY, nextDemoBoardIds);
+
+  window.location.assign(HOME_ROUTE);
+  return parsed;
 }
 
 function closeBoardActionsModal() {
@@ -1545,6 +1786,55 @@ function importBoardFromJson(rawText) {
   const importedPhaseOrder = isValidPhaseOrder(parsed.phaseOrder, structure.phases.length)
     ? [...parsed.phaseOrder]
     : identityPhaseOrder(structure.phases.length);
+  const importedPhaseUids = Array.isArray(parsed.phaseUids) ? parsed.phaseUids : [];
+  const normalizedImportedPhaseUids = identityPhaseOrder(phaseCount).map((phaseId) => {
+    const candidate = importedPhaseUids[phaseId];
+    return typeof candidate === "string" && candidate ? candidate : generateUniqueUid();
+  });
+  const normalizeImportedPhaseCommentsByPhaseId = () => {
+    const byPhaseId = new Map();
+    if (!parsed.phaseComments || typeof parsed.phaseComments !== "object" || Array.isArray(parsed.phaseComments)) {
+      return byPhaseId;
+    }
+    const phaseUidToPhaseId = new Map();
+    normalizedImportedPhaseUids.forEach((uid, phaseId) => {
+      phaseUidToPhaseId.set(uid, phaseId);
+    });
+    Object.entries(parsed.phaseComments).forEach(([phaseKey, comments]) => {
+      if (!Array.isArray(comments)) return;
+      let phaseId = null;
+      if (phaseUidToPhaseId.has(phaseKey)) {
+        phaseId = phaseUidToPhaseId.get(phaseKey);
+      } else {
+        const legacyColumn = Number(phaseKey);
+        const legacyPhaseId = importedPhaseOrder[legacyColumn];
+        if (Number.isInteger(legacyPhaseId)) {
+          phaseId = legacyPhaseId;
+        }
+      }
+      if (!Number.isInteger(phaseId) || phaseId < 0 || phaseId >= phaseCount) return;
+      const normalizedItems = comments
+        .filter((comment) => comment && typeof comment === "object")
+        .map((comment, index) => ({
+          id: Number.isInteger(comment.id) ? comment.id : index + 1,
+          uid: typeof comment.uid === "string" && comment.uid ? comment.uid : generateUniqueUid(),
+          text: typeof comment.text === "string" ? comment.text : "",
+          createdAt: Number.isFinite(comment.createdAt) ? comment.createdAt : Date.now(),
+          updatedAt: Number.isFinite(comment.updatedAt) ? comment.updatedAt : Date.now(),
+        }))
+        .sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
+      const current = byPhaseId.get(phaseId) || [];
+      byPhaseId.set(phaseId, [...current, ...normalizedItems]);
+    });
+    byPhaseId.forEach((comments, phaseId) => {
+      byPhaseId.set(
+        phaseId,
+        comments.sort((a, b) => a.createdAt - b.createdAt || a.id - b.id),
+      );
+    });
+    return byPhaseId;
+  };
+  const importedCommentsByPhaseId = normalizeImportedPhaseCommentsByPhaseId();
   const notes = parsed.notes.map((note, index) => {
     const column = Number.isInteger(note.column) ? note.column : 0;
     const importedKind = note.kind || "plot";
@@ -1569,6 +1859,8 @@ function importBoardFromJson(rawText) {
       ? boards.find((board) => board.uid === parsed.uid)
       : null;
   if (existingByUid) {
+    ensureBoardPhaseUids(existingByUid);
+    normalizeBoardPhaseComments(existingByUid);
     const existingPhaseOrder = getBoardPhaseOrder(existingByUid);
     if (existingByUid.structureId !== structure.id) {
       throw new Error(
@@ -1615,6 +1907,60 @@ function importBoardFromJson(rawText) {
       }
     });
 
+    const localCommentLocationsByUid = new Map();
+    Object.entries(existingByUid.phaseComments).forEach(([phaseUid, comments]) => {
+      if (!Array.isArray(comments)) return;
+      comments.forEach((comment) => {
+        if (comment && typeof comment.uid === "string" && comment.uid) {
+          localCommentLocationsByUid.set(comment.uid, { phaseUid, comment });
+        }
+      });
+    });
+    importedCommentsByPhaseId.forEach((comments, phaseId) => {
+      const targetPhaseUid = existingByUid.phaseUids[phaseId];
+      if (!targetPhaseUid) return;
+      if (!Array.isArray(existingByUid.phaseComments[targetPhaseUid])) {
+        existingByUid.phaseComments[targetPhaseUid] = [];
+      }
+      comments.forEach((importedComment) => {
+        const localInfo = localCommentLocationsByUid.get(importedComment.uid);
+        if (!localInfo) {
+          const nextId =
+            Number.isInteger(existingByUid.nextCommentId) && existingByUid.nextCommentId > 0
+              ? existingByUid.nextCommentId
+              : 1;
+          existingByUid.nextCommentId = nextId + 1;
+          const created = {
+            id: nextId,
+            uid: importedComment.uid,
+            text: importedComment.text,
+            createdAt: importedComment.createdAt,
+            updatedAt: importedComment.updatedAt,
+          };
+          existingByUid.phaseComments[targetPhaseUid].push(created);
+          localCommentLocationsByUid.set(importedComment.uid, { phaseUid: targetPhaseUid, comment: created });
+          return;
+        }
+        const localComment = localInfo.comment;
+        if ((importedComment.updatedAt || 0) > (localComment.updatedAt || 0)) {
+          localComment.text = importedComment.text;
+          localComment.createdAt = importedComment.createdAt;
+          localComment.updatedAt = importedComment.updatedAt;
+          if (localInfo.phaseUid !== targetPhaseUid) {
+            existingByUid.phaseComments[localInfo.phaseUid] = (existingByUid.phaseComments[localInfo.phaseUid] || []).filter(
+              (entry) => entry.uid !== importedComment.uid,
+            );
+            existingByUid.phaseComments[targetPhaseUid].push(localComment);
+            localInfo.phaseUid = targetPhaseUid;
+          }
+        }
+      });
+    });
+    Object.keys(existingByUid.phaseComments).forEach((phaseUid) => {
+      const comments = Array.isArray(existingByUid.phaseComments[phaseUid]) ? existingByUid.phaseComments[phaseUid] : [];
+      existingByUid.phaseComments[phaseUid] = comments.sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
+    });
+
     if (importedBoardUpdatedAt > (existingByUid.updatedAt || 0)) {
       existingByUid.title = title;
       existingByUid.slug = ensureUniqueSlug(slugifyTitle(title), existingByUid.id);
@@ -1625,11 +1971,25 @@ function importBoardFromJson(rawText) {
     normalizeOrders(existingByUid.notes, existingByUid.structureId);
     existingByUid.nextNoteId =
       existingByUid.notes.reduce((max, note) => Math.max(max, Number(note.id) || 0), 0) + 1;
+    existingByUid.phaseCommentsVersion = 2;
+    const maxCommentId = Object.values(existingByUid.phaseComments)
+      .flat()
+      .reduce((max, comment) => Math.max(max, Number(comment?.id) || 0), 0);
+    existingByUid.nextCommentId = Math.max(existingByUid.nextCommentId || 1, maxCommentId + 1);
     saveBoards();
     renderHome();
     return;
   }
 
+  const newPhaseComments = {};
+  importedCommentsByPhaseId.forEach((comments, phaseId) => {
+    const phaseUid = normalizedImportedPhaseUids[phaseId];
+    if (!phaseUid) return;
+    newPhaseComments[phaseUid] = comments;
+  });
+  const maxImportedCommentId = [...importedCommentsByPhaseId.values()]
+    .flat()
+    .reduce((max, comment) => Math.max(max, Number(comment?.id) || 0), 0);
   const newBoard = {
     id: crypto.randomUUID(),
     uid: typeof parsed.uid === "string" ? parsed.uid : generateUniqueUid(),
@@ -1639,8 +1999,12 @@ function importBoardFromJson(rawText) {
     structureId: structure.id,
     structure: structure.name,
     phaseOrder: importedPhaseOrder,
+    phaseUids: normalizedImportedPhaseUids,
     nextNoteId: notes.length + 1,
+    nextCommentId: Math.max(maxImportedCommentId + 1, 1),
     notes,
+    phaseComments: newPhaseComments,
+    phaseCommentsVersion: 2,
   };
   normalizeOrders(newBoard.notes, newBoard.structureId);
   boards.push(newBoard);
@@ -1650,6 +2014,10 @@ function importBoardFromJson(rawText) {
 
 function openBoard(boardId, replaceRoute = false, fromGroupId = null) {
   navigation.openBoard(boardId, replaceRoute, fromGroupId);
+}
+
+function openBoardPhase(boardId, columnIndex, replaceRoute = false, fromGroupId = null) {
+  navigation.openBoardPhase(boardId, columnIndex, replaceRoute, fromGroupId);
 }
 
 function openHome(replaceRoute = false) {
@@ -1678,6 +2046,79 @@ function openGroup(groupId, replaceRoute = false) {
 
 function syncRouteToState(replaceRoute = true) {
   navigation.syncRouteToState(replaceRoute);
+}
+
+function getCurrentPhaseName(board, columnIndex) {
+  const phases = getBoardPhases(board);
+  if (!Array.isArray(phases) || !phases[columnIndex]) return `Phase ${columnIndex + 1}`;
+  return formatPhaseTitle(phases[columnIndex]);
+}
+
+function renderPhaseDetailView() {
+  const board = getCurrentBoard();
+  if (!board || !Number.isInteger(activePhaseCommentsColumn) || !phaseCommentsListEl) return;
+  const comments = getPhaseComments(board, activePhaseCommentsColumn);
+  const notes = getColumnNotes(board.notes, activePhaseCommentsColumn);
+  const phaseName = getCurrentPhaseName(board, activePhaseCommentsColumn);
+  if (phaseCommentsTitleEl) phaseCommentsTitleEl.textContent = `Phase details - ${phaseName}`;
+  if (phaseCommentsSubtitleEl) {
+    phaseCommentsSubtitleEl.textContent = `${board.title} - ${
+      comments.length === 1 ? "1 comment" : `${comments.length} comments`
+    }`;
+  }
+
+  if (phaseNotesListEl) {
+    phaseNotesListEl.innerHTML = notes
+      .map((note) => {
+        const type = noteTypeById(note.kind);
+        const archetype = archetypeById(note.archetype || "none");
+        const title =
+          note.kind === "character"
+            ? `${archetype.label}${note.characterName ? ` - ${note.characterName}` : ""}`
+            : type.label;
+        return `<article class="phase-note-item" style="--note-bg:${escapeHtml(type.color)};">
+          <div class="phase-note-item-head">${escapeHtml(title)}</div>
+          <p class="phase-note-item-text">${escapeHtml((note.text || "").trim() || "Empty note")}</p>
+        </article>`;
+      })
+      .join("");
+  }
+  if (phaseNotesEmptyEl) {
+    phaseNotesEmptyEl.classList.toggle("hidden", notes.length > 0);
+  }
+
+  phaseCommentsListEl.innerHTML = comments
+    .map((comment) => {
+      const isEditing = editingPhaseCommentUid === comment.uid;
+      return `<article class="phase-comment-item${isEditing ? " is-editing" : ""}" data-comment-uid="${comment.uid}">
+        ${
+          isEditing
+            ? `<textarea class="phase-comment-edit-input" data-role="phase-comment-edit-input" maxlength="1000">${escapeHtml(
+                comment.text,
+              )}</textarea>`
+            : ""
+        }
+        <div class="phase-comment-actions">
+          ${
+            isEditing
+              ? `<button class="ghost-button" data-role="save-phase-comment-edit" type="button">Save</button>
+                 <button class="ghost-button" data-role="cancel-phase-comment-edit" type="button">Cancel</button>`
+              : `<button class="icon-action-button" data-role="edit-phase-comment" type="button" aria-label="Edit comment" title="Edit comment">✎</button>
+                 <button class="icon-action-button danger-menu-item" data-role="delete-phase-comment" type="button" aria-label="Delete comment" title="Delete comment">✕</button>`
+          }
+        </div>
+        ${
+          isEditing
+            ? ""
+            : `<p class="phase-comment-text">${escapeHtml(comment.text || "")}</p>`
+        }
+      </article>`;
+    })
+    .join("");
+
+  if (phaseCommentsEmptyEl) {
+    phaseCommentsEmptyEl.classList.toggle("hidden", comments.length > 0);
+  }
 }
 
 const boardInteractions = createBoardInteractionsController({
@@ -1864,6 +2305,13 @@ goDashboardFromBoardBtn.addEventListener("click", () => {
   openHome();
 });
 
+if (goBoardFromPhaseBtn) {
+  goBoardFromPhaseBtn.addEventListener("click", () => {
+    if (!currentBoardId) return;
+    openBoard(currentBoardId, false, boardBackGroupId);
+  });
+}
+
 goDashboardFromGroupBtn.addEventListener("click", () => {
   openHome();
 });
@@ -1924,6 +2372,113 @@ groupBoardStackEl.addEventListener("dblclick", (event) => {
   touchBoard(board);
   renderGroup();
 });
+
+boardEl.addEventListener("click", (event) => {
+  const openPhaseBtn = event.target.closest('[data-role="open-phase-comments"]');
+  if (!openPhaseBtn) return;
+  const columnIndex = Number(openPhaseBtn.dataset.column);
+  if (!Number.isInteger(columnIndex)) return;
+  if (!currentBoardId) return;
+  openBoardPhase(currentBoardId, columnIndex, false, boardBackGroupId);
+});
+
+if (phaseCommentInput) {
+  phaseCommentInput.addEventListener("input", () => {
+    if (phaseCommentCharCountEl) {
+      phaseCommentCharCountEl.textContent = `${phaseCommentInput.value.length} / 1000`;
+    }
+  });
+}
+
+if (phaseCommentForm) {
+  phaseCommentForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const board = getCurrentBoard();
+    if (!board || !Number.isInteger(activePhaseCommentsColumn) || !phaseCommentInput) return;
+    const phaseUid = getPhaseUidByVisualColumn(board, activePhaseCommentsColumn);
+    if (!phaseUid) return;
+    const text = phaseCommentInput.value.trim();
+    if (!text) return;
+    normalizeBoardPhaseComments(board);
+    const list = board.phaseComments[phaseUid] || [];
+    const now = Date.now();
+    list.push({
+      id: board.nextCommentId++,
+      uid: generateUniqueUid(),
+      text,
+      createdAt: now,
+      updatedAt: now,
+    });
+    board.phaseComments[phaseUid] = list.sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
+    phaseCommentInput.value = "";
+    if (phaseCommentCharCountEl) phaseCommentCharCountEl.textContent = "0 / 1000";
+    touchBoard(board);
+    renderEditor();
+    renderPhaseDetailView();
+  });
+}
+
+if (phaseCommentsListEl) {
+  phaseCommentsListEl.addEventListener("click", (event) => {
+    const board = getCurrentBoard();
+    if (!board || !Number.isInteger(activePhaseCommentsColumn)) return;
+    const phaseUid = getPhaseUidByVisualColumn(board, activePhaseCommentsColumn);
+    if (!phaseUid) return;
+    const itemEl = event.target.closest(".phase-comment-item");
+    if (!itemEl) return;
+    const commentUid = itemEl.dataset.commentUid;
+    if (!commentUid) return;
+    const comments = getPhaseComments(board, activePhaseCommentsColumn);
+    const comment = comments.find((entry) => entry.uid === commentUid);
+    if (!comment) return;
+
+    if (event.target.closest('[data-role="edit-phase-comment"]')) {
+      editingPhaseCommentUid = commentUid;
+      renderPhaseDetailView();
+      const inputEl = phaseCommentsListEl.querySelector(
+        `.phase-comment-item[data-comment-uid="${commentUid}"] [data-role="phase-comment-edit-input"]`,
+      );
+      if (inputEl) inputEl.focus();
+      return;
+    }
+
+    if (event.target.closest('[data-role="cancel-phase-comment-edit"]')) {
+      editingPhaseCommentUid = null;
+      renderPhaseDetailView();
+      return;
+    }
+
+    if (event.target.closest('[data-role="save-phase-comment-edit"]')) {
+      const inputEl = itemEl.querySelector('[data-role="phase-comment-edit-input"]');
+      if (!inputEl) return;
+      const text = inputEl.value.trim();
+      if (!text) return;
+      normalizeBoardPhaseComments(board);
+      const source = board.phaseComments[phaseUid] || [];
+      const target = source.find((entry) => entry.uid === commentUid);
+      if (!target) return;
+      target.text = text;
+      target.updatedAt = Date.now();
+      editingPhaseCommentUid = null;
+      touchBoard(board);
+      renderEditor();
+      renderPhaseDetailView();
+      return;
+    }
+
+    if (event.target.closest('[data-role="delete-phase-comment"]')) {
+      const confirmed = window.confirm("Delete this comment?");
+      if (!confirmed) return;
+      normalizeBoardPhaseComments(board);
+      const source = board.phaseComments[phaseUid] || [];
+      board.phaseComments[phaseUid] = source.filter((entry) => entry.uid !== commentUid);
+      editingPhaseCommentUid = null;
+      touchBoard(board);
+      renderEditor();
+      renderPhaseDetailView();
+    }
+  });
+}
 
 if (noteTypeColorGrid) {
   noteTypeColorGrid.addEventListener("click", (event) => {
@@ -2404,6 +2959,52 @@ function closeFactoryResetModal() {
   factoryResetModalOverlay.classList.add("hidden");
 }
 
+function openResetDemosModal() {
+  if (!resetDemosModalOverlay) return;
+  closeOptionsMenu();
+  closeDashboardActionsModal();
+  closeDashboardCreateStoryModal();
+  closeDashboardCreateStructureModal();
+  closeDashboardImportModal();
+  closeDashboardCreateSeriesModal();
+  resetDemosModalOverlay.classList.remove("hidden");
+  if (cancelResetDemosBtn) {
+    cancelResetDemosBtn.focus();
+  }
+}
+
+function closeResetDemosModal() {
+  if (!resetDemosModalOverlay) return;
+  resetDemosModalOverlay.classList.add("hidden");
+}
+
+function openRestoreBackupModal(rawText) {
+  if (!restoreBackupModalOverlay) return;
+  pendingRestoreBackupText = rawText;
+  closeOptionsMenu();
+  closeDashboardActionsModal();
+  closeDashboardCreateStoryModal();
+  closeDashboardCreateStructureModal();
+  closeDashboardImportModal();
+  closeDashboardCreateSeriesModal();
+  restoreBackupModalOverlay.classList.remove("hidden");
+  if (restoreBackupConfirmCheckbox) {
+    restoreBackupConfirmCheckbox.checked = false;
+  }
+  if (confirmRestoreBackupBtn) {
+    confirmRestoreBackupBtn.disabled = true;
+  }
+  if (cancelRestoreBackupBtn) {
+    cancelRestoreBackupBtn.focus();
+  }
+}
+
+function closeRestoreBackupModal() {
+  if (!restoreBackupModalOverlay) return;
+  restoreBackupModalOverlay.classList.add("hidden");
+  pendingRestoreBackupText = null;
+}
+
 if (factoryResetConfirmCheckbox && confirmFactoryResetBtn) {
   factoryResetConfirmCheckbox.addEventListener("change", () => {
     confirmFactoryResetBtn.disabled = !factoryResetConfirmCheckbox.checked;
@@ -2444,11 +3045,74 @@ if (confirmFactoryResetBtn) {
   });
 }
 
+if (cancelResetDemosBtn) {
+  cancelResetDemosBtn.addEventListener("click", () => {
+    closeResetDemosModal();
+  });
+}
+
+if (resetDemosModalOverlay) {
+  resetDemosModalOverlay.addEventListener("click", (event) => {
+    if (event.target === resetDemosModalOverlay) {
+      closeResetDemosModal();
+    }
+  });
+}
+
+if (confirmResetDemosBtn) {
+  confirmResetDemosBtn.addEventListener("click", () => {
+    closeResetDemosModal();
+    replaceDemoBoardsOnly();
+    ensureMatrixTrilogySeriesDemo();
+    openHome();
+  });
+}
+
+if (restoreBackupConfirmCheckbox && confirmRestoreBackupBtn) {
+  restoreBackupConfirmCheckbox.addEventListener("change", () => {
+    confirmRestoreBackupBtn.disabled = !restoreBackupConfirmCheckbox.checked;
+  });
+}
+
+if (cancelRestoreBackupBtn) {
+  cancelRestoreBackupBtn.addEventListener("click", () => {
+    closeRestoreBackupModal();
+  });
+}
+
+if (restoreBackupModalOverlay) {
+  restoreBackupModalOverlay.addEventListener("click", (event) => {
+    if (event.target === restoreBackupModalOverlay) {
+      closeRestoreBackupModal();
+    }
+  });
+}
+
+if (confirmRestoreBackupBtn) {
+  confirmRestoreBackupBtn.addEventListener("click", () => {
+    if (!confirmRestoreBackupBtn || confirmRestoreBackupBtn.disabled || !pendingRestoreBackupText) return;
+    try {
+      restoreFullAppBackupFromText(pendingRestoreBackupText);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Backup restore failed.");
+      closeRestoreBackupModal();
+    }
+  });
+}
+
 // Close with Escape when the modal is open.
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   if (factoryResetModalOverlay && !factoryResetModalOverlay.classList.contains("hidden")) {
     closeFactoryResetModal();
+    return;
+  }
+  if (resetDemosModalOverlay && !resetDemosModalOverlay.classList.contains("hidden")) {
+    closeResetDemosModal();
+    return;
+  }
+  if (restoreBackupModalOverlay && !restoreBackupModalOverlay.classList.contains("hidden")) {
+    closeRestoreBackupModal();
     return;
   }
   if (dashboardCreateStoryModalOverlay && !dashboardCreateStoryModalOverlay.classList.contains("hidden")) {
@@ -2486,17 +3150,7 @@ if (resetDemoDataBtn) {
 }
 
 function resetDemoData() {
-  closeOptionsMenu();
-  const confirmed = window.confirm(
-    "Reset demo stories only? Your personal stories and custom settings/types/archetypes will be kept.",
-  );
-  if (!confirmed) return;
-  closeDashboardActionsModal();
-  closeDashboardCreateStoryModal();
-  closeDashboardCreateStructureModal();
-  replaceDemoBoardsOnly();
-  ensureMatrixTrilogySeriesDemo();
-  openHome();
+  openResetDemosModal();
 }
 
 if (dashboardResetDemoActionBtn) {
@@ -2512,6 +3166,38 @@ if (dashboardFactoryResetActionBtn) {
     closeDashboardCreateStoryModal();
     closeDashboardCreateStructureModal();
     openFactoryResetModal();
+  });
+}
+
+if (dashboardExportBackupActionBtn) {
+  dashboardExportBackupActionBtn.addEventListener("click", () => {
+    closeDashboardActionsModal();
+    exportFullAppBackup();
+  });
+}
+
+if (dashboardRestoreBackupActionBtn && restoreAppBackupInput) {
+  dashboardRestoreBackupActionBtn.addEventListener("click", () => {
+    closeDashboardActionsModal();
+    restoreAppBackupInput.click();
+  });
+
+  restoreAppBackupInput.addEventListener("change", async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      // Validate early so user sees immediate feedback before confirmation modal.
+      const parsed = JSON.parse(text);
+      if (!parsed || typeof parsed !== "object" || parsed.backupType !== "structurer.full-backup") {
+        throw new Error("This file is not a Structurer full backup.");
+      }
+      openRestoreBackupModal(text);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Backup restore failed.");
+    } finally {
+      restoreAppBackupInput.value = "";
+    }
   });
 }
 
@@ -2618,6 +3304,7 @@ boards.forEach((board) => {
     board.phaseOrder = identityPhaseOrder(getStructureConfig(board.structureId).phases.length);
   }
   normalizeOrders(board.notes, board.structureId);
+  normalizeBoardPhaseComments(board);
 });
 if (loadedBoards === null) {
   boards = DEMO_BOARD_DATA.map((demo) => createDemoBoardFromJson(demo));

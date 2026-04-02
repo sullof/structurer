@@ -1,5 +1,18 @@
 # History
 
+**1.11.0** - 2026-04-02
+- Added a dedicated phase details route (`/<story-slug>/phase/<n>`) opened from each phase magnifier, with contextual back navigation to the story.
+- Replaced the initial phase comments modal with a full page split layout: read-only notes for the selected phase (context pane) and a separate comments workspace.
+- Added phase comments CRUD (add/edit/delete) with max length validation and compact icon-based edit/delete actions.
+- Added board-level phase comment counters so each phase surfaces how many comments are attached.
+- Introduced stable per-phase UIDs (`phaseUids`) and migrated phase comments to phase-identity storage so comments remain attached to the correct phase after phase reordering.
+- Extended story export/import payloads to include phase UIDs and phase comments.
+- Extended merge logic to include phase comments with last-write-wins by comment UID and `updatedAt`, including safe migration from legacy column-index keyed comments.
+
+**1.10.1** - 2026-04-02
+- Added full app backup export from dashboard actions (`Export full app backup`), producing a single JSON file with stories, series, settings, custom structures/archetypes/note types, note type overrides, and demo tracking ids.
+- Added full app restore from dashboard actions (`Restore from full backup`) for device migration scenarios: restore clears local app data on the current device and replaces it with backup data, then reloads the app.
+
 **1.10.0** - 2026-04-02
 - Renamed Boards to Stories in the user-facing UI (FAQ, dashboard, modals, and commands).
 - Renamed Groups to Series in the user-facing UI (dashboard, modals, and FAQ).

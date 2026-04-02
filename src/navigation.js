@@ -3,6 +3,7 @@ export function createNavigationController({
   homeRoute,
   getBoards,
   getGroups,
+  getStructureConfig,
   getCurrentBoardId,
   setCurrentBoardId,
   setCurrentGroupId,
@@ -11,10 +12,11 @@ export function createNavigationController({
   renderHome,
   renderEditor,
   renderGroup,
+  renderPhaseDetail,
   applyColumnWidth,
   applyWrapColumns,
 }) {
-  const { landingView, homeView, groupView, editorView, helpView, privacyView, termsView } = views;
+  const { landingView, homeView, groupView, editorView, phaseView, helpView, privacyView, termsView } = views;
 
   function normalizePathname(pathname) {
     if (!pathname || pathname === "/") return "/";
@@ -39,6 +41,7 @@ export function createNavigationController({
     homeView.classList.remove("hidden");
     groupView.classList.add("hidden");
     editorView.classList.add("hidden");
+    if (phaseView) phaseView.classList.add("hidden");
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
@@ -52,6 +55,7 @@ export function createNavigationController({
     homeView.classList.add("hidden");
     groupView.classList.add("hidden");
     editorView.classList.add("hidden");
+    if (phaseView) phaseView.classList.add("hidden");
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
@@ -64,6 +68,7 @@ export function createNavigationController({
     homeView.classList.add("hidden");
     groupView.classList.add("hidden");
     editorView.classList.add("hidden");
+    if (phaseView) phaseView.classList.add("hidden");
     helpView.classList.remove("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
@@ -76,6 +81,7 @@ export function createNavigationController({
     homeView.classList.add("hidden");
     groupView.classList.add("hidden");
     editorView.classList.add("hidden");
+    if (phaseView) phaseView.classList.add("hidden");
     helpView.classList.add("hidden");
     privacyView.classList.remove("hidden");
   }
@@ -87,6 +93,7 @@ export function createNavigationController({
     homeView.classList.add("hidden");
     groupView.classList.add("hidden");
     editorView.classList.add("hidden");
+    if (phaseView) phaseView.classList.add("hidden");
     helpView.classList.add("hidden");
     termsView.classList.remove("hidden");
   }
@@ -104,12 +111,43 @@ export function createNavigationController({
     homeView.classList.add("hidden");
     groupView.classList.add("hidden");
     editorView.classList.remove("hidden");
+    if (phaseView) phaseView.classList.add("hidden");
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
     renderEditor();
     applyColumnWidth();
     applyWrapColumns();
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+  }
+
+  function showBoardPhase(boardId, phaseIndex) {
+    const board = getBoards().find((item) => item.id === boardId);
+    if (!board) {
+      showHome();
+      return;
+    }
+    const phaseCount = getStructureConfig(board.structureId).phases.length;
+    if (!Number.isInteger(phaseIndex) || phaseIndex < 0 || phaseIndex >= phaseCount) {
+      showBoard(boardId);
+      return;
+    }
+    setCurrentBoardId(boardId);
+    clearEditingNoteId();
+    setCurrentGroupId(null);
+    landingView.classList.add("hidden");
+    homeView.classList.add("hidden");
+    groupView.classList.add("hidden");
+    editorView.classList.add("hidden");
+    if (phaseView) phaseView.classList.remove("hidden");
+    helpView.classList.add("hidden");
+    if (privacyView) privacyView.classList.add("hidden");
+    if (termsView) termsView.classList.add("hidden");
+    if (typeof renderPhaseDetail === "function") {
+      renderPhaseDetail(board.id, phaseIndex);
+    }
     requestAnimationFrame(() => {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     });
@@ -127,6 +165,7 @@ export function createNavigationController({
     homeView.classList.add("hidden");
     groupView.classList.remove("hidden");
     editorView.classList.add("hidden");
+    if (phaseView) phaseView.classList.add("hidden");
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
@@ -140,6 +179,20 @@ export function createNavigationController({
     const path = `/${board.slug}`;
     navigateTo(path, replaceRoute);
     showBoard(board.id);
+  }
+
+  function openBoardPhase(boardId, phaseIndex, replaceRoute = false, fromGroupId = null) {
+    const board = getBoards().find((item) => item.id === boardId);
+    if (!board) return;
+    const phaseCount = getStructureConfig(board.structureId).phases.length;
+    if (!Number.isInteger(phaseIndex) || phaseIndex < 0 || phaseIndex >= phaseCount) {
+      openBoard(board.id, replaceRoute, fromGroupId);
+      return;
+    }
+    setBoardBackGroupId(fromGroupId);
+    const path = `/${board.slug}/phase/${phaseIndex + 1}`;
+    navigateTo(path, replaceRoute);
+    showBoardPhase(board.id, phaseIndex);
   }
 
   function openHome(replaceRoute = false) {
@@ -213,6 +266,25 @@ export function createNavigationController({
       showGroup(group.id);
       return;
     }
+    const phaseRouteMatch = path.match(/^\/([^/]+)\/phase\/(\d+)$/);
+    if (phaseRouteMatch) {
+      const [, slug, phaseIndexRaw] = phaseRouteMatch;
+      const board = getBoards().find((item) => item.slug === slug);
+      const oneBasedIndex = Number(phaseIndexRaw);
+      if (!board || !Number.isInteger(oneBasedIndex)) {
+        openLanding(replaceRoute);
+        return;
+      }
+      const phaseCount = getStructureConfig(board.structureId).phases.length;
+      const phaseIndex = oneBasedIndex - 1;
+      if (phaseIndex < 0 || phaseIndex >= phaseCount) {
+        openBoard(board.id, true);
+        return;
+      }
+      setBoardBackGroupId(null);
+      showBoardPhase(board.id, phaseIndex);
+      return;
+    }
     const slug = path.slice(1);
     const board = getBoards().find((item) => item.slug === slug);
     if (!board) {
@@ -230,8 +302,10 @@ export function createNavigationController({
     showPrivacy,
     showTerms,
     showBoard,
+    showBoardPhase,
     showGroup,
     openBoard,
+    openBoardPhase,
     openHome,
     openLanding,
     openHelp,
