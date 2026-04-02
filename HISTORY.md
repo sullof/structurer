@@ -1,5 +1,8 @@
 # History
 
+**1.12.1** - 2026-04-02
+- Help: added FAQ *I don't speak English. Where can I find structures in my language?* (built-in presets are in English; non-English structures come from imported extensions, with a pointer to the following FAQ on extensions and import).
+
 **1.12.0** - 2026-04-02
 - Added dashboard actions to export and import custom structures as a dedicated JSON package (`structurer.custom-structures`).
 - Added strict import validation for custom structures (required fields, id/uid format, non-empty phase arrays, duplicate checks, and built-in id conflict checks): if any entry is invalid, the full import fails.
