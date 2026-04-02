@@ -37,7 +37,7 @@ The web version keeps your work private in your browser `localStorage`: no user 
 - Export a story to JSON and import saved stories from JSON
 - Dedicated phase details page (`/<story-slug>/phase/<n>`) opened from phase magnifier
 - Phase details layout with read-only phase notes (context) and comment workspace
-- Phase comments CRUD (add/edit/delete) with 1000-char limit per comment
+- Phase comments CRUD (add/edit/delete); no fixed character limit
 - Story phase comment counters in board view
 - Phase comments are phase-UID based (stable under phase reordering)
 - Story import/export merge includes phase comments with LWW per comment UID (`updatedAt`)

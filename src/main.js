@@ -2327,7 +2327,7 @@ function renderPhaseDetailView() {
       return `<article class="phase-comment-item${isEditing ? " is-editing" : ""}" data-comment-uid="${comment.uid}">
         ${
           isEditing
-            ? `<textarea class="phase-comment-edit-input" data-role="phase-comment-edit-input" maxlength="1000">${escapeHtml(
+            ? `<textarea class="phase-comment-edit-input" data-role="phase-comment-edit-input">${escapeHtml(
                 comment.text,
               )}</textarea>`
             : ""
@@ -2623,7 +2623,8 @@ boardEl.addEventListener("click", (event) => {
 if (phaseCommentInput) {
   phaseCommentInput.addEventListener("input", () => {
     if (phaseCommentCharCountEl) {
-      phaseCommentCharCountEl.textContent = `${phaseCommentInput.value.length} / 1000`;
+      const n = phaseCommentInput.value.length;
+      phaseCommentCharCountEl.textContent = `${n} character${n === 1 ? "" : "s"}`;
     }
   });
 }
@@ -2649,7 +2650,7 @@ if (phaseCommentForm) {
     });
     board.phaseComments[phaseUid] = list.sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
     phaseCommentInput.value = "";
-    if (phaseCommentCharCountEl) phaseCommentCharCountEl.textContent = "0 / 1000";
+    if (phaseCommentCharCountEl) phaseCommentCharCountEl.textContent = "0 characters";
     touchBoard(board);
     renderEditor();
     renderPhaseDetailView();

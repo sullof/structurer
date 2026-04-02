@@ -1,5 +1,8 @@
 # History
 
+**1.12.2** - 2026-04-02
+- Removed the previous 1000-character limit on phase comments (add form and inline edit); character count is still shown as a live length without a cap.
+
 **1.12.1** - 2026-04-02
 - Help: added FAQ *I don't speak English. Where can I find structures in my language?* (built-in presets are in English; non-English structures come from imported extensions, with a pointer to the following FAQ on extensions and import).
 
