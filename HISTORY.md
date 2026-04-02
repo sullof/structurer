@@ -1,5 +1,16 @@
 # History
 
+**1.12.0** - 2026-04-02
+- Added dashboard actions to export and import custom structures as a dedicated JSON package (`structurer.custom-structures`).
+- Added strict import validation for custom structures (required fields, id/uid format, non-empty phase arrays, duplicate checks, and built-in id conflict checks): if any entry is invalid, the full import fails.
+- Added custom-structure merge behavior with deterministic outcomes: merge by structure UID first, fallback by normalized fingerprint (name + phases), and last-write-wins by `updatedAt`.
+- Added a second import path for custom structures: paste JSON directly in dashboard actions (`Import custom structure (paste JSON)`), reusing the same strict validation and merge logic.
+- Moved the extensions catalog and JSON packs to a dedicated repository ([structurer-extensions](https://github.com/StructurerHQ/structurer-extensions) under **StructurerHQ**); the main app repo no longer ships extension JSON files. Help/FAQ/README link to the external catalog and the main app under `StructurerHQ/structurer`.
+- Added dashboard **Active structures**: a compact multi-column list of all available structure names (built-in + custom), with a **NEW** badge for recently added or imported custom structures (based on local activity timestamps within the last hour, without overwriting merge `updatedAt` semantics). Stored activity in `localStorage` under `structurer.customStructureActivity.v1`, included in full app backup/restore.
+- Refreshed the dashboard after custom-structure import so **Active structures** updates immediately; user-facing import alerts use plain-language success/skip/error messages instead of raw Created/Updated/Skipped counts.
+- Improved dashboard readability: more padding inside story/series cards and the Active structures panel; empty-state copy now refers to **... Actions** and stays visible until the user has at least one non-demo story.
+- Help FAQ: extensions section mentions both file import and paste-JSON import.
+
 **1.11.0** - 2026-04-02
 - Added a dedicated phase details route (`/<story-slug>/phase/<n>`) opened from each phase magnifier, with contextual back navigation to the story.
 - Replaced the initial phase comments modal with a full page split layout: read-only notes for the selected phase (context pane) and a separate comments workspace.

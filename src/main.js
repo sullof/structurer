@@ -42,6 +42,7 @@ const loadedBoards = loadBoards();
 let boards = loadedBoards || [];
 const GROUPS_KEY = "structurer.groups.v1";
 const DEMO_BOARD_IDS_KEY = "structurer.demoBoardIds.v1";
+const CUSTOM_STRUCTURE_ACTIVITY_KEY = "structurer.customStructureActivity.v1";
 const issuedUids = new Set();
 let groups = loadGroups();
 let demoBoardIds = loadDemoBoardIds();
@@ -53,6 +54,7 @@ let activePhaseCommentsColumn = null;
 let editingPhaseCommentUid = null;
 let boardActionsModalBoardId = null;
 let customStructures = loadCustomStructures();
+let customStructureActivity = loadCustomStructureActivity();
 let customArchetypes = loadCustomArchetypes();
 let customNoteTypes = loadCustomNoteTypes();
 let pendingNoteTypeColorResolve = null;
@@ -71,6 +73,7 @@ const editorView = document.querySelector("#editor-view");
 const phaseView = document.querySelector("#phase-view");
 const groupsList = document.querySelector("#groups-list");
 const boardsList = document.querySelector("#boards-list");
+const dashboardStructuresList = document.querySelector("#dashboard-structures-list");
 const dashboardGroupsHeading = document.querySelector("#dashboard-groups-heading");
 const dashboardBoardsHeading = document.querySelector("#dashboard-boards-heading");
 const emptyState = document.querySelector("#empty-state");
@@ -134,8 +137,16 @@ const closeDashboardCreateStructureModalBtn = document.querySelector("#close-das
 const dashboardResetDemoActionBtn = document.querySelector("#dashboard-reset-demo-action");
 const dashboardFactoryResetActionBtn = document.querySelector("#dashboard-factory-reset-action");
 const dashboardExportBackupActionBtn = document.querySelector("#dashboard-export-backup-action");
+const dashboardExportStructuresActionBtn = document.querySelector("#dashboard-export-structures-action");
+const dashboardImportStructuresActionBtn = document.querySelector("#dashboard-import-structures-action");
+const dashboardImportStructuresPasteActionBtn = document.querySelector("#dashboard-import-structures-paste-action");
 const dashboardRestoreBackupActionBtn = document.querySelector("#dashboard-restore-backup-action");
 const restoreAppBackupInput = document.querySelector("#restore-app-backup-input");
+const importCustomStructuresInput = document.querySelector("#import-custom-structures-input");
+const dashboardImportStructuresPasteModalOverlay = document.querySelector("#dashboard-import-structures-paste-modal-overlay");
+const closeDashboardImportStructuresPasteModalBtn = document.querySelector("#close-dashboard-import-structures-paste-modal");
+const importStructuresPasteForm = document.querySelector("#import-structures-paste-form");
+const importStructuresPasteText = document.querySelector("#import-structures-paste-text");
 const openImportStoryActionBtn = document.querySelector("#open-import-story-action");
 const dashboardImportModalOverlay = document.querySelector("#dashboard-import-modal-overlay");
 const closeDashboardImportModalBtn = document.querySelector("#close-dashboard-import-modal");
@@ -276,6 +287,22 @@ function loadCustomStructures() {
 
 function saveCustomStructures() {
   saveCustomStructuresToStorage(CUSTOM_STRUCTURES_KEY, customStructures);
+}
+
+function loadCustomStructureActivity() {
+  const parsed = loadJsonItem(CUSTOM_STRUCTURE_ACTIVITY_KEY, {});
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+  const normalized = {};
+  Object.entries(parsed).forEach(([uid, ts]) => {
+    const value = Number(ts);
+    if (!uid || !Number.isFinite(value) || value <= 0) return;
+    normalized[uid] = value;
+  });
+  return normalized;
+}
+
+function saveCustomStructureActivity() {
+  saveJsonItem(CUSTOM_STRUCTURE_ACTIVITY_KEY, customStructureActivity);
 }
 
 function loadCustomArchetypes() {
@@ -1012,13 +1039,35 @@ function renderHome() {
   if (homeListControlsEl) {
     boardsList.appendChild(homeListControlsEl);
   }
+  if (dashboardStructuresList) {
+    const oneHourMs = 60 * 60 * 1000;
+    const now = Date.now();
+    const customIds = new Set(customStructures.map((structure) => structure.id));
+    const structureItems = getAllStructureList()
+      .map((structure) => {
+        const isCustom = customIds.has(structure.id);
+        const activityAt = Number(customStructureActivity[structure.uid]) || 0;
+        const updatedAt = Number(structure.updatedAt) || 0;
+        const freshnessTs = Math.max(activityAt, updatedAt);
+        const isNew = isCustom && now - freshnessTs >= 0 && now - freshnessTs < oneHourMs;
+        return { name: structure.name, isNew };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+    dashboardStructuresList.innerHTML = structureItems
+      .map(
+        (item) =>
+          `<li>${escapeHtml(item.name)}${item.isNew ? ' <span class="dashboard-structure-badge-new">NEW</span>' : ""}</li>`,
+      )
+      .join("");
+  }
   if (dashboardGroupsHeading) {
     dashboardGroupsHeading.classList.toggle("hidden", sortedGroups.length === 0);
   }
   if (dashboardBoardsHeading) {
     dashboardBoardsHeading.classList.toggle("hidden", sortedBoards.length === 0);
   }
-  emptyState.style.display = sortedBoards.length === 0 && sortedGroups.length === 0 ? "block" : "none";
+  const hasAtLeastOneNonDemoStory = boards.some((board) => !isDemoBoard(board));
+  emptyState.style.display = hasAtLeastOneNonDemoStory ? "none" : "block";
   applyDemoVisibilityControl();
   renderCreateGroupBoardCheckboxes();
 }
@@ -1508,6 +1557,186 @@ function downloadJsonFile(payload, filename) {
   URL.revokeObjectURL(url);
 }
 
+function normalizeStructureFingerprint(name, phases) {
+  const normalizedName = String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+  const normalizedPhases = Array.isArray(phases)
+    ? phases.map((phase) => String(phase || "").trim().toLowerCase().replace(/\s+/g, " ")).join("|")
+    : "";
+  return `${normalizedName}::${normalizedPhases}`;
+}
+
+function exportCustomStructures() {
+  const payload = {
+    exportType: "structurer.custom-structures",
+    schemaVersion: 1,
+    exportedAt: Date.now(),
+    appVersion: packageJson.version || "",
+    structures: customStructures.map((structure) => ({
+      id: structure.id,
+      uid: structure.uid,
+      name: structure.name,
+      phases: Array.isArray(structure.phases) ? structure.phases : [],
+      updatedAt: Number.isFinite(structure.updatedAt) ? structure.updatedAt : Date.now(),
+    })),
+  };
+  const stamp = new Date().toISOString().replace(/[:]/g, "-").slice(0, 19);
+  downloadJsonFile(payload, `structurer-custom-structures-${stamp}.json`);
+}
+
+function parseImportedCustomStructures(rawText) {
+  const parsed = JSON.parse(rawText);
+  if (!parsed || typeof parsed !== "object" || parsed.exportType !== "structurer.custom-structures") {
+    throw new Error("Invalid custom structures file.");
+  }
+  if (!Array.isArray(parsed.structures) || parsed.structures.length === 0) {
+    throw new Error("Invalid custom structures file: structures must be a non-empty array.");
+  }
+  const builtInIds = new Set(Object.keys(BUILTIN_STRUCTURES));
+  const localByUid = new Map(customStructures.map((item) => [item.uid, item]));
+  const localById = new Map(customStructures.map((item) => [item.id, item]));
+  const seenIds = new Set();
+  const seenUids = new Set();
+  const seenFingerprints = new Set();
+  const normalized = parsed.structures.map((item, index) => {
+    if (!item || typeof item !== "object") {
+      throw new Error(`Invalid custom structures file: entry #${index + 1} must be an object.`);
+    }
+    const id = typeof item.id === "string" ? item.id.trim() : "";
+    const uid = typeof item.uid === "string" ? item.uid.trim() : "";
+    const name = typeof item.name === "string" ? item.name.trim() : "";
+    const phases = Array.isArray(item.phases) ? item.phases.map((phase) => String(phase || "").trim()) : null;
+    const updatedAt = Number.isFinite(item.updatedAt) ? item.updatedAt : Date.now();
+
+    if (!id || !uid || !name || !phases) {
+      throw new Error(`Invalid custom structures file: entry #${index + 1} is missing required fields.`);
+    }
+    if (!/^custom_[a-z0-9_]+$/.test(id)) {
+      throw new Error(`Invalid custom structures file: entry #${index + 1} has invalid id "${id}".`);
+    }
+    if (!/^[a-z0-9][a-z0-9_-]*$/i.test(uid)) {
+      throw new Error(`Invalid custom structures file: entry #${index + 1} has invalid uid "${uid}".`);
+    }
+    if (phases.length < 2 || phases.some((phase) => !phase)) {
+      throw new Error(`Invalid custom structures file: entry #${index + 1} must include at least 2 non-empty phases.`);
+    }
+    if (builtInIds.has(id)) {
+      throw new Error(`Invalid custom structures file: id "${id}" conflicts with a built-in structure.`);
+    }
+    if (seenIds.has(id)) {
+      throw new Error(`Invalid custom structures file: duplicate id "${id}".`);
+    }
+    if (seenUids.has(uid)) {
+      throw new Error(`Invalid custom structures file: duplicate uid "${uid}".`);
+    }
+    const fingerprint = normalizeStructureFingerprint(name, phases);
+    if (seenFingerprints.has(fingerprint)) {
+      throw new Error(`Invalid custom structures file: duplicate structure content for "${name}".`);
+    }
+    seenIds.add(id);
+    seenUids.add(uid);
+    seenFingerprints.add(fingerprint);
+
+    const localBySameId = localById.get(id);
+    if (localBySameId && localBySameId.uid !== uid) {
+      throw new Error(`Invalid custom structures file: id "${id}" conflicts with another local structure.`);
+    }
+    const localBySameUid = localByUid.get(uid);
+    if (localBySameUid && localBySameUid.id !== id) {
+      throw new Error(`Invalid custom structures file: uid "${uid}" conflicts with local id mapping.`);
+    }
+    return { id, uid, name, phases, updatedAt };
+  });
+
+  return normalized;
+}
+
+function importCustomStructuresFromText(rawText) {
+  const imported = parseImportedCustomStructures(rawText);
+  const localByUid = new Map(customStructures.map((item) => [item.uid, item]));
+  const localByFingerprint = new Map(
+    customStructures.map((item) => [normalizeStructureFingerprint(item.name, item.phases), item]),
+  );
+
+  let createdCount = 0;
+  let updatedCount = 0;
+  let skippedCount = 0;
+  const importTimestamp = Date.now();
+
+  imported.forEach((incoming) => {
+    const localByUidMatch = localByUid.get(incoming.uid);
+    if (localByUidMatch) {
+      if ((incoming.updatedAt || 0) > (localByUidMatch.updatedAt || 0)) {
+        localByUidMatch.name = incoming.name;
+        localByUidMatch.phases = incoming.phases;
+        localByUidMatch.updatedAt = incoming.updatedAt;
+        customStructureActivity[localByUidMatch.uid] = importTimestamp;
+        updatedCount += 1;
+      } else {
+        skippedCount += 1;
+      }
+      return;
+    }
+    const localByFingerprintMatch = localByFingerprint.get(
+      normalizeStructureFingerprint(incoming.name, incoming.phases),
+    );
+    if (localByFingerprintMatch) {
+      if ((incoming.updatedAt || 0) > (localByFingerprintMatch.updatedAt || 0)) {
+        localByFingerprintMatch.name = incoming.name;
+        localByFingerprintMatch.phases = incoming.phases;
+        localByFingerprintMatch.updatedAt = incoming.updatedAt;
+        customStructureActivity[localByFingerprintMatch.uid] = importTimestamp;
+        updatedCount += 1;
+      } else {
+        skippedCount += 1;
+      }
+      return;
+    }
+    customStructures.push({
+      id: incoming.id,
+      uid: incoming.uid,
+      name: incoming.name,
+      phases: incoming.phases,
+      updatedAt: incoming.updatedAt,
+    });
+    customStructureActivity[incoming.uid] = importTimestamp;
+    createdCount += 1;
+  });
+
+  if (createdCount > 0 || updatedCount > 0) {
+    saveCustomStructures();
+    saveCustomStructureActivity();
+    renderStructureOptions();
+    renderHome();
+  }
+
+  return { createdCount, updatedCount, skippedCount, total: imported.length };
+}
+
+function getCustomStructureImportSuccessMessage(result) {
+  const changedCount = result.createdCount + result.updatedCount;
+  if (changedCount > 0 && result.skippedCount === 0) {
+    return "Import completed. The structure is now available in the Active structures list.";
+  }
+  if (changedCount > 0 && result.skippedCount > 0) {
+    return "Import completed. Some structures were added/updated, while others were already present and were skipped.";
+  }
+  return "Nothing changed. This structure is already present and up to date.";
+}
+
+function getCustomStructureImportErrorMessage(error) {
+  const message = error instanceof Error ? error.message : "";
+  if (!message) {
+    return "Import failed. The file appears to be invalid or corrupted.";
+  }
+  if (message.startsWith("Invalid custom structures file")) {
+    return "Import failed. The structure file format is invalid or corrupted.";
+  }
+  return `Import failed. ${message}`;
+}
+
 function exportFullAppBackup() {
   const backup = {
     backupType: "structurer.full-backup",
@@ -1518,6 +1747,7 @@ function exportFullAppBackup() {
       boards,
       settings: { columnMinWidth, wrapColumns, showDemoBoards },
       customStructures,
+      customStructureActivity,
       customArchetypes,
       customNoteTypes,
       noteTypeOverrides,
@@ -1545,6 +1775,8 @@ function restoreFullAppBackupFromText(rawText) {
   const nextBoards = Array.isArray(data.boards) ? data.boards : [];
   const nextSettings = data.settings && typeof data.settings === "object" ? data.settings : {};
   const nextCustomStructures = Array.isArray(data.customStructures) ? data.customStructures : [];
+  const nextCustomStructureActivity =
+    data.customStructureActivity && typeof data.customStructureActivity === "object" ? data.customStructureActivity : {};
   const nextCustomArchetypes = Array.isArray(data.customArchetypes) ? data.customArchetypes : [];
   const nextCustomNoteTypes = Array.isArray(data.customNoteTypes) ? data.customNoteTypes : [];
   const nextNoteTypeOverrides =
@@ -1556,6 +1788,7 @@ function restoreFullAppBackupFromText(rawText) {
     STORAGE_KEY,
     SETTINGS_KEY,
     CUSTOM_STRUCTURES_KEY,
+    CUSTOM_STRUCTURE_ACTIVITY_KEY,
     CUSTOM_ARCHETYPES_KEY,
     CUSTOM_NOTE_TYPES_KEY,
     NOTE_TYPE_OVERRIDES_KEY,
@@ -1565,6 +1798,7 @@ function restoreFullAppBackupFromText(rawText) {
   saveJsonItem(STORAGE_KEY, nextBoards);
   saveJsonItem(SETTINGS_KEY, nextSettings);
   saveJsonItem(CUSTOM_STRUCTURES_KEY, nextCustomStructures);
+  saveJsonItem(CUSTOM_STRUCTURE_ACTIVITY_KEY, nextCustomStructureActivity);
   saveJsonItem(CUSTOM_ARCHETYPES_KEY, nextCustomArchetypes);
   saveJsonItem(CUSTOM_NOTE_TYPES_KEY, nextCustomNoteTypes);
   saveJsonItem(NOTE_TYPE_OVERRIDES_KEY, nextNoteTypeOverrides);
@@ -2187,14 +2421,18 @@ createStructureForm.addEventListener("submit", (event) => {
     suffix += 1;
   }
 
+  const createdAt = Date.now();
+  const uid = generateUniqueUid();
   customStructures.push({
     id,
-    uid: generateUniqueUid(),
+    uid,
     name,
     phases: phaseValues,
-    updatedAt: Date.now(),
+    updatedAt: createdAt,
   });
+  customStructureActivity[uid] = createdAt;
   saveCustomStructures();
+  saveCustomStructureActivity();
   renderStructureOptions(id);
   structureNameInput.value = "";
   renderStructurePhaseRows(["", "", ""]);
@@ -2767,11 +3005,18 @@ function closeDashboardCreateSeriesModal() {
   dashboardCreateSeriesModalOverlay.classList.add("hidden");
 }
 
+function closeDashboardImportStructuresPasteModal() {
+  if (!dashboardImportStructuresPasteModalOverlay) return;
+  dashboardImportStructuresPasteModalOverlay.classList.add("hidden");
+  if (importStructuresPasteText) importStructuresPasteText.value = "";
+}
+
 function openDashboardActionsModal() {
   if (!dashboardActionsModalOverlay) return;
   closeOptionsMenu();
   closeDashboardCreateStoryModal();
   closeDashboardCreateStructureModal();
+  closeDashboardImportStructuresPasteModal();
   closeDashboardImportModal();
   closeDashboardCreateSeriesModal();
   dashboardActionsModalOverlay.classList.remove("hidden");
@@ -2803,6 +3048,13 @@ function openDashboardCreateSeriesModal() {
   if (!dashboardCreateSeriesModalOverlay) return;
   closeDashboardActionsModal();
   dashboardCreateSeriesModalOverlay.classList.remove("hidden");
+}
+
+function openDashboardImportStructuresPasteModal() {
+  if (!dashboardImportStructuresPasteModalOverlay) return;
+  closeDashboardActionsModal();
+  dashboardImportStructuresPasteModalOverlay.classList.remove("hidden");
+  if (importStructuresPasteText) importStructuresPasteText.focus();
 }
 
 function openResizeModal() {
@@ -2893,6 +3145,12 @@ if (openCreateSeriesActionBtn) {
   });
 }
 
+if (dashboardImportStructuresPasteActionBtn) {
+  dashboardImportStructuresPasteActionBtn.addEventListener("click", () => {
+    openDashboardImportStructuresPasteModal();
+  });
+}
+
 if (closeDashboardImportModalBtn) {
   closeDashboardImportModalBtn.addEventListener("click", () => {
     closeDashboardImportModal();
@@ -2902,6 +3160,12 @@ if (closeDashboardImportModalBtn) {
 if (closeDashboardCreateSeriesModalBtn) {
   closeDashboardCreateSeriesModalBtn.addEventListener("click", () => {
     closeDashboardCreateSeriesModal();
+  });
+}
+
+if (closeDashboardImportStructuresPasteModalBtn) {
+  closeDashboardImportStructuresPasteModalBtn.addEventListener("click", () => {
+    closeDashboardImportStructuresPasteModal();
   });
 }
 
@@ -2932,6 +3196,12 @@ if (dashboardImportModalOverlay) {
 if (dashboardCreateSeriesModalOverlay) {
   dashboardCreateSeriesModalOverlay.addEventListener("click", (event) => {
     if (event.target === dashboardCreateSeriesModalOverlay) closeDashboardCreateSeriesModal();
+  });
+}
+
+if (dashboardImportStructuresPasteModalOverlay) {
+  dashboardImportStructuresPasteModalOverlay.addEventListener("click", (event) => {
+    if (event.target === dashboardImportStructuresPasteModalOverlay) closeDashboardImportStructuresPasteModal();
   });
 }
 
@@ -3131,6 +3401,13 @@ document.addEventListener("keydown", (event) => {
     closeDashboardCreateSeriesModal();
     return;
   }
+  if (
+    dashboardImportStructuresPasteModalOverlay &&
+    !dashboardImportStructuresPasteModalOverlay.classList.contains("hidden")
+  ) {
+    closeDashboardImportStructuresPasteModal();
+    return;
+  }
   if (dashboardActionsModalOverlay && !dashboardActionsModalOverlay.classList.contains("hidden")) {
     closeDashboardActionsModal();
   }
@@ -3173,6 +3450,54 @@ if (dashboardExportBackupActionBtn) {
   dashboardExportBackupActionBtn.addEventListener("click", () => {
     closeDashboardActionsModal();
     exportFullAppBackup();
+  });
+}
+
+if (dashboardExportStructuresActionBtn) {
+  dashboardExportStructuresActionBtn.addEventListener("click", () => {
+    closeDashboardActionsModal();
+    exportCustomStructures();
+  });
+}
+
+if (dashboardImportStructuresActionBtn && importCustomStructuresInput) {
+  dashboardImportStructuresActionBtn.addEventListener("click", () => {
+    closeDashboardActionsModal();
+    importCustomStructuresInput.click();
+  });
+
+  importCustomStructuresInput.addEventListener("change", async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const result = importCustomStructuresFromText(text);
+      window.alert(getCustomStructureImportSuccessMessage(result));
+    } catch (error) {
+      window.alert(getCustomStructureImportErrorMessage(error));
+    } finally {
+      importCustomStructuresInput.value = "";
+    }
+  });
+}
+
+if (importStructuresPasteForm && importStructuresPasteText) {
+  importStructuresPasteForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const rawText = importStructuresPasteText.value.trim();
+    if (!rawText) return;
+    const maxChars = 2 * 1024 * 1024;
+    if (rawText.length > maxChars) {
+      window.alert("Pasted JSON is too large. Please use a smaller payload or file import.");
+      return;
+    }
+    try {
+      const result = importCustomStructuresFromText(rawText);
+      closeDashboardImportStructuresPasteModal();
+      window.alert(getCustomStructureImportSuccessMessage(result));
+    } catch (error) {
+      window.alert(getCustomStructureImportErrorMessage(error));
+    }
   });
 }
 

@@ -44,6 +44,10 @@
                 Export any story as JSON and import it in another browser or computer. Your format is consistent
                 across instances of Structurer.
               </p>
+              <p>
+                You can also import community extension packs (custom structures) from the dashboard actions to expand
+                your available structure library.
+              </p>
             </article>
             <article class="landing-card card-theme">
               <h3>About the demos</h3>
@@ -94,7 +98,7 @@
         </header>
 
         <section id="empty-state" class="empty-state">
-          <p>No stories yet. Create your first story to begin planning.</p>
+          <p>No personal stories yet. Create your first story from <strong>... Actions</strong> to begin planning.</p>
         </section>
 
         <section class="dashboard-section">
@@ -104,6 +108,10 @@
         <section class="dashboard-section">
           <h2 id="dashboard-boards-heading" class="dashboard-section-title">Stories</h2>
           <section id="boards-list" class="boards-list"></section>
+        </section>
+        <section class="dashboard-section">
+          <h2 class="dashboard-section-title">Active structures</h2>
+          <ul id="dashboard-structures-list" class="dashboard-structures-list"></ul>
         </section>
         <div class="home-list-controls">
           <button id="toggle-demo-visibility" class="link-button" type="button">Hide demos</button>
@@ -307,6 +315,41 @@
               <p>
                 For example, if you want to follow a structure like <em>Freytag's Pyramid</em> (which is not included
                 by default), you can add its phases manually and save it as your own reusable structure.
+              </p>
+              <p>
+                You can also import ready-made custom structure packs from dashboard actions using
+                <strong>Import custom structure</strong>.
+              </p>
+            </div>
+          </details>
+
+          <details class="help-faq-item">
+            <summary>What are extensions and how do I use them?</summary>
+            <div class="help-faq-content">
+              <p>
+                Extensions are curated custom structure packs distributed as JSON files. They let you add new narrative
+                frameworks (including non-English variants) without changing the built-in defaults.
+              </p>
+              <p>
+                To use one: download a JSON file from the extensions catalog, open dashboard <strong>... Actions</strong>,
+                click <strong>Import custom structure</strong> and select the file, or use
+                <strong>Import custom structure (paste JSON)</strong> to paste JSON directly.
+              </p>
+              <p>
+                See the catalog in
+                <a
+                  href="https://github.com/StructurerHQ/structurer-extensions/blob/main/EXTENSIONS.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  ><strong>EXTENSIONS.md</strong></a
+                >
+                and contribution rules in
+                <a
+                  href="https://github.com/StructurerHQ/structurer-extensions/blob/main/CONTRIBUTING_EXTENSIONS.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  ><strong>CONTRIBUTING_EXTENSIONS.md</strong></a
+                >.
               </p>
             </div>
           </details>
@@ -593,6 +636,9 @@
           <div class="board-actions-modal-list">
             <button id="open-create-story-action" class="ghost-button" type="button">Create a new story</button>
             <button id="open-create-structure-action" class="ghost-button" type="button">Add a structure not listed</button>
+            <button id="dashboard-export-structures-action" class="ghost-button" type="button">Export custom structures</button>
+            <button id="dashboard-import-structures-action" class="ghost-button" type="button">Import custom structure</button>
+            <button id="dashboard-import-structures-paste-action" class="ghost-button" type="button">Import custom structure (paste JSON)</button>
             <button id="open-import-story-action" class="ghost-button" type="button">Import/merge a saved story</button>
             <button id="open-create-series-action" class="ghost-button" type="button">Create series</button>
             <button id="dashboard-export-backup-action" class="ghost-button" type="button">Export full app backup</button>
@@ -607,6 +653,7 @@
             </button>
           </div>
           <input id="restore-app-backup-input" type="file" accept="application/json,.json" hidden />
+          <input id="import-custom-structures-input" type="file" accept="application/json,.json" hidden />
           <div class="modal-actions">
             <button id="close-dashboard-actions-modal" class="ghost-button" type="button">Close</button>
           </div>
@@ -642,6 +689,25 @@
           <div class="modal-actions">
             <button id="close-dashboard-create-structure-modal" class="ghost-button" type="button">Cancel</button>
           </div>
+        </div>
+      </div>
+
+      <div id="dashboard-import-structures-paste-modal-overlay" class="modal-overlay hidden">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Import custom structure from JSON text">
+          <h2>Import custom structure (paste JSON)</h2>
+          <p class="subtitle">Paste a valid `structurer.custom-structures` JSON payload.</p>
+          <form id="import-structures-paste-form">
+            <textarea
+              id="import-structures-paste-text"
+              class="paste-structures-textarea"
+              placeholder="Paste JSON here..."
+              required
+            ></textarea>
+            <div class="modal-actions">
+              <button id="close-dashboard-import-structures-paste-modal" class="ghost-button" type="button">Cancel</button>
+              <button class="ghost-button" type="submit">Import</button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -826,7 +892,7 @@
         </p>
 
         <p>
-          <a href="https://github.com/sullof/structurer" target="_blank" rel="noopener noreferrer">Structurer</a>
+          <a href="https://github.com/StructurerHQ/structurer" target="_blank" rel="noopener noreferrer">Structurer</a>
           is an open source app. Version <span class="app-footer-version" id="app-version" aria-label="Application version"></span>
         </p>
       </footer>

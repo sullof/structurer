@@ -18,6 +18,7 @@ The web version keeps your work private in your browser `localStorage`: no user 
 - Create and open multiple stories
 - Choose structure per story at creation time
 - Create custom structures (saved locally) with user-defined phase rows
+- Export custom structures to JSON and import/merge approved custom-structure packs (file or pasted JSON)
 - Story routes by slug (example: `/gatti_come_spine`)
 - Home route at `/` (landing)
 - Dashboard route at `/dashboard`
@@ -135,6 +136,14 @@ No backend is currently used.
 ## History
 
 Version history is maintained in [HISTORY.md](HISTORY.md).
+
+## Extensions
+
+- Curated extensions catalog: [Structurer Extensions Catalog](https://github.com/StructurerHQ/structurer-extensions/blob/main/EXTENSIONS.md)
+- How to contribute extension files: [Structurer Extensions Contribution Guide](https://github.com/StructurerHQ/structurer-extensions/blob/main/CONTRIBUTING_EXTENSIONS.md)
+- Import workflow in app: Dashboard `... Actions` -> `Import custom structure` (file) or `Import custom structure (paste JSON)`
+- Custom structure imports are strict-validated (invalid files fail entirely, no partial import)
+- Structure merge policy: UID-first, fingerprint fallback (`name + phases`), then Last-Write-Wins by `updatedAt`
 
 ## Copyright
 

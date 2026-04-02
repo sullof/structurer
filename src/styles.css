@@ -436,6 +436,45 @@ a:hover {
   color: #374151;
 }
 
+.dashboard-structures-list {
+  margin: 0;
+  padding: 18px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  display: grid;
+  gap: 6px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+}
+
+.dashboard-structures-list li {
+  list-style: none;
+  margin: 0;
+  padding-left: 14px;
+  position: relative;
+}
+
+.dashboard-structures-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #4b5563;
+}
+
+.dashboard-structure-badge-new {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #dcfce7;
+  border: 1px solid #16a34a;
+  color: #166534;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
 .home-list-controls {
   display: flex;
   justify-content: flex-start;
@@ -806,7 +845,7 @@ a:hover {
 .board-card {
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 18px 16px;
   background: #fff;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1528,6 +1567,17 @@ a:hover {
   padding: 10px;
   font: inherit;
   line-height: 1.45;
+  resize: vertical;
+}
+
+.paste-structures-textarea {
+  width: 100%;
+  min-height: 220px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  font: inherit;
+  line-height: 1.4;
   resize: vertical;
 }
 
