@@ -1199,7 +1199,8 @@ function renderGroup() {
   const group = getCurrentGroup();
   if (!group) return;
   const groupBoards = group.boardIds.map((id) => boards.find((board) => board.id === id)).filter(Boolean);
-  groupTitleEl.textContent = group.title;
+  const isDemoSeries = groupBoards.length > 0 && groupBoards.every((board) => isDemoBoard(board));
+  groupTitleEl.innerHTML = `${isDemoSeries ? '<span class="demo-label">Demo</span> ' : ""}${escapeHtml(group.title)}`;
   groupSubtitleEl.textContent = `${groupBoards.length} stories`;
   groupBoardStackEl.innerHTML = groupBoards
     .map((board) => {
@@ -1209,7 +1210,7 @@ function renderGroup() {
       <section class="group-board-card">
         <header class="group-board-head">
           <div>
-            <h2>${board.title}</h2>
+            <h2>${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}${escapeHtml(board.title)}</h2>
             <p class="subtitle">${structure.name}</p>
           </div>
           <div class="group-board-head-actions">
