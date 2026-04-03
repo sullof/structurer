@@ -10,6 +10,7 @@ import {
   HOME_ROUTE,
   SETTINGS_KEY,
   PHASE_HELP_STATE_KEY,
+  EDITOR_QUICK_HELP_DISMISSED_KEY,
   STORAGE_KEY,
 } from "./app-config";
 import { DEMO_BOARD_DATA } from "./demo-boards";
@@ -234,6 +235,8 @@ const phaseCommentCharCountEl = document.querySelector("#phase-comment-char-coun
 const savePhaseCommentBtn = document.querySelector("#save-phase-comment-btn");
 
 const boardEl = document.querySelector("#board");
+const editorQuickHelpEl = document.querySelector("#editor-quick-help");
+const dismissEditorQuickHelpBtn = document.querySelector("#dismiss-editor-quick-help");
 const groupBoardStackEl = document.querySelector("#group-board-stack");
 const homeListControlsEl = document.querySelector(".home-list-controls");
 const dashboardSectionDividerEl = document.querySelector(".dashboard-section-divider");
@@ -1191,6 +1194,15 @@ function renderHome() {
   updateDashboardRemoveStructuresActionState();
 }
 
+function syncEditorQuickHelpVisibility() {
+  if (!editorQuickHelpEl) return;
+  if (loadJsonItem(EDITOR_QUICK_HELP_DISMISSED_KEY, false)) {
+    editorQuickHelpEl.classList.add("hidden");
+    return;
+  }
+  editorQuickHelpEl.classList.remove("hidden");
+}
+
 function renderEditor() {
   const board = getCurrentBoard();
   if (!board) return;
@@ -1266,6 +1278,7 @@ function renderEditor() {
     })
     .join("");
   autoResizeTextareas();
+  syncEditorQuickHelpVisibility();
 }
 
 function autoResizeTextareas() {
@@ -2107,6 +2120,7 @@ function restoreFullAppBackupFromText(rawText) {
     GROUPS_KEY,
     DEMO_BOARD_IDS_KEY,
     PHASE_HELP_STATE_KEY,
+    EDITOR_QUICK_HELP_DISMISSED_KEY,
   ]);
   saveJsonItem(STORAGE_KEY, nextBoards);
   saveJsonItem(SETTINGS_KEY, nextSettings);
@@ -2958,6 +2972,13 @@ goDashboardFromBoardBtn.addEventListener("click", () => {
   }
   openHome();
 });
+
+if (dismissEditorQuickHelpBtn && editorQuickHelpEl) {
+  dismissEditorQuickHelpBtn.addEventListener("click", () => {
+    saveJsonItem(EDITOR_QUICK_HELP_DISMISSED_KEY, true);
+    editorQuickHelpEl.classList.add("hidden");
+  });
+}
 
 if (goBoardFromPhaseBtn) {
   goBoardFromPhaseBtn.addEventListener("click", () => {
@@ -4035,6 +4056,7 @@ if (confirmFactoryResetBtn) {
       GROUPS_KEY,
       DEMO_BOARD_IDS_KEY,
       PHASE_HELP_STATE_KEY,
+      EDITOR_QUICK_HELP_DISMISSED_KEY,
     ]);
     window.location.assign(HOME_ROUTE);
   });

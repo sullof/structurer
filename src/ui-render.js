@@ -109,7 +109,7 @@ export function noteTemplate(note, archetypes, archetype, noteType, isEditing = 
       : "";
 
   return `
-    <article class="note ${collapsed ? "is-collapsed" : ""}" data-id="${note.id}" data-kind="${note.kind}" draggable="true" style="--note-bg: ${
+    <article class="note ${collapsed ? "is-collapsed" : ""}${isEditing ? " is-note-editing" : ""}" data-id="${note.id}" data-kind="${note.kind}" draggable="true" style="--note-bg: ${
     noteType?.color || "#f3f4f6"
   };">
       <div class="note-head">

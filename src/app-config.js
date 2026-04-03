@@ -2,6 +2,8 @@ export const STORAGE_KEY = "structurer.boards.v1";
 export const SETTINGS_KEY = "structurer.settings.v1";
 /** Per-board list of column indices with phase description panel open (editor UI). */
 export const PHASE_HELP_STATE_KEY = "structurer.phaseHelpOpen.v1";
+/** One-time editor tip: click note to edit, + to add (dismissed with "Got it"). */
+export const EDITOR_QUICK_HELP_DISMISSED_KEY = "structurer.editorQuickHelpDismissed.v1";
 export const CUSTOM_STRUCTURES_KEY = "structurer.customStructures.v1";
 export const CUSTOM_ARCHETYPES_KEY = "structurer.customArchetypes.v1";
 export const CUSTOM_NOTE_TYPES_KEY = "structurer.customNoteTypes.v1";

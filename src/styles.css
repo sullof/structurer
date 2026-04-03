@@ -135,6 +135,94 @@ body {
   gap: 8px;
 }
 
+/* Full-bleed alert bar at top of editor (cancels .app padding); high contrast for large / bright screens */
+#editor-view > .editor-quick-help {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-left: calc(-1 * var(--app-padding-inline));
+  margin-right: calc(-1 * var(--app-padding-inline));
+  margin-top: calc(-1 * var(--app-padding-inline));
+  margin-bottom: 12px;
+  padding: 12px max(var(--app-padding-inline), env(safe-area-inset-left, 0px)) 14px
+    max(var(--app-padding-inline), env(safe-area-inset-right, 0px));
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
+  background: linear-gradient(100deg, #1e3a8a 0%, #2563eb 48%, #1d4ed8 100%);
+  color: #f1f5f9;
+  border: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.35);
+  box-shadow: 0 4px 14px rgba(30, 58, 138, 0.28);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+#editor-view > .editor-quick-help.hidden {
+  display: none;
+}
+
+.editor-quick-help-text {
+  margin: 0;
+  flex: 1 1 280px;
+  min-width: 0;
+  text-shadow: 0 1px 0 rgba(15, 23, 42, 0.2);
+}
+
+.editor-quick-help-text strong {
+  font-weight: 750;
+  color: #fff;
+}
+
+.editor-quick-help-kbd {
+  display: inline-block;
+  font: inherit;
+  font-weight: 750;
+  padding: 1px 7px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.editor-quick-help-dismiss {
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font: inherit;
+  font-weight: 650;
+  font-size: 0.88rem;
+  background: #fff;
+  color: #1e40af;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.editor-quick-help-dismiss:hover {
+  background: #f8fafc;
+}
+
+.editor-quick-help-dismiss:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+@media (min-width: 1100px) {
+  #editor-view > .editor-quick-help {
+    font-size: 1rem;
+    padding-top: max(14px, env(safe-area-inset-top, 0px));
+    padding-bottom: 16px;
+    gap: 14px 24px;
+  }
+
+  .editor-quick-help-dismiss {
+    padding: 10px 20px;
+    font-size: 0.92rem;
+  }
+}
+
 .board-actions-trigger {
   display: inline-flex;
   align-items: center;
@@ -682,6 +770,7 @@ a:hover {
 /* Allow collapse toggle (double-click) on group preview notes while keeping the rest non-interactive */
 .group-board-preview .note.group-note-readonly {
   pointer-events: auto;
+  cursor: default;
 }
 
 .group-note-readonly .note-head {
@@ -1706,10 +1795,14 @@ a:hover {
   padding: 8px;
   border: 1px solid rgba(17, 24, 39, 0.2);
   box-shadow: 0 1px 1px rgba(17, 24, 39, 0.1);
-  cursor: default;
+  cursor: pointer;
   font-size: 0.85rem;
   line-height: 1.3;
   background: var(--note-bg, #f3f4f6);
+}
+
+.note.is-note-editing {
+  cursor: default;
 }
 
 .note.is-dragging {

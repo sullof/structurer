@@ -1,5 +1,9 @@
 # History
 
+**1.13.3** - 2026-04-03
+- **Story editor**: notes in **read-only** mode use a **pointer** cursor so it is clear you can **click a note to edit**; **editing** mode keeps the normal default/text cursors on fields. **Series** board preview notes keep the default cursor (double-click header still toggles collapse).
+- **First-time editor tip**: the first time you open a story, a **high-contrast bar** at the **top** of the editor explains clicking a note to edit and using **+** in a column header to add a note; **Got it** dismisses it permanently (`structurer.editorQuickHelpDismissed.v1` in `localStorage`). The flag is cleared on **full backup restore** and **factory reset** so the tip can appear again after a clean reinstall-style reset.
+
 **1.13.2** - 2026-04-03
 - **Custom structures** (`structurer.custom-structures`): **export** now sets **`schemaVersion`: `2`** (was `1`) so the file format matches optional structure-level **`description`** and **`author`** introduced in 1.13.1; the `structures` array contract is unchanged.
 - **Import** now **validates `schemaVersion`**: **`1`**, **`2`**, or **omitted** (legacy files) are accepted; any other value fails with a clear error. Older exports without the field or with `1` continue to import as before.
