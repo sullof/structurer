@@ -139,8 +139,8 @@ Version history is maintained in [HISTORY.md](HISTORY.md).
 
 ## Extensions
 
-- Curated extensions catalog: [Structurer Extensions Catalog](https://github.com/StructurerHQ/structurer-extensions/blob/main/EXTENSIONS.md)
-- How to contribute extension files: [Structurer Extensions Contribution Guide](https://github.com/StructurerHQ/structurer-extensions/blob/main/CONTRIBUTING_EXTENSIONS.md)
+- Curated extensions catalog: [Structurer Extensions Catalog](https://github.com/sullof/structurer-extensions/blob/main/EXTENSIONS.md)
+- How to contribute extension files: [Structurer Extensions Contribution Guide](https://github.com/sullof/structurer-extensions/blob/main/CONTRIBUTING_EXTENSIONS.md)
 - Import workflow in app: Dashboard `... Actions` -> `Import custom structure` (file) or `Import custom structure (paste JSON)`
 - Custom structure imports are strict-validated (invalid files fail entirely, no partial import)
 - Structure merge policy: UID-first, fingerprint fallback (`name + phases`), then Last-Write-Wins by `updatedAt`
