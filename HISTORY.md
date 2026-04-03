@@ -1,5 +1,18 @@
 # History
 
+**1.13.0** - 2026-04-03
+- **Series rename** in **Edit series** via the **Series name** field; **story rename** by double-clicking the title (dashboard, editor header, or series view); the title becomes an inline field (Enter to save, Escape to cancel, blur to save). **Rename story** removed from Story actions. Help FAQ *How do I rename a story or a series?* added.
+- Added optional per-phase guidance in structures: each phase can now be either a string (title only) or an object with `title` and optional `description`; phase descriptions are shown only when provided, so existing structures keep working unchanged.
+- In the board editor, phase descriptions can be toggled by clicking the phase title; the description appears directly under the header row and uses full column width, with top-aligned header actions preserved.
+- Added persistence for open phase-help panels in local storage (`structurer.phaseHelpOpen.v1`), restored per board when returning to a story; state is cleared by full backup restore/factory reset flows.
+- Deleting a story now opens a confirmation modal with a required acknowledgement checkbox before **Delete story** is enabled; series deletion is unchanged (still a simple confirm).
+- Replaced native `window.alert` / `window.confirm` with in-app dialogs: `appAlert(message)` for notices and `appAlert(message, { confirm: true })` for **Cancel / Confirm** (returns a boolean), including queues and Escape coordinated with other modals.
+- Added **`appDialog({ title, message, render, confirmLabel, cancelLabel })`** for reusable custom modal bodies: `render(root, api)` builds DOM under `#app-alert-custom-root` and returns a getter run on **Confirm**; `api.setConfirmEnabled` toggles the confirm button (e.g. after picking an option).
+- **Series actions**: **Reorder stories** is now **Edit series** — one dialog to reorder (drag by the handle), remove a story (✕), or add a story from a bottom select; the separate **Remove story** action is removed.
+- **Remove custom structures** (dashboard **Actions → Structure**): **Remove a structure** is enabled only when at least one custom structure is unused by any story; pick structures with checkboxes, **Proceed**, then confirm the list before deletion. Activity timestamps for removed structures are cleared from `structurer.customStructureActivity.v1`.
+- **Dashboard Actions** modal reorganized into accordion sections — **Story**, **Series**, **Structure**, **Backup & data** — with a short intro line; only one section stays open at a time; expanded bodies use a gray panel with white command buttons; the modal grows with content and the overlay scrolls on small viewports (no inner list scroll). Fixed a CSS specificity bug where the overlay stayed visible after **Close** because `display: flex` overrode `.hidden`; closing the dialog also collapses all sections.
+- **Add a structure not listed**: the structure name field appears first, then the phase hint; each phase row is stacked again (phase name on the first row, optional description on the second).
+
 **1.12.5** - 2026-04-03
 - Updated repository links from `StructurerHQ` to `sullof` across app docs and in-app links.
 - Reordered dashboard sections for clearer flow: **Stories** first, then **Series**; moved `Hide demos` below series.

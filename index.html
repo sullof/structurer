@@ -97,7 +97,13 @@
         </header>
 
         <section id="empty-state" class="empty-state">
-          <p>No personal stories yet. Create your first story from <strong>... Actions</strong> to begin planning.</p>
+          <p>
+            No personal stories yet.
+            <button id="open-create-story-empty-state" class="link-button dashboard-inline-action" type="button">
+              Create your first one
+            </button>
+            to begin planning.
+          </p>
         </section>
 
         <section class="dashboard-section">
@@ -115,7 +121,11 @@
         <section class="dashboard-section">
           <h2 class="dashboard-section-title">Available structures</h2>
           <p class="dashboard-structures-hint">
-            You can create custom structures or load more from the
+            You can
+            <button id="open-create-structure-inline" class="link-button dashboard-inline-action" type="button">
+              create custom structures
+            </button>
+            or load more from the
             <a href="https://github.com/sullof/structurer-extensions/blob/main/EXTENSIONS.md" target="_blank" rel="noopener noreferrer"
               >extensions catalog</a
             >.
@@ -184,7 +194,22 @@
                 Use <strong>Create series</strong> in the dashboard to name a series and pick stories with checkboxes.
                 To add an existing story to a series later, open that story’s actions and choose
                 <strong>Add story to series</strong> (available once you have at least one series), then pick the series
-                from the list. Manage order and membership from group actions on the dashboard.
+                from the list. Manage order, rename the series, and membership from <strong>Edit series</strong> in series actions on the dashboard.
+              </p>
+            </div>
+          </details>
+
+          <details class="help-faq-item">
+            <summary>How do I rename a story or a series?</summary>
+            <div class="help-faq-content">
+              <p>
+                <strong>Stories:</strong> double-click the story title in the dashboard list, on the story board header,
+                or on a story title inside a series view. The title becomes an editable field: press <strong>Enter</strong> to
+                save, <strong>Escape</strong> to cancel, or click outside to save.
+              </p>
+              <p>
+                <strong>Series:</strong> open <strong>Edit series</strong> from series actions (dashboard or series page)
+                and change the <strong>Series name</strong> field at the top of the dialog.
               </p>
             </div>
           </details>
@@ -315,8 +340,9 @@
             <summary>I want to use a structure that is not listed. What should I do?</summary>
             <div class="help-faq-content">
               <p>
-                Go to dashboard and open <strong>Add a structure not listed</strong>. Add one phase per row, save, and
-                the new structure will appear in the story creation selector.
+                Go to dashboard and open <strong>Add a structure not listed</strong>. For each phase, enter a name and
+                optionally a short description (shown as help when editing a story), save, and the new structure will
+                appear in the story creation selector.
               </p>
               <p>
                 For example, if you want to follow a structure like <em>Freytag's Pyramid</em> (which is not included
@@ -653,24 +679,48 @@
           aria-label="Dashboard actions"
         >
           <h2>Actions</h2>
-          <div class="board-actions-modal-list">
-            <button id="open-create-story-action" class="ghost-button" type="button">Create a new story</button>
-            <button id="open-create-structure-action" class="ghost-button" type="button">Add a structure not listed</button>
-            <button id="dashboard-export-structures-action" class="ghost-button" type="button">Export custom structures</button>
-            <button id="dashboard-import-structures-action" class="ghost-button" type="button">Import custom structure</button>
-            <button id="dashboard-import-structures-paste-action" class="ghost-button" type="button">Import custom structure (paste JSON)</button>
-            <button id="open-import-story-action" class="ghost-button" type="button">Import/merge a saved story</button>
-            <button id="open-create-series-action" class="ghost-button" type="button">Create series</button>
-            <button id="dashboard-export-backup-action" class="ghost-button" type="button">Export full app backup</button>
-            <button id="dashboard-reset-demo-action" class="ghost-button" type="button">Reset demos</button>
-            <button id="dashboard-restore-backup-action" class="ghost-button danger-menu-item" type="button">Restore from full backup</button>
-            <button
-              id="dashboard-factory-reset-action"
-              class="ghost-button danger-menu-item"
-              type="button"
-            >
-              Factory reset app data
-            </button>
+          <p class="subtitle dashboard-actions-modal-intro">Open a category to see commands.</p>
+          <div class="board-actions-modal-list dashboard-actions-modal-sections">
+            <details class="dashboard-actions-section">
+              <summary class="dashboard-actions-section-summary">Story</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="open-create-story-action" class="ghost-button" type="button">Create a new story</button>
+                <button id="open-import-story-action" class="ghost-button" type="button">Import/merge a saved story</button>
+              </div>
+            </details>
+            <details class="dashboard-actions-section">
+              <summary class="dashboard-actions-section-summary">Series</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="open-create-series-action" class="ghost-button" type="button">Create series</button>
+              </div>
+            </details>
+            <details class="dashboard-actions-section">
+              <summary class="dashboard-actions-section-summary">Structure</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="open-create-structure-action" class="ghost-button" type="button">Add a structure not listed</button>
+                <button id="dashboard-export-structures-action" class="ghost-button" type="button">Export custom structures</button>
+                <button id="dashboard-import-structures-action" class="ghost-button" type="button">Import custom structure</button>
+                <button id="dashboard-import-structures-paste-action" class="ghost-button" type="button">
+                  Import custom structure (paste JSON)
+                </button>
+                <button id="dashboard-remove-structures-action" class="ghost-button" type="button" disabled>
+                  Remove a structure
+                </button>
+              </div>
+            </details>
+            <details class="dashboard-actions-section">
+              <summary class="dashboard-actions-section-summary">Backup &amp; data</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="dashboard-export-backup-action" class="ghost-button" type="button">Export full app backup</button>
+                <button id="dashboard-reset-demo-action" class="ghost-button" type="button">Reset demos</button>
+                <button id="dashboard-restore-backup-action" class="ghost-button danger-menu-item" type="button">
+                  Restore from full backup
+                </button>
+                <button id="dashboard-factory-reset-action" class="ghost-button danger-menu-item" type="button">
+                  Factory reset app data
+                </button>
+              </div>
+            </details>
           </div>
           <input id="restore-app-backup-input" type="file" accept="application/json,.json" hidden />
           <input id="import-custom-structures-input" type="file" accept="application/json,.json" hidden />
@@ -694,12 +744,39 @@
         </div>
       </div>
 
+      <div id="new-story-onboarding-modal-overlay" class="modal-overlay hidden">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="How to start adding notes">
+          <h2>Start with your first note</h2>
+          <p class="subtitle">Use the <strong>+</strong> button in each phase column to add your notes.</p>
+          <div class="modal-actions">
+            <button id="confirm-new-story-onboarding" class="ghost-button" type="button">OK</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="dashboard-remove-structures-modal-overlay" class="modal-overlay hidden">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="remove-structures-modal-title">
+          <h2 id="remove-structures-modal-title">Remove custom structures</h2>
+          <p class="subtitle">
+            Only structures that are not used by any story can be removed. Select which unused structures to delete.
+          </p>
+          <ul id="remove-structures-list" class="remove-structures-list"></ul>
+          <p id="remove-structures-empty" class="remove-structures-empty hidden">No unused structures to remove.</p>
+          <div class="modal-actions">
+            <button id="close-dashboard-remove-structures-modal" class="ghost-button" type="button">Cancel</button>
+            <button id="confirm-remove-structures-btn" class="ghost-button" type="button" disabled>Proceed</button>
+          </div>
+        </div>
+      </div>
+
       <div id="dashboard-create-structure-modal-overlay" class="modal-overlay hidden">
-        <div class="modal" role="dialog" aria-modal="true" aria-label="Add a structure not listed">
+        <div class="modal modal--wide-create-structure" role="dialog" aria-modal="true" aria-label="Add a structure not listed">
           <h2>Add a structure not listed</h2>
-          <p class="subtitle">Each row is one phase/column in the story.</p>
           <form id="create-structure-form" class="create-structure-form">
             <input id="structure-name-input" type="text" maxlength="80" placeholder="Structure name" required />
+            <p class="subtitle structure-form-phase-hint">
+              Each block is one phase/column: a phase name and an optional description (shown as in-editor help for that column).
+            </p>
             <div id="structure-phases-list" class="structure-phases-list"></div>
             <div class="structure-form-actions">
               <button id="add-structure-phase" class="ghost-button" type="button">Add row</button>
@@ -769,7 +846,6 @@
         <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Story actions">
           <h2>Story actions</h2>
           <div class="board-actions-modal-list">
-            <button id="modal-rename-board" class="ghost-button" type="button">Rename story</button>
             <button id="modal-add-board-to-group" class="ghost-button" type="button">Add story to series</button>
             <button id="modal-export-board" class="ghost-button" type="button">Export the story</button>
             <button id="modal-edit-note-types" class="ghost-button" type="button">Edit note types</button>
@@ -782,6 +858,24 @@
           </div>
         </div>
       </div>
+
+      <div id="delete-story-modal-overlay" class="modal-overlay hidden">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Delete story confirmation">
+          <h2>Delete this story?</h2>
+          <p class="subtitle" id="delete-story-modal-intro"></p>
+          <label class="factory-reset-confirm-checkbox" for="delete-story-confirm-checkbox">
+            <input id="delete-story-confirm-checkbox" type="checkbox" />
+            <span>I understand this story will be permanently deleted.</span>
+          </label>
+          <div class="modal-actions">
+            <button id="cancel-delete-story" class="ghost-button" type="button">Cancel</button>
+            <button id="confirm-delete-story" class="ghost-button danger-menu-item" type="button" disabled>
+              Delete story
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div id="add-board-to-group-modal-overlay" class="modal-overlay hidden">
         <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-labelledby="add-board-to-group-title">
           <h2 id="add-board-to-group-title">Add to series</h2>
@@ -797,8 +891,7 @@
         <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Series actions">
           <h2>Series actions</h2>
           <div class="board-actions-modal-list">
-            <button id="modal-reorder-group-boards" class="ghost-button" type="button">Reorder stories</button>
-            <button id="modal-remove-board-from-group" class="ghost-button danger-menu-item" type="button">Remove story</button>
+            <button id="modal-reorder-group-boards" class="ghost-button" type="button">Edit series</button>
             <button id="modal-delete-group" class="ghost-button danger-menu-item" type="button">Delete series</button>
           </div>
           <div class="modal-actions">
@@ -807,10 +900,25 @@
         </div>
       </div>
       <div id="group-reorder-modal-overlay" class="modal-overlay hidden">
-        <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Reorder stories">
-          <h2>Reorder stories</h2>
-          <p class="subtitle">Drag stories to change their order in this series.</p>
+        <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-labelledby="group-reorder-modal-title">
+          <h2 id="group-reorder-modal-title">Edit series</h2>
+          <div class="group-reorder-series-name-row">
+            <label class="group-reorder-series-name-label" for="group-reorder-series-name">Series name</label>
+            <input
+              id="group-reorder-series-name"
+              class="group-reorder-series-name-input"
+              type="text"
+              maxlength="120"
+              autocomplete="off"
+              spellcheck="true"
+            />
+          </div>
+          <p class="subtitle">Drag by the handle to reorder. Remove a story with ✕ or add one below.</p>
           <div id="group-reorder-list" class="reorder-list"></div>
+          <div class="group-reorder-add-row">
+            <label class="group-reorder-add-label" for="group-reorder-add-select">Add story</label>
+            <select id="group-reorder-add-select" class="group-reorder-add-select" aria-label="Add a story to this series"></select>
+          </div>
           <p id="group-reorder-status" class="reorder-status" aria-live="polite"></p>
           <div class="modal-actions">
             <button id="close-group-reorder-modal" class="ghost-button" type="button">Done</button>
@@ -901,6 +1009,25 @@
             <button id="confirm-restore-backup" class="ghost-button danger-menu-item" type="button" disabled>
               Restore backup
             </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="app-alert-modal-overlay" class="modal-overlay hidden">
+        <div
+          class="modal"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="app-alert-title"
+          aria-describedby="app-alert-message"
+        >
+          <h2 id="app-alert-title">Notice</h2>
+          <p id="app-alert-message" class="subtitle app-alert-message"></p>
+          <div id="app-alert-custom-root" class="app-alert-custom-root hidden" aria-live="polite"></div>
+          <div class="modal-actions app-alert-actions">
+            <button id="app-alert-cancel" class="ghost-button hidden" type="button">Cancel</button>
+            <button id="app-alert-ok" class="ghost-button" type="button">OK</button>
+            <button id="app-alert-confirm" class="ghost-button danger-menu-item hidden" type="button">Confirm</button>
           </div>
         </div>
       </div>

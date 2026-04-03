@@ -1,3 +1,12 @@
+import { appAlert } from "./app-alert.js";
+
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/"/g, "&quot;");
+}
+
 export function createGroupModalController({
   elements,
   getGroups,
@@ -8,17 +17,18 @@ export function createGroupModalController({
   renderHome,
   renderGroup,
   openHome,
-  openGroup,
+  commitGroupTitleRename,
 }) {
   const {
     groupActionsModalOverlay,
     closeGroupActionsModalBtn,
     modalReorderGroupBoardsBtn,
-    modalRemoveBoardFromGroupBtn,
     modalDeleteGroupBtn,
     groupReorderModalOverlay,
     closeGroupReorderModalBtn,
     groupReorderListEl,
+    groupReorderAddSelectEl,
+    groupReorderSeriesNameInput: groupReorderSeriesNameInputEl,
     groupReorderStatusEl,
   } = elements;
 
@@ -39,16 +49,38 @@ export function createGroupModalController({
       .map((id) => getBoards().find((item) => item.id === id))
       .filter(Boolean)
       .map(
-        (board) => `<div class="reorder-item" draggable="true" data-board-id="${board.id}">
-      <span class="reorder-handle">⋮⋮</span>
-      <span>${board.title}</span>
+        (board) => `<div class="reorder-item" data-board-id="${board.id}">
+      <span class="reorder-handle" draggable="true" aria-hidden="true">⋮⋮</span>
+      <span class="reorder-item-title">${escapeHtml(board.title)}</span>
+      <button type="button" class="reorder-remove ghost-button" data-board-id="${board.id}" aria-label="Remove from series">✕</button>
     </div>`,
       )
       .join("");
     groupReorderListEl.innerHTML = html;
   }
 
-  function closeGroupReorderModal() {
+  function populateAddSelect(group) {
+    if (!groupReorderAddSelectEl) return;
+    const inSeries = new Set(group.boardIds);
+    const eligible = getBoards()
+      .filter((b) => !inSeries.has(b.id))
+      .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+    groupReorderAddSelectEl.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = eligible.length === 0 ? "No other stories to add" : "Add a story…";
+    groupReorderAddSelectEl.appendChild(placeholder);
+    eligible.forEach((board) => {
+      const opt = document.createElement("option");
+      opt.value = board.id;
+      opt.textContent = board.title;
+      groupReorderAddSelectEl.appendChild(opt);
+    });
+    groupReorderAddSelectEl.disabled = eligible.length === 0;
+    groupReorderAddSelectEl.value = "";
+  }
+
+  function finishCloseGroupReorderModal() {
     groupReorderModalOverlay.classList.add("hidden");
     groupReorderModalGroupId = null;
     draggedReorderBoardId = null;
@@ -63,6 +95,28 @@ export function createGroupModalController({
       groupReorderStatusEl.classList.remove("is-visible");
     }
     groupReorderListEl.querySelectorAll(".reorder-placeholder").forEach((el) => el.remove());
+    if (groupReorderAddSelectEl) {
+      groupReorderAddSelectEl.innerHTML = "";
+      groupReorderAddSelectEl.disabled = true;
+    }
+    if (groupReorderSeriesNameInputEl) {
+      groupReorderSeriesNameInputEl.value = "";
+    }
+  }
+
+  async function tryCloseGroupReorderModal() {
+    if (groupReorderSeriesNameInputEl && groupReorderModalGroupId && commitGroupTitleRename) {
+      const result = commitGroupTitleRename(groupReorderModalGroupId, groupReorderSeriesNameInputEl.value);
+      if (result.ok) {
+        if (result.changed) showGroupReorderStatus("Series name saved");
+      } else if (result.error === "empty") {
+        const g = getGroups().find((item) => item.id === groupReorderModalGroupId);
+        if (g) groupReorderSeriesNameInputEl.value = g.title;
+        await appAlert("Series name cannot be empty.");
+        return;
+      }
+    }
+    finishCloseGroupReorderModal();
   }
 
   function showGroupReorderStatus(message) {
@@ -98,13 +152,59 @@ export function createGroupModalController({
     renderHome();
     if (getCurrentGroupId() === group.id) renderGroup();
     renderGroupReorderList(group);
+    populateAddSelect(group);
     showGroupReorderStatus("Order saved");
     return true;
   }
 
+  function removeBoardFromSeries(boardId) {
+    const groups = getGroups();
+    const group = groups.find((item) => item.id === groupReorderModalGroupId);
+    if (!group) return;
+    const idx = group.boardIds.indexOf(boardId);
+    if (idx < 0) return;
+    group.boardIds.splice(idx, 1);
+    if (group.boardIds.length === 0) {
+      const nextGroups = groups.filter((item) => item.id !== group.id);
+      setGroups(nextGroups);
+      saveGroups();
+      renderHome();
+      if (getCurrentGroupId() === group.id) openHome();
+      finishCloseGroupReorderModal();
+      closeGroupActionsModal();
+      return;
+    }
+    group.updatedAt = Date.now();
+    saveGroups();
+    renderHome();
+    if (getCurrentGroupId() === group.id) renderGroup();
+    renderGroupReorderList(group);
+    populateAddSelect(group);
+    showGroupReorderStatus("Story removed");
+  }
+
+  function addBoardToSeries(boardId) {
+    const groups = getGroups();
+    const group = groups.find((item) => item.id === groupReorderModalGroupId);
+    if (!group) return;
+    if (group.boardIds.includes(boardId)) return;
+    group.boardIds.push(boardId);
+    group.updatedAt = Date.now();
+    saveGroups();
+    renderHome();
+    if (getCurrentGroupId() === group.id) renderGroup();
+    renderGroupReorderList(group);
+    populateAddSelect(group);
+    showGroupReorderStatus("Story added");
+  }
+
   function openGroupReorderModal(group) {
     groupReorderModalGroupId = group.id;
+    if (groupReorderSeriesNameInputEl) {
+      groupReorderSeriesNameInputEl.value = group.title;
+    }
     renderGroupReorderList(group);
+    populateAddSelect(group);
     groupReorderModalOverlay.classList.remove("hidden");
   }
 
@@ -121,7 +221,7 @@ export function createGroupModalController({
 
   if (closeGroupReorderModalBtn) {
     closeGroupReorderModalBtn.addEventListener("click", () => {
-      closeGroupReorderModal();
+      void tryCloseGroupReorderModal();
     });
   }
 
@@ -129,55 +229,19 @@ export function createGroupModalController({
     modalReorderGroupBoardsBtn.addEventListener("click", () => {
       const group = getGroups().find((item) => item.id === groupActionsModalGroupId);
       if (!group) return;
-      if (group.boardIds.length < 2) {
-        window.alert("Reorder is available when the series has at least 2 stories.");
-        return;
-      }
       openGroupReorderModal(group);
       closeGroupActionsModal();
     });
   }
 
-  if (modalRemoveBoardFromGroupBtn) {
-    modalRemoveBoardFromGroupBtn.addEventListener("click", () => {
-      const groups = getGroups();
-      const boards = getBoards();
-      const group = groups.find((item) => item.id === groupActionsModalGroupId);
-      if (!group) return;
-      const choices = group.boardIds
-        .map((id, index) => {
-          const board = boards.find((item) => item.id === id);
-          return board ? `${index + 1}. ${board.title}` : null;
-        })
-        .filter(Boolean)
-        .join("\n");
-      const selectedInput = window.prompt(`Remove which story?\n${choices}`);
-      if (!selectedInput) return;
-      const selected = Number(selectedInput) - 1;
-      if (!Number.isInteger(selected) || selected < 0 || selected >= group.boardIds.length) return;
-      group.boardIds.splice(selected, 1);
-      if (group.boardIds.length === 0) {
-        const nextGroups = groups.filter((item) => item.id !== group.id);
-        setGroups(nextGroups);
-        if (getCurrentGroupId() === group.id) openHome();
-      } else {
-        group.updatedAt = Date.now();
-      }
-      saveGroups();
-      renderHome();
-      if (getCurrentGroupId() === group.id) renderGroup();
-      closeGroupActionsModal();
-    });
-  }
-
   if (modalDeleteGroupBtn) {
-    modalDeleteGroupBtn.addEventListener("click", () => {
+    modalDeleteGroupBtn.addEventListener("click", async () => {
       const groups = getGroups();
       const group = groups.find((item) => item.id === groupActionsModalGroupId);
       if (!group) return;
-      const confirmed = window.confirm(
-        `Delete series "${group.title}"? This action cannot be undone.`,
-      );
+      const confirmed = await appAlert(`Delete series "${group.title}"? This action cannot be undone.`, {
+        confirm: true,
+      });
       if (!confirmed) return;
       const nextGroups = groups.filter((item) => item.id !== group.id);
       setGroups(nextGroups);
@@ -198,12 +262,53 @@ export function createGroupModalController({
 
   groupReorderModalOverlay.addEventListener("click", (event) => {
     if (event.target === groupReorderModalOverlay) {
-      closeGroupReorderModal();
+      void tryCloseGroupReorderModal();
     }
   });
 
+  if (groupReorderSeriesNameInputEl && commitGroupTitleRename) {
+    groupReorderSeriesNameInputEl.addEventListener("blur", async () => {
+      if (!groupReorderModalGroupId) return;
+      const result = commitGroupTitleRename(groupReorderModalGroupId, groupReorderSeriesNameInputEl.value);
+      if (result.ok) {
+        if (result.changed) showGroupReorderStatus("Series name saved");
+        return;
+      }
+      if (result.error === "empty") {
+        const g = getGroups().find((item) => item.id === groupReorderModalGroupId);
+        if (g) groupReorderSeriesNameInputEl.value = g.title;
+        await appAlert("Series name cannot be empty.");
+      }
+    });
+    groupReorderSeriesNameInputEl.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        groupReorderSeriesNameInputEl.blur();
+      }
+    });
+  }
+
+  if (groupReorderAddSelectEl) {
+    groupReorderAddSelectEl.addEventListener("change", () => {
+      const id = groupReorderAddSelectEl.value;
+      if (!id) return;
+      addBoardToSeries(id);
+    });
+  }
+
+  groupReorderListEl.addEventListener("click", (event) => {
+    const btn = event.target.closest(".reorder-remove");
+    if (!btn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const boardId = btn.dataset.boardId;
+    if (boardId) removeBoardFromSeries(boardId);
+  });
+
   groupReorderListEl.addEventListener("dragstart", (event) => {
-    const item = event.target.closest(".reorder-item");
+    const handle = event.target.closest(".reorder-handle");
+    if (!handle) return;
+    const item = handle.closest(".reorder-item");
     if (!item) return;
     draggedReorderBoardId = item.dataset.boardId;
     groupReorderDropIndex = null;
@@ -258,5 +363,5 @@ export function createGroupModalController({
     groupReorderListEl.querySelectorAll(".reorder-item.is-dragging").forEach((el) => el.classList.remove("is-dragging"));
   });
 
-  return { openGroupActionsModal, closeGroupActionsModal, closeGroupReorderModal };
+  return { openGroupActionsModal, closeGroupActionsModal, closeGroupReorderModal: tryCloseGroupReorderModal };
 }

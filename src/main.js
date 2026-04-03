@@ -9,6 +9,7 @@ import {
   DEFAULT_COLUMN_WIDTH,
   HOME_ROUTE,
   SETTINGS_KEY,
+  PHASE_HELP_STATE_KEY,
   STORAGE_KEY,
 } from "./app-config";
 import { DEMO_BOARD_DATA } from "./demo-boards";
@@ -36,6 +37,8 @@ import { createGroupModalController } from "./group-modals";
 import { createNavigationController } from "./navigation";
 import { createBoardInteractionsController } from "./board-interactions";
 import { createBoardNoteActionsController } from "./board-note-actions";
+import { createInlineTitleEditController } from "./inline-title-edit.js";
+import { appAlert, closeAppAlertIfOpen, dismissAllAppAlerts } from "./app-alert.js";
 import packageJson from "../package.json";
 
 const loadedBoards = loadBoards();
@@ -50,7 +53,11 @@ let currentBoardId = null;
 let currentGroupId = null;
 let boardBackGroupId = null;
 let editingNoteId = null;
+let boardCardPendingOpenTimer = null;
 let activePhaseCommentsColumn = null;
+let phaseHelpStateByBoard = loadJsonItem(PHASE_HELP_STATE_KEY, {}) || {};
+let phaseHelpOpenColumns = new Set();
+let phaseHelpBoardId = null;
 let editingPhaseCommentUid = null;
 let boardActionsModalBoardId = null;
 let customStructures = loadCustomStructures();
@@ -88,7 +95,6 @@ const importBoardButton = document.querySelector("#import-board-button");
 const importBoardInput = document.querySelector("#import-board-input");
 const boardActionsModalOverlay = document.querySelector("#board-actions-modal-overlay");
 const closeBoardActionsModalBtn = document.querySelector("#close-board-actions-modal");
-const modalRenameBoardBtn = document.querySelector("#modal-rename-board");
 const modalAddBoardToGroupBtn = document.querySelector("#modal-add-board-to-group");
 const addBoardToGroupModalOverlay = document.querySelector("#add-board-to-group-modal-overlay");
 const addBoardToGroupListEl = document.querySelector("#add-board-to-group-list");
@@ -100,14 +106,21 @@ const createGroupBoardsEmptyEl = document.querySelector("#create-group-boards-em
 const modalExportBoardBtn = document.querySelector("#modal-export-board");
 const modalResetDemoBoardBtn = document.querySelector("#modal-reset-demo-board");
 const modalDeleteBoardBtn = document.querySelector("#modal-delete-board");
+const deleteStoryModalOverlay = document.querySelector("#delete-story-modal-overlay");
+const deleteStoryModalIntroEl = document.querySelector("#delete-story-modal-intro");
+const deleteStoryConfirmCheckbox = document.querySelector("#delete-story-confirm-checkbox");
+const cancelDeleteStoryBtn = document.querySelector("#cancel-delete-story");
+const confirmDeleteStoryBtn = document.querySelector("#confirm-delete-story");
+let pendingDeleteStoryBoardId = null;
 const groupActionsModalOverlay = document.querySelector("#group-actions-modal-overlay");
 const closeGroupActionsModalBtn = document.querySelector("#close-group-actions-modal");
 const modalReorderGroupBoardsBtn = document.querySelector("#modal-reorder-group-boards");
-const modalRemoveBoardFromGroupBtn = document.querySelector("#modal-remove-board-from-group");
 const modalDeleteGroupBtn = document.querySelector("#modal-delete-group");
 const groupReorderModalOverlay = document.querySelector("#group-reorder-modal-overlay");
 const closeGroupReorderModalBtn = document.querySelector("#close-group-reorder-modal");
 const groupReorderListEl = document.querySelector("#group-reorder-list");
+const groupReorderAddSelectEl = document.querySelector("#group-reorder-add-select");
+const groupReorderSeriesNameInputEl = document.querySelector("#group-reorder-series-name");
 const groupReorderStatusEl = document.querySelector("#group-reorder-status");
 const phaseOrderConflictModalOverlay = document.querySelector("#phase-order-conflict-modal-overlay");
 const closePhaseOrderConflictModalBtn = document.querySelector("#close-phase-order-conflict-modal");
@@ -128,10 +141,13 @@ const confirmRestoreBackupBtn = document.querySelector("#confirm-restore-backup"
 const restoreBackupConfirmCheckbox = document.querySelector("#restore-backup-confirm-checkbox");
 const dashboardActionsBtn = document.querySelector("#dashboard-actions-btn");
 const dashboardActionsModalOverlay = document.querySelector("#dashboard-actions-modal-overlay");
+const dashboardActionsSectionsEl = document.querySelector(".dashboard-actions-modal-sections");
 const closeDashboardActionsModalBtn = document.querySelector("#close-dashboard-actions-modal");
 const openCreateStoryActionBtn = document.querySelector("#open-create-story-action");
 const dashboardCreateStoryModalOverlay = document.querySelector("#dashboard-create-story-modal-overlay");
 const closeDashboardCreateStoryModalBtn = document.querySelector("#close-dashboard-create-story-modal");
+const newStoryOnboardingModalOverlay = document.querySelector("#new-story-onboarding-modal-overlay");
+const confirmNewStoryOnboardingBtn = document.querySelector("#confirm-new-story-onboarding");
 const openCreateStructureActionBtn = document.querySelector("#open-create-structure-action");
 const dashboardCreateStructureModalOverlay = document.querySelector("#dashboard-create-structure-modal-overlay");
 const closeDashboardCreateStructureModalBtn = document.querySelector("#close-dashboard-create-structure-modal");
@@ -141,6 +157,12 @@ const dashboardExportBackupActionBtn = document.querySelector("#dashboard-export
 const dashboardExportStructuresActionBtn = document.querySelector("#dashboard-export-structures-action");
 const dashboardImportStructuresActionBtn = document.querySelector("#dashboard-import-structures-action");
 const dashboardImportStructuresPasteActionBtn = document.querySelector("#dashboard-import-structures-paste-action");
+const dashboardRemoveStructuresActionBtn = document.querySelector("#dashboard-remove-structures-action");
+const dashboardRemoveStructuresModalOverlay = document.querySelector("#dashboard-remove-structures-modal-overlay");
+const removeStructuresListEl = document.querySelector("#remove-structures-list");
+const removeStructuresEmptyEl = document.querySelector("#remove-structures-empty");
+const closeDashboardRemoveStructuresModalBtn = document.querySelector("#close-dashboard-remove-structures-modal");
+const confirmRemoveStructuresBtn = document.querySelector("#confirm-remove-structures-btn");
 const dashboardRestoreBackupActionBtn = document.querySelector("#dashboard-restore-backup-action");
 const restoreAppBackupInput = document.querySelector("#restore-app-backup-input");
 const importCustomStructuresInput = document.querySelector("#import-custom-structures-input");
@@ -208,6 +230,8 @@ const groupBoardStackEl = document.querySelector("#group-board-stack");
 const homeListControlsEl = document.querySelector(".home-list-controls");
 const dashboardSectionDividerEl = document.querySelector(".dashboard-section-divider");
 const toggleDemoVisibilityBtn = document.querySelector("#toggle-demo-visibility");
+const openCreateStructureInlineBtn = document.querySelector("#open-create-structure-inline");
+const openCreateStoryEmptyStateBtn = document.querySelector("#open-create-story-empty-state");
 const homeCollapsiblePanels = [...document.querySelectorAll("#home-view .collapsible-panel")];
 let addBoardToGroupTargetBoardId = null;
 let pendingRestoreBackupText = null;
@@ -325,6 +349,15 @@ function getAllStructures() {
 
 function getAllStructureList() {
   return Object.values(getAllStructures());
+}
+
+function getStructureIdsUsedByBoards() {
+  return new Set(boards.map((board) => board.structureId).filter(Boolean));
+}
+
+function getUnusedCustomStructures() {
+  const used = getStructureIdsUsedByBoards();
+  return customStructures.filter((structure) => !used.has(structure.id));
 }
 
 function getAllArchetypes() {
@@ -586,7 +619,7 @@ function closeEditNoteTypesModal() {
   editNoteTypesModalOverlay.classList.add("hidden");
 }
 
-function saveEditNoteTypesFromModal() {
+async function saveEditNoteTypesFromModal() {
   if (!editNoteTypesListEl) return;
   const rows = editNoteTypesListEl.querySelectorAll(".edit-note-type-row");
   for (const row of rows) {
@@ -596,12 +629,12 @@ function saveEditNoteTypesFromModal() {
     const label = labelInput.value.trim();
     const color = parseHexColorInput(hexInput.value);
     if (!label) {
-      window.alert(`Please enter a label for note type "${id}".`);
+      await appAlert(`Please enter a label for note type "${id}".`);
       labelInput.focus();
       return;
     }
     if (!color) {
-      window.alert(`Please enter a valid hex color for "${label}" (e.g. #fef08a or #rgb).`);
+      await appAlert(`Please enter a valid hex color for "${label}" (e.g. #fef08a or #rgb).`);
       hexInput.focus();
       return;
     }
@@ -762,10 +795,35 @@ function renderStructureOptions(selectedId = null) {
   boardStructureSelect.innerHTML = renderStructureOptionsHtml(structures, activeId);
 }
 
-function renderStructurePhaseRows(values = ["", "", ""]) {
+const DEFAULT_STRUCTURE_PHASE_ROWS = [
+  { title: "", description: "" },
+  { title: "", description: "" },
+  { title: "", description: "" },
+];
+
+function normalizeStructureFormPhaseValue(value) {
+  if (value == null || value === "") return { title: "", description: "" };
+  if (typeof value === "string") return { title: value, description: "" };
+  if (typeof value === "object") {
+    return {
+      title: String(value.title ?? ""),
+      description: String(value.description ?? ""),
+    };
+  }
+  return { title: "", description: "" };
+}
+
+function renderStructurePhaseRows(values = DEFAULT_STRUCTURE_PHASE_ROWS) {
   structurePhasesList.innerHTML = values
-    .map((value, index) => structurePhaseRowTemplate(index, value))
+    .map((value, index) => structurePhaseRowTemplate(index, normalizeStructureFormPhaseValue(value)))
     .join("");
+}
+
+function collectStructurePhaseRowsFromDOM() {
+  return [...structurePhasesList.querySelectorAll(".structure-phase-row")].map((row) => ({
+    title: row.querySelector('[data-role="phase-input"]')?.value ?? "",
+    description: row.querySelector('[data-role="phase-description-input"]')?.value ?? "",
+  }));
 }
 
 function archetypeById(id) {
@@ -893,8 +951,48 @@ function formatDate(timestamp) {
   return new Date(timestamp).toLocaleString();
 }
 
+function parsePhaseEntry(phase) {
+  if (phase == null) return { title: "" };
+  if (typeof phase === "string") {
+    return { title: String(phase).trim() };
+  }
+  if (typeof phase === "object" && !Array.isArray(phase)) {
+    const title = String(phase.title ?? phase.name ?? "").trim();
+    const rawDesc = typeof phase.description === "string" ? phase.description.trim() : "";
+    const description = rawDesc ? rawDesc : undefined;
+    return { title, description };
+  }
+  return { title: String(phase).trim() };
+}
+
 function formatPhaseTitle(phase) {
-  return String(phase || "").trim();
+  return parsePhaseEntry(phase).title;
+}
+
+function getPhaseDescription(phase) {
+  return parsePhaseEntry(phase).description ?? "";
+}
+
+function buildPhaseHelpOpenSetForBoard(board) {
+  const phases = getBoardPhases(board);
+  const stored = phaseHelpStateByBoard[board.id];
+  const next = new Set();
+  if (!Array.isArray(stored)) return next;
+  stored.forEach((idx) => {
+    if (!Number.isInteger(idx) || idx < 0 || idx >= phases.length) return;
+    if (getPhaseDescription(phases[idx])) next.add(idx);
+  });
+  return next;
+}
+
+function persistPhaseHelpStateForBoard(boardId, openSet) {
+  const arr = Array.from(openSet).sort((a, b) => a - b);
+  if (arr.length === 0) {
+    delete phaseHelpStateByBoard[boardId];
+  } else {
+    phaseHelpStateByBoard[boardId] = arr;
+  }
+  saveJsonItem(PHASE_HELP_STATE_KEY, phaseHelpStateByBoard);
 }
 
 function renderCreateGroupBoardCheckboxes() {
@@ -1036,7 +1134,13 @@ function renderHome() {
   boardsList.innerHTML = sortedBoards
     .map((board) => {
       const structure = getStructureConfig(board.structureId);
-      return boardCardTemplate(board, structure.name, formatDate(board.updatedAt), isDemoBoard(board));
+      return boardCardTemplate(
+        board,
+        structure.name,
+        formatDate(board.updatedAt),
+        isDemoBoard(board),
+        inlineTitleEdit.getEditingStoryBoardId(),
+      );
     })
     .join("");
   if (homeListControlsEl) {
@@ -1076,11 +1180,16 @@ function renderHome() {
   emptyState.style.display = hasAtLeastOneNonDemoStory ? "none" : "block";
   applyDemoVisibilityControl();
   renderCreateGroupBoardCheckboxes();
+  updateDashboardRemoveStructuresActionState();
 }
 
 function renderEditor() {
   const board = getCurrentBoard();
   if (!board) return;
+  if (phaseHelpBoardId !== board.id) {
+    phaseHelpBoardId = board.id;
+    phaseHelpOpenColumns = buildPhaseHelpOpenSetForBoard(board);
+  }
   const structure = getStructureConfig(board.structureId);
   const phases = getBoardPhases(board);
   const archetypes = getAllArchetypes();
@@ -1088,7 +1197,11 @@ function renderEditor() {
   const editingId = editingNoteId;
   const isModifiedOrder = isPhaseOrderModified(board);
 
-  editorTitle.innerHTML = `${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}${escapeHtml(board.title)}`;
+  const editorTitleMarkup =
+    board.id === inlineTitleEdit.getEditingStoryBoardId()
+      ? `<input class="inline-story-title-input editor-title-input" type="text" maxlength="80" value="${escapeHtml(board.title)}" data-role="inline-story-title-input" data-board-id="${board.id}" aria-label="Story name" />`
+      : `<span class="editor-title-text" data-role="board-title-dblclick">${escapeHtml(board.title)}</span>`;
+  editorTitle.innerHTML = `<div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}${editorTitleMarkup}</span></div>`;
   structureNameEl.textContent = isModifiedOrder ? `${structure.name} (modified)` : structure.name;
   boardEl.innerHTML = phases
     .map((phase, columnIndex) => {
@@ -1096,17 +1209,30 @@ function renderEditor() {
       const phaseComments = getPhaseComments(board, columnIndex);
       const commentCount = phaseComments.length;
       const emptyClass = noteItems.length === 0 ? " column-empty" : "";
+      const phaseDesc = getPhaseDescription(phase);
+      const helpOpen = phaseDesc && phaseHelpOpenColumns.has(columnIndex);
+      const phaseTitleLabel = escapeHtml(formatPhaseTitle(phase));
+      const phaseTitleHtml = phaseDesc
+        ? `<button type="button" class="phase-title phase-title-toggle" data-role="phase-description-toggle" data-column="${columnIndex}" aria-expanded="${Boolean(helpOpen)}"${helpOpen ? ` aria-controls="phase-help-${columnIndex}"` : ""} aria-label="${helpOpen ? "Hide" : "Show"} phase description" title="Show or hide phase description">${phaseTitleLabel}</button>`
+        : `<h2 class="phase-title">${phaseTitleLabel}</h2>`;
+      const helpPanel =
+        phaseDesc && helpOpen
+          ? `<p class="phase-help-panel" id="phase-help-${columnIndex}" role="region">${escapeHtml(phaseDesc)}</p>`
+          : "";
       return `
       <section class="column${emptyClass}" data-column="${columnIndex}">
         <div class="phase-head">
-          <div class="phase-title-wrap">
-            <button class="phase-drag" data-role="phase-drag-handle" title="Drag phase" draggable="true">⋮⋮</button>
-            <h2 class="phase-title">${formatPhaseTitle(phase)}</h2>
+          <div class="phase-head-top">
+            <div class="phase-title-wrap">
+              <button class="phase-drag" data-role="phase-drag-handle" title="Drag phase" draggable="true">⋮⋮</button>
+              ${phaseTitleHtml}
+            </div>
+            <div class="phase-head-actions">
+              <button class="phase-expand" data-role="open-phase-comments" data-column="${columnIndex}" title="Open phase details">🔍</button>
+              <button class="phase-add" data-role="open-column-menu" title="Add note">+</button>
+            </div>
           </div>
-          <div class="phase-head-actions">
-            <button class="phase-expand" data-role="open-phase-comments" data-column="${columnIndex}" title="Open phase details">🔍</button>
-            <button class="phase-add" data-role="open-column-menu" title="Add note">+</button>
-          </div>
+          ${helpPanel}
           ${columnMenuTemplate(columnIndex, archetypes, noteTypes)}
         </div>
         <div class="notes">${noteItems
@@ -1195,12 +1321,34 @@ function showBoard(boardId) {
   navigation.showBoard(boardId);
 }
 
+function closeNewStoryOnboardingModal() {
+  if (!newStoryOnboardingModalOverlay) return;
+  newStoryOnboardingModalOverlay.classList.add("hidden");
+}
+
+function openNewStoryOnboardingModal() {
+  if (!newStoryOnboardingModalOverlay) return;
+  newStoryOnboardingModalOverlay.classList.remove("hidden");
+}
+
+function markCurrentBoardOnboardingSeen() {
+  const board = getCurrentBoard();
+  if (!board) return;
+  if (board.onboardingAddNotesHintSeen === true) return;
+  board.onboardingAddNotesHintSeen = true;
+  saveBoards();
+}
+
 function renderGroup() {
   const group = getCurrentGroup();
   if (!group) return;
   const groupBoards = group.boardIds.map((id) => boards.find((board) => board.id === id)).filter(Boolean);
   const isDemoSeries = groupBoards.length > 0 && groupBoards.every((board) => isDemoBoard(board));
-  groupTitleEl.innerHTML = `${isDemoSeries ? '<span class="demo-label">Demo</span> ' : ""}${escapeHtml(group.title)}`;
+  const groupTitleMarkup =
+    inlineTitleEdit.getEditingGroupId() === group.id
+      ? `<input class="inline-group-title-input" type="text" maxlength="120" value="${escapeHtml(group.title)}" data-role="inline-group-title-input" data-group-id="${group.id}" aria-label="Series name" />`
+      : `<span class="group-title-text" data-role="group-title-dblclick">${escapeHtml(group.title)}</span>`;
+  groupTitleEl.innerHTML = `<span class="inline-story-title-host" data-role="inline-story-title-host">${isDemoSeries ? '<span class="demo-label">Demo</span> ' : ""}${groupTitleMarkup}</span>`;
   groupSubtitleEl.textContent = `${groupBoards.length} stories`;
   groupBoardStackEl.innerHTML = groupBoards
     .map((board) => {
@@ -1210,7 +1358,11 @@ function renderGroup() {
       <section class="group-board-card">
         <header class="group-board-head">
           <div>
-            <h2>${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}${escapeHtml(board.title)}</h2>
+            <h2><div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}${
+              board.id === inlineTitleEdit.getEditingStoryBoardId()
+                ? `<input class="inline-story-title-input group-board-title-input" type="text" maxlength="80" value="${escapeHtml(board.title)}" data-role="inline-story-title-input" data-board-id="${board.id}" aria-label="Story name" />`
+                : `<span class="group-board-title-text" data-role="board-title-dblclick" data-board-id="${board.id}">${escapeHtml(board.title)}</span>`
+            }</span></div></h2>
             <p class="subtitle">${structure.name}</p>
           </div>
           <div class="group-board-head-actions">
@@ -1290,16 +1442,50 @@ function touchBoard(board) {
   saveBoards();
 }
 
+function commitGroupTitleRenameFromModal(groupId, rawValue) {
+  const trimmed = String(rawValue ?? "").trim();
+  const group = groups.find((g) => g.id === groupId);
+  if (!group) return { ok: true };
+  if (!trimmed) return { ok: false, error: "empty" };
+  if (trimmed === group.title) return { ok: true };
+  group.title = trimmed;
+  group.slug = ensureUniqueGroupSlug(slugifyTitle(trimmed), group.id);
+  group.updatedAt = Date.now();
+  saveGroups();
+  renderHome();
+  if (currentGroupId === group.id) renderGroup();
+  return { ok: true, changed: true };
+}
+
+const inlineTitleEdit = createInlineTitleEditController({
+  getBoards: () => boards,
+  getGroups: () => groups,
+  getCurrentBoardId: () => currentBoardId,
+  getCurrentGroupId: () => currentGroupId,
+  slugifyTitle,
+  ensureUniqueSlug,
+  touchBoard,
+  clearBoardCardPendingOpenTimer: () => {
+    clearTimeout(boardCardPendingOpenTimer);
+    boardCardPendingOpenTimer = null;
+  },
+  commitGroupTitleRenameFromModal,
+  renderHome,
+  renderEditor,
+  renderGroup,
+});
+
 const groupModalController = createGroupModalController({
   elements: {
     groupActionsModalOverlay,
     closeGroupActionsModalBtn,
     modalReorderGroupBoardsBtn,
-    modalRemoveBoardFromGroupBtn,
     modalDeleteGroupBtn,
     groupReorderModalOverlay,
     closeGroupReorderModalBtn,
     groupReorderListEl,
+    groupReorderAddSelectEl,
+    groupReorderSeriesNameInput: groupReorderSeriesNameInputEl,
     groupReorderStatusEl,
   },
   getGroups: () => groups,
@@ -1312,7 +1498,7 @@ const groupModalController = createGroupModalController({
   renderHome,
   renderGroup,
   openHome,
-  openGroup,
+  commitGroupTitleRename: commitGroupTitleRenameFromModal,
 });
 
 function createBoard(title, structureId = "hero_journey") {
@@ -1333,11 +1519,13 @@ function createBoard(title, structureId = "hero_journey") {
     notes: [],
     phaseComments: {},
     phaseCommentsVersion: 2,
+    onboardingAddNotesHintSeen: false,
     updatedAt: Date.now(),
   };
   boards.push(newBoard);
   saveBoards();
   renderHome();
+  return newBoard;
 }
 
 function createDemoBoardFromJson(demoData) {
@@ -1600,7 +1788,9 @@ function normalizeStructureFingerprint(name, phases) {
     .toLowerCase()
     .replace(/\s+/g, " ");
   const normalizedPhases = Array.isArray(phases)
-    ? phases.map((phase) => String(phase || "").trim().toLowerCase().replace(/\s+/g, " ")).join("|")
+    ? phases
+        .map((phase) => String(parsePhaseEntry(phase).title || "").trim().toLowerCase().replace(/\s+/g, " "))
+        .join("|")
     : "";
   return `${normalizedName}::${normalizedPhases}`;
 }
@@ -1621,6 +1811,25 @@ function exportCustomStructures() {
   };
   const stamp = new Date().toISOString().replace(/[:]/g, "-").slice(0, 19);
   downloadJsonFile(payload, `structurer-custom-structures-${stamp}.json`);
+}
+
+function normalizeImportedStructurePhase(phase, pathLabel) {
+  if (typeof phase === "string") {
+    const title = String(phase || "").trim();
+    if (!title) {
+      throw new Error(`Invalid custom structures file: ${pathLabel} must be a non-empty string or object with title.`);
+    }
+    return title;
+  }
+  if (phase && typeof phase === "object" && !Array.isArray(phase)) {
+    const title = String(phase.title ?? phase.name ?? "").trim();
+    if (!title) {
+      throw new Error(`Invalid custom structures file: ${pathLabel} must include a non-empty title.`);
+    }
+    const description = typeof phase.description === "string" ? phase.description.trim() : "";
+    return description ? { title, description } : { title };
+  }
+  throw new Error(`Invalid custom structures file: ${pathLabel} must be a string or { title, description? }.`);
 }
 
 function parseImportedCustomStructures(rawText) {
@@ -1644,7 +1853,11 @@ function parseImportedCustomStructures(rawText) {
     const id = typeof item.id === "string" ? item.id.trim() : "";
     const uid = typeof item.uid === "string" ? item.uid.trim() : "";
     const name = typeof item.name === "string" ? item.name.trim() : "";
-    const phases = Array.isArray(item.phases) ? item.phases.map((phase) => String(phase || "").trim()) : null;
+    const phases = Array.isArray(item.phases)
+      ? item.phases.map((phase, pi) =>
+          normalizeImportedStructurePhase(phase, `entry #${index + 1} phase #${pi + 1}`),
+        )
+      : null;
     const updatedAt = Number.isFinite(item.updatedAt) ? item.updatedAt : Date.now();
 
     if (!id || !uid || !name || !phases) {
@@ -1831,6 +2044,7 @@ function restoreFullAppBackupFromText(rawText) {
     NOTE_TYPE_OVERRIDES_KEY,
     GROUPS_KEY,
     DEMO_BOARD_IDS_KEY,
+    PHASE_HELP_STATE_KEY,
   ]);
   saveJsonItem(STORAGE_KEY, nextBoards);
   saveJsonItem(SETTINGS_KEY, nextSettings);
@@ -1851,6 +2065,41 @@ function closeBoardActionsModal() {
   boardActionsModalBoardId = null;
 }
 
+function closeDeleteStoryModal() {
+  if (!deleteStoryModalOverlay) return;
+  deleteStoryModalOverlay.classList.add("hidden");
+  pendingDeleteStoryBoardId = null;
+  if (deleteStoryConfirmCheckbox) {
+    deleteStoryConfirmCheckbox.checked = false;
+  }
+  if (confirmDeleteStoryBtn) {
+    confirmDeleteStoryBtn.disabled = true;
+  }
+}
+
+function openDeleteStoryModal(boardId) {
+  if (!deleteStoryModalOverlay) return;
+  dismissAllAppAlerts();
+  const board = boards.find((item) => item.id === boardId);
+  if (!board) return;
+  pendingDeleteStoryBoardId = boardId;
+  if (deleteStoryModalIntroEl) {
+    deleteStoryModalIntroEl.innerHTML = `This will permanently delete <strong>${escapeHtml(
+      board.title,
+    )}</strong> and all its notes. This cannot be undone.`;
+  }
+  if (deleteStoryConfirmCheckbox) {
+    deleteStoryConfirmCheckbox.checked = false;
+  }
+  if (confirmDeleteStoryBtn) {
+    confirmDeleteStoryBtn.disabled = true;
+  }
+  deleteStoryModalOverlay.classList.remove("hidden");
+  if (cancelDeleteStoryBtn) {
+    cancelDeleteStoryBtn.focus();
+  }
+}
+
 function groupsEligibleForBoard(boardId) {
   const board = boards.find((b) => b.id == boardId);
   if (!board) return [];
@@ -1858,6 +2107,7 @@ function groupsEligibleForBoard(boardId) {
 }
 
 function openBoardActionsModal(boardId) {
+  dismissAllAppAlerts();
   boardActionsModalBoardId = boardId;
   boardActionsModalOverlay.classList.remove("hidden");
   const board = boards.find((b) => b.id == boardId);
@@ -2153,8 +2403,12 @@ function importBoardFromJson(rawText) {
       error.code = "PHASE_ORDER_CONFLICT";
       error.phaseOrderConflict = {
         boardTitle: existingByUid.title,
-        currentOrder: existingPhaseOrder.map((phaseIndex) => structurePhases[phaseIndex] || "-"),
-        importedOrder: importedPhaseOrder.map((phaseIndex) => structurePhases[phaseIndex] || "-"),
+        currentOrder: existingPhaseOrder.map((phaseIndex) =>
+          formatPhaseTitle(structurePhases[phaseIndex]) || "-",
+        ),
+        importedOrder: importedPhaseOrder.map((phaseIndex) =>
+          formatPhaseTitle(structurePhases[phaseIndex]) || "-",
+        ),
       };
       throw error;
     }
@@ -2290,34 +2544,42 @@ function importBoardFromJson(rawText) {
 }
 
 function openBoard(boardId, replaceRoute = false, fromGroupId = null) {
+  inlineTitleEdit.flush();
   navigation.openBoard(boardId, replaceRoute, fromGroupId);
 }
 
 function openBoardPhase(boardId, columnIndex, replaceRoute = false, fromGroupId = null) {
+  inlineTitleEdit.flush();
   navigation.openBoardPhase(boardId, columnIndex, replaceRoute, fromGroupId);
 }
 
 function openHome(replaceRoute = false) {
+  inlineTitleEdit.flush();
   navigation.openHome(replaceRoute);
 }
 
 function openLanding(replaceRoute = false) {
+  inlineTitleEdit.flush();
   navigation.openLanding(replaceRoute);
 }
 
 function openHelp(replaceRoute = false) {
+  inlineTitleEdit.flush();
   navigation.openHelp(replaceRoute);
 }
 
 function openPrivacy(replaceRoute = false) {
+  inlineTitleEdit.flush();
   navigation.openPrivacy(replaceRoute);
 }
 
 function openTerms(replaceRoute = false) {
+  inlineTitleEdit.flush();
   navigation.openTerms(replaceRoute);
 }
 
 function openGroup(groupId, replaceRoute = false) {
+  inlineTitleEdit.flush();
   navigation.openGroup(groupId, replaceRoute);
 }
 
@@ -2416,15 +2678,19 @@ createBoardForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const title = boardTitleInput.value.trim();
   if (!title) return;
-  createBoard(title, boardStructureSelect.value);
+  const newBoard = createBoard(title, boardStructureSelect.value);
   boardTitleInput.value = "";
   closeDashboardCreateStoryModal();
   closeDashboardActionsModal();
+  if (newBoard?.id) {
+    openBoard(newBoard.id);
+    openNewStoryOnboardingModal();
+  }
 });
 
 addStructurePhaseBtn.addEventListener("click", () => {
-  const values = [...structurePhasesList.querySelectorAll('[data-role="phase-input"]')].map((input) => input.value);
-  values.push("");
+  const values = collectStructurePhaseRowsFromDOM();
+  values.push({ title: "", description: "" });
   renderStructurePhaseRows(values);
 });
 
@@ -2434,7 +2700,7 @@ structurePhasesList.addEventListener("click", (event) => {
   const rows = [...structurePhasesList.querySelectorAll(".structure-phase-row")];
   if (rows.length <= 2) return;
   removeButton.closest(".structure-phase-row").remove();
-  const values = [...structurePhasesList.querySelectorAll('[data-role="phase-input"]')].map((input) => input.value);
+  const values = collectStructurePhaseRowsFromDOM();
   renderStructurePhaseRows(values);
 });
 
@@ -2442,17 +2708,22 @@ structurePhasesList.addEventListener("input", () => {
   // Keep list in sync; no additional actions needed.
 });
 
-createStructureForm.addEventListener("submit", (event) => {
+createStructureForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const name = structureNameInput.value.trim();
   if (!name) return;
 
-  const phaseValues = [...structurePhasesList.querySelectorAll('[data-role="phase-input"]')]
-    .map((input) => input.value.trim())
+  const phaseEntries = collectStructurePhaseRowsFromDOM()
+    .map((row) => {
+      const title = row.title.trim();
+      if (!title) return null;
+      const description = row.description.trim();
+      return description ? { title, description } : { title };
+    })
     .filter(Boolean);
 
-  if (phaseValues.length < 2) {
-    window.alert("Please add at least 2 phases.");
+  if (phaseEntries.length < 2) {
+    await appAlert("Please add at least 2 phases.");
     return;
   }
 
@@ -2470,7 +2741,7 @@ createStructureForm.addEventListener("submit", (event) => {
     id,
     uid,
     name,
-    phases: phaseValues,
+    phases: phaseEntries,
     updatedAt: createdAt,
   });
   customStructureActivity[uid] = createdAt;
@@ -2478,13 +2749,19 @@ createStructureForm.addEventListener("submit", (event) => {
   saveCustomStructureActivity();
   renderStructureOptions(id);
   structureNameInput.value = "";
-  renderStructurePhaseRows(["", "", ""]);
-  window.alert(`Structure "${name}" saved.`);
+  renderStructurePhaseRows();
+  await appAlert(`Structure "${name}" saved.`);
   closeDashboardCreateStructureModal();
   closeDashboardActionsModal();
 });
 
 boardsList.addEventListener("click", (event) => {
+  if (event.target.closest('[data-role="inline-story-title-input"]')) return;
+  const cardEarly = event.target.closest(".board-card");
+  if (cardEarly && inlineTitleEdit.getEditingStoryBoardId() === cardEarly.dataset.boardId) {
+    const root = cardEarly.querySelector('[data-role="inline-story-title-root"]');
+    if (root && root.contains(event.target)) return;
+  }
   const boardCard = event.target.closest(".board-card");
   if (!boardCard) return;
   const boardId = boardCard.dataset.boardId;
@@ -2493,10 +2770,26 @@ boardsList.addEventListener("click", (event) => {
     openBoardActionsModal(boardId);
     return;
   }
+  const titleEl = event.target.closest('[data-role="board-title-dblclick"]');
+  if (titleEl) {
+    if (event.detail === 2) {
+      clearTimeout(boardCardPendingOpenTimer);
+      boardCardPendingOpenTimer = null;
+      inlineTitleEdit.beginStory(boardId);
+      return;
+    }
+    clearTimeout(boardCardPendingOpenTimer);
+    boardCardPendingOpenTimer = window.setTimeout(() => {
+      boardCardPendingOpenTimer = null;
+      openBoard(boardId);
+    }, 280);
+    return;
+  }
   openBoard(boardId);
 });
 
 boardsList.addEventListener("keydown", (event) => {
+  if (event.target.closest('[data-role="inline-story-title-input"]')) return;
   if (event.target.closest("button")) return;
   const boardCard = event.target.closest(".board-card");
   if (!boardCard) return;
@@ -2613,13 +2906,13 @@ importBoardInput.addEventListener("change", async (event) => {
     importBoardFromJson(text);
     closeDashboardImportModal();
     closeDashboardActionsModal();
-    window.alert("Story imported successfully.");
+    await appAlert("Story imported successfully.");
   } catch (error) {
     if (error instanceof Error && error.code === "PHASE_ORDER_CONFLICT" && error.phaseOrderConflict) {
       // Keep the import modal open so the user can retry if needed.
       openPhaseOrderConflictModal(error.phaseOrderConflict);
     } else {
-      window.alert(
+      await appAlert(
         error instanceof Error
           ? error.message
           : "Import failed. Please use a valid Structurer story JSON.",
@@ -2637,6 +2930,14 @@ groupBoardStackEl.addEventListener("click", (event) => {
 });
 
 groupBoardStackEl.addEventListener("dblclick", (event) => {
+  const storyTitleEl = event.target.closest('[data-role="board-title-dblclick"][data-board-id]');
+  if (storyTitleEl) {
+    event.preventDefault();
+    event.stopPropagation();
+    const bid = storyTitleEl.dataset.boardId;
+    if (bid) inlineTitleEdit.beginStory(bid);
+    return;
+  }
   if (event.target.closest("button")) return;
   const noteHead = event.target.closest(".group-note-readonly .note-head");
   if (!noteHead) return;
@@ -2655,6 +2956,18 @@ groupBoardStackEl.addEventListener("dblclick", (event) => {
 });
 
 boardEl.addEventListener("click", (event) => {
+  const descToggle = event.target.closest('[data-role="phase-description-toggle"]');
+  if (descToggle) {
+    event.preventDefault();
+    const columnIndex = Number(descToggle.dataset.column);
+    if (!Number.isInteger(columnIndex)) return;
+    if (phaseHelpOpenColumns.has(columnIndex)) phaseHelpOpenColumns.delete(columnIndex);
+    else phaseHelpOpenColumns.add(columnIndex);
+    const board = getCurrentBoard();
+    if (board) persistPhaseHelpStateForBoard(board.id, phaseHelpOpenColumns);
+    renderEditor();
+    return;
+  }
   const openPhaseBtn = event.target.closest('[data-role="open-phase-comments"]');
   if (!openPhaseBtn) return;
   const columnIndex = Number(openPhaseBtn.dataset.column);
@@ -2701,7 +3014,7 @@ if (phaseCommentForm) {
 }
 
 if (phaseCommentsListEl) {
-  phaseCommentsListEl.addEventListener("click", (event) => {
+  phaseCommentsListEl.addEventListener("click", async (event) => {
     const board = getCurrentBoard();
     if (!board || !Number.isInteger(activePhaseCommentsColumn)) return;
     const phaseUid = getPhaseUidByVisualColumn(board, activePhaseCommentsColumn);
@@ -2749,7 +3062,7 @@ if (phaseCommentsListEl) {
     }
 
     if (event.target.closest('[data-role="delete-phase-comment"]')) {
-      const confirmed = window.confirm("Delete this comment?");
+      const confirmed = await appAlert("Delete this comment?", { confirm: true });
       if (!confirmed) return;
       normalizeBoardPhaseComments(board);
       const source = board.phaseComments[phaseUid] || [];
@@ -2786,13 +3099,15 @@ if (cancelNoteTypeColorBtn) {
 }
 
 if (editNoteTypesListEl) {
-  editNoteTypesListEl.addEventListener("click", (event) => {
+  editNoteTypesListEl.addEventListener("click", async (event) => {
     const delBtn = event.target.closest('[data-role="delete-custom-note-type"]');
     if (delBtn) {
       const id = delBtn.dataset.noteTypeId;
       if (!id || BUILTIN_NOTE_TYPES.some((b) => b.id === id) || isNoteTypeInUse(id)) return;
       const typeLabel = noteTypeById(id).label;
-      const confirmed = window.confirm(`Delete note type "${typeLabel}"? This cannot be undone.`);
+      const confirmed = await appAlert(`Delete note type "${typeLabel}"? This cannot be undone.`, {
+        confirm: true,
+      });
       if (!confirmed) return;
       customNoteTypes = customNoteTypes.filter((item) => item.id !== id);
       delete noteTypeOverrides[id];
@@ -2828,7 +3143,7 @@ if (cancelEditNoteTypesBtn) {
   cancelEditNoteTypesBtn.addEventListener("click", () => closeEditNoteTypesModal());
 }
 if (saveEditNoteTypesBtn) {
-  saveEditNoteTypesBtn.addEventListener("click", () => saveEditNoteTypesFromModal());
+  saveEditNoteTypesBtn.addEventListener("click", () => void saveEditNoteTypesFromModal());
 }
 if (editNoteTypesModalOverlay) {
   editNoteTypesModalOverlay.addEventListener("click", (event) => {
@@ -2877,11 +3192,11 @@ if (modalExportBoardBtn) {
 }
 
 if (modalResetDemoBoardBtn) {
-  modalResetDemoBoardBtn.addEventListener("click", () => {
+  modalResetDemoBoardBtn.addEventListener("click", async () => {
     if (!boardActionsModalBoardId) return;
     const board = boards.find((item) => item.id === boardActionsModalBoardId);
     if (!board || !isDemoBoard(board)) return;
-    const confirmed = window.confirm("Reset this demo story to its original notes?");
+    const confirmed = await appAlert("Reset this demo story to its original notes?", { confirm: true });
     if (!confirmed) return;
     resetSingleDemoBoard(board);
     ensureMatrixTrilogySeriesDemo();
@@ -2893,25 +3208,21 @@ if (modalResetDemoBoardBtn) {
   });
 }
 
-if (modalRenameBoardBtn) {
-  modalRenameBoardBtn.addEventListener("click", () => {
-    const board = boards.find((item) => item.id === boardActionsModalBoardId);
-    if (!board) return;
-    const nextTitle = window.prompt("Rename story:", board.title);
-    if (nextTitle === null) return;
-    const trimmed = nextTitle.trim();
-    if (!trimmed) return;
-    board.title = trimmed;
-    board.slug = ensureUniqueSlug(slugifyTitle(trimmed), board.id);
-    touchBoard(board);
-    renderHome();
-    if (currentBoardId === board.id) {
-      renderEditor();
-    }
-    if (currentGroupId && groups.some((g) => g.id === currentGroupId && g.boardIds.includes(board.id))) {
-      renderGroup();
-    }
-    closeBoardActionsModal();
+if (editorView) {
+  editorView.addEventListener("dblclick", (event) => {
+    const titleEl = event.target.closest('[data-role="board-title-dblclick"]');
+    if (!titleEl || !currentBoardId) return;
+    event.preventDefault();
+    inlineTitleEdit.beginStory(currentBoardId);
+  });
+}
+
+if (groupView) {
+  groupView.addEventListener("dblclick", (event) => {
+    const titleEl = event.target.closest('[data-role="group-title-dblclick"]');
+    if (!titleEl || !currentGroupId) return;
+    event.preventDefault();
+    inlineTitleEdit.beginGroup(currentGroupId);
   });
 }
 
@@ -2962,7 +3273,7 @@ if (addBoardToGroupListEl) {
     const board = boards.find((item) => item.id === boardId);
     if (!group || !board) return;
     if (group.boardIds.includes(board.id)) {
-      window.alert(`"${board.title}" is already in "${group.title}".`);
+      void appAlert(`"${board.title}" is already in "${group.title}".`);
       return;
     }
     group.boardIds.push(board.id);
@@ -2988,7 +3299,7 @@ if (addBoardToGroupModalOverlay) {
 }
 
 if (createGroupForm && createGroupNameInput) {
-  createGroupForm.addEventListener("submit", (event) => {
+  createGroupForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const title = createGroupNameInput.value.trim();
     if (!title) return;
@@ -2996,7 +3307,7 @@ if (createGroupForm && createGroupNameInput) {
       (input) => input.value,
     );
     if (checkedIds.length === 0) {
-      window.alert("Select at least one story to include.");
+      await appAlert("Select at least one story to include.");
       return;
     }
     const group = {
@@ -3020,9 +3331,12 @@ if (createGroupForm && createGroupNameInput) {
 modalDeleteBoardBtn.addEventListener("click", () => {
   const board = boards.find((item) => item.id === boardActionsModalBoardId);
   if (!board) return;
-  const confirmed = window.confirm(`Delete story "${board.title}"? This action cannot be undone.`);
-  if (!confirmed) return;
-  const deletedId = board.id;
+  const boardId = board.id;
+  closeBoardActionsModal();
+  openDeleteStoryModal(boardId);
+});
+
+function performDeleteStory(deletedId) {
   boards = boards.filter((item) => item.id !== deletedId);
   groups.forEach((g) => {
     g.boardIds = g.boardIds.filter((id) => id !== deletedId);
@@ -3036,8 +3350,36 @@ modalDeleteBoardBtn.addEventListener("click", () => {
   if (currentGroupId) {
     renderGroup();
   }
-  closeBoardActionsModal();
-});
+}
+
+if (deleteStoryConfirmCheckbox && confirmDeleteStoryBtn) {
+  deleteStoryConfirmCheckbox.addEventListener("change", () => {
+    confirmDeleteStoryBtn.disabled = !deleteStoryConfirmCheckbox.checked;
+  });
+}
+
+if (cancelDeleteStoryBtn) {
+  cancelDeleteStoryBtn.addEventListener("click", () => {
+    closeDeleteStoryModal();
+  });
+}
+
+if (deleteStoryModalOverlay) {
+  deleteStoryModalOverlay.addEventListener("click", (event) => {
+    if (event.target === deleteStoryModalOverlay) {
+      closeDeleteStoryModal();
+    }
+  });
+}
+
+if (confirmDeleteStoryBtn) {
+  confirmDeleteStoryBtn.addEventListener("click", () => {
+    if (!confirmDeleteStoryBtn || confirmDeleteStoryBtn.disabled || !pendingDeleteStoryBoardId) return;
+    const deletedId = pendingDeleteStoryBoardId;
+    closeDeleteStoryModal();
+    performDeleteStory(deletedId);
+  });
+}
 
 function closeOptionsMenu() {
   optionsMenu.classList.add("hidden");
@@ -3046,6 +3388,23 @@ function closeOptionsMenu() {
 function closeDashboardActionsModal() {
   if (!dashboardActionsModalOverlay) return;
   dashboardActionsModalOverlay.classList.add("hidden");
+  if (dashboardActionsSectionsEl) {
+    dashboardActionsSectionsEl.querySelectorAll("details.dashboard-actions-section").forEach((details) => {
+      details.open = false;
+    });
+  }
+}
+
+function initDashboardActionsExclusiveAccordion() {
+  if (!dashboardActionsSectionsEl) return;
+  dashboardActionsSectionsEl.addEventListener("toggle", (event) => {
+    const details = event.target;
+    if (!(details instanceof HTMLDetailsElement) || !details.matches(".dashboard-actions-section")) return;
+    if (!details.open) return;
+    dashboardActionsSectionsEl.querySelectorAll("details.dashboard-actions-section").forEach((other) => {
+      if (other !== details) other.open = false;
+    });
+  });
 }
 
 function closeDashboardCreateStoryModal() {
@@ -3074,20 +3433,90 @@ function closeDashboardImportStructuresPasteModal() {
   if (importStructuresPasteText) importStructuresPasteText.value = "";
 }
 
+function updateDashboardRemoveStructuresActionState() {
+  if (!dashboardRemoveStructuresActionBtn) return;
+  const unused = getUnusedCustomStructures();
+  const has = unused.length > 0;
+  dashboardRemoveStructuresActionBtn.disabled = !has;
+  if (has) {
+    dashboardRemoveStructuresActionBtn.removeAttribute("aria-disabled");
+    dashboardRemoveStructuresActionBtn.removeAttribute("title");
+  } else {
+    dashboardRemoveStructuresActionBtn.setAttribute("aria-disabled", "true");
+    dashboardRemoveStructuresActionBtn.title =
+      "No custom structures are unused. A structure must not be used by any story to be removed.";
+  }
+}
+
+function syncRemoveStructuresProceedButtonState() {
+  if (!confirmRemoveStructuresBtn || !removeStructuresListEl) return;
+  const checked = removeStructuresListEl.querySelectorAll('input[data-role="remove-structure-cb"]:checked');
+  confirmRemoveStructuresBtn.disabled = checked.length === 0;
+}
+
+function populateRemoveStructuresModalList() {
+  if (!removeStructuresListEl || !removeStructuresEmptyEl) return;
+  const unused = getUnusedCustomStructures();
+  removeStructuresEmptyEl.classList.toggle("hidden", unused.length > 0);
+  if (unused.length === 0) {
+    removeStructuresListEl.innerHTML = "";
+    syncRemoveStructuresProceedButtonState();
+    return;
+  }
+  removeStructuresListEl.innerHTML = unused
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(
+      (structure) => `
+    <li>
+      <label class="remove-structures-row">
+        <input type="checkbox" name="remove-structure" value="${escapeHtml(structure.id)}" checked data-role="remove-structure-cb" />
+        <span>${escapeHtml(structure.name)}</span>
+      </label>
+    </li>`,
+    )
+    .join("");
+  syncRemoveStructuresProceedButtonState();
+}
+
+function closeDashboardRemoveStructuresModal() {
+  if (!dashboardRemoveStructuresModalOverlay) return;
+  dashboardRemoveStructuresModalOverlay.classList.add("hidden");
+  if (removeStructuresListEl) removeStructuresListEl.innerHTML = "";
+}
+
+function openDashboardRemoveStructuresModal() {
+  if (!dashboardRemoveStructuresModalOverlay) return;
+  dismissAllAppAlerts();
+  closeOptionsMenu();
+  closeDashboardActionsModal();
+  closeDashboardCreateStoryModal();
+  closeDashboardCreateStructureModal();
+  closeDashboardImportStructuresPasteModal();
+  closeDashboardImportModal();
+  closeDashboardCreateSeriesModal();
+  closeDeleteStoryModal();
+  populateRemoveStructuresModalList();
+  dashboardRemoveStructuresModalOverlay.classList.remove("hidden");
+}
+
 function openDashboardActionsModal() {
   if (!dashboardActionsModalOverlay) return;
+  dismissAllAppAlerts();
   closeOptionsMenu();
   closeDashboardCreateStoryModal();
   closeDashboardCreateStructureModal();
   closeDashboardImportStructuresPasteModal();
   closeDashboardImportModal();
   closeDashboardCreateSeriesModal();
+  closeDeleteStoryModal();
+  closeDashboardRemoveStructuresModal();
   dashboardActionsModalOverlay.classList.remove("hidden");
 }
 
 function openDashboardCreateStoryModal() {
   if (!dashboardCreateStoryModalOverlay) return;
   closeDashboardActionsModal();
+  closeDashboardRemoveStructuresModal();
   dashboardCreateStoryModalOverlay.classList.remove("hidden");
   // Focus for faster input.
   if (boardTitleInput) boardTitleInput.focus();
@@ -3096,6 +3525,7 @@ function openDashboardCreateStoryModal() {
 function openDashboardCreateStructureModal() {
   if (!dashboardCreateStructureModalOverlay) return;
   closeDashboardActionsModal();
+  closeDashboardRemoveStructuresModal();
   dashboardCreateStructureModalOverlay.classList.remove("hidden");
   // Focus for faster input.
   if (structureNameInput) structureNameInput.focus();
@@ -3104,18 +3534,21 @@ function openDashboardCreateStructureModal() {
 function openDashboardImportModal() {
   if (!dashboardImportModalOverlay) return;
   closeDashboardActionsModal();
+  closeDashboardRemoveStructuresModal();
   dashboardImportModalOverlay.classList.remove("hidden");
 }
 
 function openDashboardCreateSeriesModal() {
   if (!dashboardCreateSeriesModalOverlay) return;
   closeDashboardActionsModal();
+  closeDashboardRemoveStructuresModal();
   dashboardCreateSeriesModalOverlay.classList.remove("hidden");
 }
 
 function openDashboardImportStructuresPasteModal() {
   if (!dashboardImportStructuresPasteModalOverlay) return;
   closeDashboardActionsModal();
+  closeDashboardRemoveStructuresModal();
   dashboardImportStructuresPasteModalOverlay.classList.remove("hidden");
   if (importStructuresPasteText) importStructuresPasteText.focus();
 }
@@ -3178,6 +3611,12 @@ if (openCreateStoryActionBtn) {
   });
 }
 
+if (openCreateStoryEmptyStateBtn) {
+  openCreateStoryEmptyStateBtn.addEventListener("click", () => {
+    openDashboardCreateStoryModal();
+  });
+}
+
 if (closeDashboardCreateStoryModalBtn) {
   closeDashboardCreateStoryModalBtn.addEventListener("click", () => {
     closeDashboardCreateStoryModal();
@@ -3186,6 +3625,12 @@ if (closeDashboardCreateStoryModalBtn) {
 
 if (openCreateStructureActionBtn) {
   openCreateStructureActionBtn.addEventListener("click", () => {
+    openDashboardCreateStructureModal();
+  });
+}
+
+if (openCreateStructureInlineBtn) {
+  openCreateStructureInlineBtn.addEventListener("click", () => {
     openDashboardCreateStructureModal();
   });
 }
@@ -3244,6 +3689,13 @@ if (dashboardCreateStoryModalOverlay) {
   });
 }
 
+if (confirmNewStoryOnboardingBtn) {
+  confirmNewStoryOnboardingBtn.addEventListener("click", () => {
+    markCurrentBoardOnboardingSeen();
+    closeNewStoryOnboardingModal();
+  });
+}
+
 if (dashboardCreateStructureModalOverlay) {
   dashboardCreateStructureModalOverlay.addEventListener("click", (event) => {
     if (event.target === dashboardCreateStructureModalOverlay) closeDashboardCreateStructureModal();
@@ -3268,10 +3720,78 @@ if (dashboardImportStructuresPasteModalOverlay) {
   });
 }
 
+if (dashboardRemoveStructuresModalOverlay) {
+  dashboardRemoveStructuresModalOverlay.addEventListener("click", (event) => {
+    if (event.target === dashboardRemoveStructuresModalOverlay) closeDashboardRemoveStructuresModal();
+  });
+}
+
+if (removeStructuresListEl) {
+  removeStructuresListEl.addEventListener("change", (event) => {
+    if (event.target.matches('input[data-role="remove-structure-cb"]')) {
+      syncRemoveStructuresProceedButtonState();
+    }
+  });
+}
+
+if (dashboardRemoveStructuresActionBtn) {
+  dashboardRemoveStructuresActionBtn.addEventListener("click", () => {
+    if (dashboardRemoveStructuresActionBtn.disabled) return;
+    openDashboardRemoveStructuresModal();
+  });
+}
+
+if (closeDashboardRemoveStructuresModalBtn) {
+  closeDashboardRemoveStructuresModalBtn.addEventListener("click", () => {
+    closeDashboardRemoveStructuresModal();
+  });
+}
+
+if (confirmRemoveStructuresBtn && removeStructuresListEl) {
+  confirmRemoveStructuresBtn.addEventListener("click", async () => {
+    const selected = [...removeStructuresListEl.querySelectorAll('input[data-role="remove-structure-cb"]:checked')].map(
+      (input) => input.value,
+    );
+    if (selected.length === 0) return;
+
+    const nameById = new Map(customStructures.map((s) => [s.id, s.name]));
+    const names = selected.map((id) => nameById.get(id) || id);
+
+    closeDashboardRemoveStructuresModal();
+
+    const confirmed = await appAlert(
+      `The following custom structures will be permanently removed:\n\n${names.map((n) => `• ${n}`).join("\n")}\n\nThis cannot be undone.`,
+      { confirm: true },
+    );
+    if (!confirmed) return;
+
+    const idSet = new Set(selected);
+    customStructures.forEach((structure) => {
+      if (idSet.has(structure.id) && structure.uid) {
+        delete customStructureActivity[structure.uid];
+      }
+    });
+    customStructures = customStructures.filter((s) => !idSet.has(s.id));
+    saveCustomStructures();
+    saveCustomStructureActivity();
+    renderHome();
+    if (boardStructureSelect) {
+      const sid = boardStructureSelect.value;
+      if (sid && !getAllStructures()[sid]) {
+        renderStructureOptions("hero_journey");
+      } else {
+        renderStructureOptions();
+      }
+    }
+  });
+}
+
 function openFactoryResetModal() {
   if (!factoryResetModalOverlay) return;
 
   closeOptionsMenu();
+  dismissAllAppAlerts();
+  closeDeleteStoryModal();
   factoryResetModalOverlay.classList.remove("hidden");
 
   if (factoryResetConfirmCheckbox) {
@@ -3295,11 +3815,13 @@ function closeFactoryResetModal() {
 function openResetDemosModal() {
   if (!resetDemosModalOverlay) return;
   closeOptionsMenu();
+  dismissAllAppAlerts();
   closeDashboardActionsModal();
   closeDashboardCreateStoryModal();
   closeDashboardCreateStructureModal();
   closeDashboardImportModal();
   closeDashboardCreateSeriesModal();
+  closeDeleteStoryModal();
   resetDemosModalOverlay.classList.remove("hidden");
   if (cancelResetDemosBtn) {
     cancelResetDemosBtn.focus();
@@ -3315,11 +3837,13 @@ function openRestoreBackupModal(rawText) {
   if (!restoreBackupModalOverlay) return;
   pendingRestoreBackupText = rawText;
   closeOptionsMenu();
+  dismissAllAppAlerts();
   closeDashboardActionsModal();
   closeDashboardCreateStoryModal();
   closeDashboardCreateStructureModal();
   closeDashboardImportModal();
   closeDashboardCreateSeriesModal();
+  closeDeleteStoryModal();
   restoreBackupModalOverlay.classList.remove("hidden");
   if (restoreBackupConfirmCheckbox) {
     restoreBackupConfirmCheckbox.checked = false;
@@ -3373,6 +3897,7 @@ if (confirmFactoryResetBtn) {
       NOTE_TYPE_OVERRIDES_KEY,
       GROUPS_KEY,
       DEMO_BOARD_IDS_KEY,
+      PHASE_HELP_STATE_KEY,
     ]);
     window.location.assign(HOME_ROUTE);
   });
@@ -3422,12 +3947,12 @@ if (restoreBackupModalOverlay) {
 }
 
 if (confirmRestoreBackupBtn) {
-  confirmRestoreBackupBtn.addEventListener("click", () => {
+  confirmRestoreBackupBtn.addEventListener("click", async () => {
     if (!confirmRestoreBackupBtn || confirmRestoreBackupBtn.disabled || !pendingRestoreBackupText) return;
     try {
       restoreFullAppBackupFromText(pendingRestoreBackupText);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : "Backup restore failed.");
+      await appAlert(error instanceof Error ? error.message : "Backup restore failed.");
       closeRestoreBackupModal();
     }
   });
@@ -3436,6 +3961,7 @@ if (confirmRestoreBackupBtn) {
 // Close with Escape when the modal is open.
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+  if (closeAppAlertIfOpen()) return;
   if (factoryResetModalOverlay && !factoryResetModalOverlay.classList.contains("hidden")) {
     closeFactoryResetModal();
     return;
@@ -3448,8 +3974,15 @@ document.addEventListener("keydown", (event) => {
     closeRestoreBackupModal();
     return;
   }
+  if (deleteStoryModalOverlay && !deleteStoryModalOverlay.classList.contains("hidden")) {
+    closeDeleteStoryModal();
+    return;
+  }
   if (dashboardCreateStoryModalOverlay && !dashboardCreateStoryModalOverlay.classList.contains("hidden")) {
     closeDashboardCreateStoryModal();
+    return;
+  }
+  if (newStoryOnboardingModalOverlay && !newStoryOnboardingModalOverlay.classList.contains("hidden")) {
     return;
   }
   if (dashboardCreateStructureModalOverlay && !dashboardCreateStructureModalOverlay.classList.contains("hidden")) {
@@ -3469,6 +4002,13 @@ document.addEventListener("keydown", (event) => {
     !dashboardImportStructuresPasteModalOverlay.classList.contains("hidden")
   ) {
     closeDashboardImportStructuresPasteModal();
+    return;
+  }
+  if (
+    dashboardRemoveStructuresModalOverlay &&
+    !dashboardRemoveStructuresModalOverlay.classList.contains("hidden")
+  ) {
+    closeDashboardRemoveStructuresModal();
     return;
   }
   if (dashboardActionsModalOverlay && !dashboardActionsModalOverlay.classList.contains("hidden")) {
@@ -3535,9 +4075,9 @@ if (dashboardImportStructuresActionBtn && importCustomStructuresInput) {
     try {
       const text = await file.text();
       const result = importCustomStructuresFromText(text);
-      window.alert(getCustomStructureImportSuccessMessage(result));
+      await appAlert(getCustomStructureImportSuccessMessage(result));
     } catch (error) {
-      window.alert(getCustomStructureImportErrorMessage(error));
+      await appAlert(getCustomStructureImportErrorMessage(error));
     } finally {
       importCustomStructuresInput.value = "";
     }
@@ -3545,21 +4085,21 @@ if (dashboardImportStructuresActionBtn && importCustomStructuresInput) {
 }
 
 if (importStructuresPasteForm && importStructuresPasteText) {
-  importStructuresPasteForm.addEventListener("submit", (event) => {
+  importStructuresPasteForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const rawText = importStructuresPasteText.value.trim();
     if (!rawText) return;
     const maxChars = 2 * 1024 * 1024;
     if (rawText.length > maxChars) {
-      window.alert("Pasted JSON is too large. Please use a smaller payload or file import.");
+      await appAlert("Pasted JSON is too large. Please use a smaller payload or file import.");
       return;
     }
     try {
       const result = importCustomStructuresFromText(rawText);
       closeDashboardImportStructuresPasteModal();
-      window.alert(getCustomStructureImportSuccessMessage(result));
+      await appAlert(getCustomStructureImportSuccessMessage(result));
     } catch (error) {
-      window.alert(getCustomStructureImportErrorMessage(error));
+      await appAlert(getCustomStructureImportErrorMessage(error));
     }
   });
 }
@@ -3582,7 +4122,7 @@ if (dashboardRestoreBackupActionBtn && restoreAppBackupInput) {
       }
       openRestoreBackupModal(text);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : "Backup restore failed.");
+      await appAlert(error instanceof Error ? error.message : "Backup restore failed.");
     } finally {
       restoreAppBackupInput.value = "";
     }
@@ -3652,6 +4192,8 @@ const boardNoteActions = createBoardNoteActionsController({
 });
 
 document.addEventListener("click", (event) => {
+  inlineTitleEdit.handleDocumentClick(event);
+
   if (!event.target.closest(".options-wrap")) {
     closeOptionsMenu();
   }
@@ -3724,8 +4266,9 @@ applyColumnWidth();
 applyWrapColumns();
 applyDevFlags();
 applyDemoVisibilityControl();
+initDashboardActionsExclusiveAccordion();
 renderStructureOptions("hero_journey");
-renderStructurePhaseRows(["", "", ""]);
+renderStructurePhaseRows();
 syncRouteToState(true);
 
 const appVersionEl = document.querySelector("#app-version");
