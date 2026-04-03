@@ -1,3 +1,10 @@
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/"/g, "&quot;");
+}
+
 export function renderStructureOptionsHtml(structures, selectedId) {
   return structures
     .map((structure) => {
@@ -7,29 +14,46 @@ export function renderStructureOptionsHtml(structures, selectedId) {
     .join("");
 }
 
-export function structurePhaseRowTemplate(index, value = "") {
+export function structurePhaseRowTemplate(index, phase = { title: "", description: "" }) {
+  const title = escapeHtml(phase.title ?? "");
+  const description = escapeHtml(phase.description ?? "");
   return `
     <div class="structure-phase-row">
       <span class="phase-row-index">${index + 1}.</span>
       <input
         type="text"
+        class="structure-phase-name-input"
         data-role="phase-input"
         maxlength="80"
         placeholder="Phase name"
-        value="${value}"
+        value="${title}"
         required
+        aria-label="Phase name"
       />
-      <button type="button" class="ghost-button" data-role="remove-phase-row" aria-label="Remove row">✕</button>
+      <textarea
+        class="structure-phase-description-input"
+        data-role="phase-description-input"
+        maxlength="1200"
+        rows="2"
+        placeholder="Optional help text for this column"
+        aria-label="Phase description (optional)"
+      >${description}</textarea>
+      <button type="button" class="ghost-button structure-phase-remove-btn" data-role="remove-phase-row" aria-label="Remove row">✕</button>
     </div>
   `;
 }
 
-export function boardCardTemplate(board, structureName, updatedAtText, isDemo = false) {
+export function boardCardTemplate(board, structureName, updatedAtText, isDemo = false, editingStoryTitleBoardId = null) {
   const noteCount = board.notes.length;
+  const safeTitle = escapeHtml(board.title);
+  const titleMarkup =
+    board.id === editingStoryTitleBoardId
+      ? `<input class="inline-story-title-input board-card-title-input" type="text" maxlength="80" value="${escapeHtml(board.title)}" data-role="inline-story-title-input" data-board-id="${board.id}" aria-label="Story name" />`
+      : `<span class="board-card-title-text" data-role="board-title-dblclick" data-board-id="${board.id}">${safeTitle}</span>`;
   return `
-    <article class="board-card" data-board-id="${board.id}" role="button" tabindex="0" aria-label="Open ${board.title}">
+    <article class="board-card" data-board-id="${board.id}" role="button" tabindex="0" aria-label="Open ${safeTitle}">
       <div>
-        <strong>${isDemo ? '<span class="demo-label">Demo</span> ' : ""}${board.title}</strong>
+        <strong><div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${isDemo ? '<span class="demo-label">Demo</span> ' : ""}${titleMarkup}</span></div></strong>
         <div class="board-meta">
           <div class="board-meta-line">${structureName} • ${noteCount} notes</div>
           <div class="board-meta-line">Updated ${updatedAtText}</div>

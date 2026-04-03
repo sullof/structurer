@@ -33,7 +33,7 @@ The web version keeps your work private in your browser `localStorage`: no user 
 - Live drag preview with visible drop placeholders for both notes and phases
 - Reset phase order to the original structure order
 - Open a story by clicking its tile (desktop and mobile)
-- Rename story from dashboard story actions
+- Rename stories inline (double-click the title on the dashboard, story header, or series view); rename series from **Edit series**
 - Export a story to JSON and import saved stories from JSON
 - Dedicated phase details page (`/<story-slug>/phase/<n>`) opened from phase magnifier
 - Phase details layout with read-only phase notes (context) and comment workspace
@@ -147,5 +147,5 @@ Version history is maintained in [HISTORY.md](HISTORY.md).
 
 ## Copyright
 
-2026 Francesco Sullo <francesco@sullo.co> — Built with Cursor AI.
-
+2026 Francesco Sullo <francesco@sullo.co> — Built with Cursor AI.   
+I chose to do so because I didn't want to waste too much time on it, preferring to focus on writing. The side effect is that Cursor has generated a code that is far from being optimized or efficient, and, most likely, in the future I will have to rewrite it entirely :-(
