@@ -1,6 +1,6 @@
 :root {
   color-scheme: light;
-  --bg: #f5f5f7;
+  --bg: #fafafc;
   /* Subtle vertical pinstripes (1px line every 32px) — “paper / panel” feel */
   --bg-stripe: rgba(17, 24, 39, 0.02);
   --bg-stripe-period: 10px;
@@ -182,7 +182,7 @@ a:hover {
 }
 
 .landing-hero {
-  background: linear-gradient(135deg, #ffffff 0%, #eef2ff 55%, #fef9c3 100%);
+  background: linear-gradient(135deg, #dcfce7 0%, #ecfccb 50%, #fef9c3 100%);
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 22px;
@@ -202,20 +202,39 @@ a:hover {
   max-width: 880px;
 }
 
-.landing-hero button {
-  border: 1px solid #111827;
-  background: #111827;
-  color: #fff;
-  border-radius: 8px;
-  padding: 9px 12px;
-  cursor: pointer;
-  font-size: 0.95rem;
-}
-
 .landing-hero-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.landing-primary-button {
+  border-radius: 12px;
+  padding: 9px 18px;
+  border: 1px solid #16a34a;
+  background: #bbf7d0;
+  color: #14532d;
+  /* font-weight: 600; */
+  font-size: 0.96rem;
+  cursor: pointer;
+  transition: background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out,
+    box-shadow 120ms ease-out, transform 80ms ease-out;
+}
+
+.landing-primary-button:hover {
+  background: #fff;
+  border-color: #15803d;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+}
+
+.landing-primary-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);
+}
+
+.landing-primary-button:focus-visible {
+  outline: 2px solid #16a34a;
+  outline-offset: 3px;
 }
 
 .landing-grid {
@@ -260,20 +279,26 @@ a:hover {
   color: #374151;
 }
 
-.landing-card.card-plot {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--plot) 45%, white) 0%, #fff 100%);
+
+/* --plot: #fef08a;
+--character: #bfdbfe;
+--theme: #bbf7d0; */
+
+
+.landing-card.card-privacy {
+  background: #fef08a;
 }
 
-.landing-card.card-character {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--character) 45%, white) 0%, #fff 100%);
+.landing-card.card-demo-map {
+  background: #dff0fe;
 }
 
-.landing-card.card-theme {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--theme) 45%, white) 0%, #fff 100%);
+.landing-card.card-about-demos {
+  background:  #bbf7d0;
 }
 
-.landing-card.card-neutral {
-  background: linear-gradient(180deg, #f3f4f6 0%, #fff 100%);
+.landing-card.card-portable {
+  background: #d9f99d;
 }
 
 .home-create h2 {

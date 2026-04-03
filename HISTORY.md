@@ -1,6 +1,10 @@
 # History
 
-**1.12.3** - 2026-04-02
+**1.12.4** - 2026-04-03
+- Refreshed the landing hero styling: the **Open dashboard** button now uses a soft green pill design instead of dark black, and home cards use flat pastels derived from note colors instead of cool gradients.
+- Renamed landing card CSS classes to semantic content-based names (`card-privacy`, `card-portable`, `card-about-demos`, `card-demo-map`) for clearer styling intent and easier maintenance.
+
+**1.12.3** - 2026-04-03
 - Upgraded demo content to better showcase rich use of structures:
   - Back to the Future (Save the Cat) now includes more granular beats, character notes with archetypes, and explicit theme/subplot notes around family and destiny.
   - Finding Nemo (Story Circle) emphasizes Marlin/Dory/Nemo character arcs per ring, plus tank-gang subplot and thematic notes on control vs trust.
