@@ -1,5 +1,11 @@
 # History
 
+**1.13.1** - 2026-04-03
+- **Structure-level metadata** (separate from per-phase text): each structure can have an optional **`description`** (short “about this template”) and optional **`author`** / credit. Built-in presets in `app-config` now include curated descriptions and attribution lines.
+- **Custom structures**: **Add a structure not listed** adds optional **About this structure** and **Credit / author** fields after the name; values are validated client-side (max lengths, no `http`/`https`/`//` URLs or risky schemes/HTML patterns). **Author** accepts plain text or a single `Name <email@domain>` pair; the same rules apply on **import**.
+- **Import / export** (`structurer.custom-structures`): exported JSON includes `description` and `author` when set; import validates them with the same rules. On merge, if a key is present in the file, it updates or clears the stored field; omitted keys leave existing metadata unchanged.
+- **Structure preview** modal (dashboard **Available structures**): shows the structure description and credit under the title when present; removed the extra subtitle line (*Read-only reference. Each phase becomes…*).
+
 **1.13.0** - 2026-04-03
 - **Series rename** in **Edit series** via the **Series name** field; **story rename** by double-clicking the title (dashboard, editor header, or series view); the title becomes an inline field (Enter to save, Escape to cancel, blur to save). **Rename story** removed from Story actions. Help FAQ *How do I rename a story or a series?* added.
 - Added optional per-phase guidance in structures: each phase can now be either a string (title only) or an object with `title` and optional `description`; phase descriptions are shown only when provided, so existing structures keep working unchanged.

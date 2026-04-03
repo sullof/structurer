@@ -40,6 +40,7 @@ import { createBoardNoteActionsController } from "./board-note-actions";
 import { createInlineTitleEditController } from "./inline-title-edit.js";
 import { appAlert, closeAppAlertIfOpen, dismissAllAppAlerts } from "./app-alert.js";
 import packageJson from "../package.json";
+import { validateStructureAuthor, validateStructureDescription } from "./structure-metadata.js";
 
 const loadedBoards = loadBoards();
 let boards = loadedBoards || [];
@@ -89,6 +90,8 @@ const boardTitleInput = document.querySelector("#board-title");
 const boardStructureSelect = document.querySelector("#board-structure");
 const createStructureForm = document.querySelector("#create-structure-form");
 const structureNameInput = document.querySelector("#structure-name-input");
+const structureDescriptionInput = document.querySelector("#structure-description-input");
+const structureAuthorInput = document.querySelector("#structure-author-input");
 const structurePhasesList = document.querySelector("#structure-phases-list");
 const addStructurePhaseBtn = document.querySelector("#add-structure-phase");
 const importBoardButton = document.querySelector("#import-board-button");
@@ -151,6 +154,11 @@ const confirmNewStoryOnboardingBtn = document.querySelector("#confirm-new-story-
 const openCreateStructureActionBtn = document.querySelector("#open-create-structure-action");
 const dashboardCreateStructureModalOverlay = document.querySelector("#dashboard-create-structure-modal-overlay");
 const closeDashboardCreateStructureModalBtn = document.querySelector("#close-dashboard-create-structure-modal");
+const structurePreviewModalOverlay = document.querySelector("#structure-preview-modal-overlay");
+const structurePreviewModalTitleEl = document.querySelector("#structure-preview-modal-title");
+const structurePreviewModalMetaEl = document.querySelector("#structure-preview-modal-meta");
+const structurePreviewModalPhasesEl = document.querySelector("#structure-preview-modal-phases");
+const closeStructurePreviewModalBtn = document.querySelector("#close-structure-preview-modal");
 const dashboardResetDemoActionBtn = document.querySelector("#dashboard-reset-demo-action");
 const dashboardFactoryResetActionBtn = document.querySelector("#dashboard-factory-reset-action");
 const dashboardExportBackupActionBtn = document.querySelector("#dashboard-export-backup-action");
@@ -1160,13 +1168,13 @@ function renderHome() {
         const updatedAt = Number(structure.updatedAt) || 0;
         const freshnessTs = Math.max(activityAt, updatedAt);
         const isNew = isCustom && now - freshnessTs >= 0 && now - freshnessTs < oneHourMs;
-        return { name: structure.name, isNew };
+        return { id: structure.id, name: structure.name, isNew };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
     dashboardStructuresList.innerHTML = structureItems
       .map(
         (item) =>
-          `<li>${escapeHtml(item.name)}${item.isNew ? ' <span class="dashboard-structure-badge-new">NEW</span>' : ""}</li>`,
+          `<li><button type="button" class="dashboard-structure-preview-btn" data-structure-id="${escapeHtml(item.id)}">${escapeHtml(item.name)}${item.isNew ? ' <span class="dashboard-structure-badge-new">NEW</span>' : ""}</button></li>`,
       )
       .join("");
   }
@@ -1213,7 +1221,7 @@ function renderEditor() {
       const helpOpen = phaseDesc && phaseHelpOpenColumns.has(columnIndex);
       const phaseTitleLabel = escapeHtml(formatPhaseTitle(phase));
       const phaseTitleHtml = phaseDesc
-        ? `<button type="button" class="phase-title phase-title-toggle" data-role="phase-description-toggle" data-column="${columnIndex}" aria-expanded="${Boolean(helpOpen)}"${helpOpen ? ` aria-controls="phase-help-${columnIndex}"` : ""} aria-label="${helpOpen ? "Hide" : "Show"} phase description" title="Show or hide phase description">${phaseTitleLabel}<span class="phase-description-indicator" aria-hidden="true">ⓘ</span></button>`
+        ? `<button type="button" class="phase-title phase-title-toggle" data-role="phase-description-toggle" data-column="${columnIndex}" aria-expanded="${Boolean(helpOpen)}"${helpOpen ? ` aria-controls="phase-help-${columnIndex}"` : ""} aria-label="${helpOpen ? "Hide" : "Show"} phase description" title="Show or hide phase description"><span class="phase-description-indicator" aria-hidden="true">ⓘ</span><span class="phase-title-label">${phaseTitleLabel}</span></button>`
         : `<h2 class="phase-title">${phaseTitleLabel}</h2>`;
       const helpPanel =
         phaseDesc && helpOpen
@@ -1358,11 +1366,7 @@ function renderGroup() {
       <section class="group-board-card">
         <header class="group-board-head">
           <div>
-            <h2><div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}${
-              board.id === inlineTitleEdit.getEditingStoryBoardId()
-                ? `<input class="inline-story-title-input group-board-title-input" type="text" maxlength="80" value="${escapeHtml(board.title)}" data-role="inline-story-title-input" data-board-id="${board.id}" aria-label="Story name" />`
-                : `<span class="group-board-title-text" data-role="board-title-dblclick" data-board-id="${board.id}">${escapeHtml(board.title)}</span>`
-            }</span></div></h2>
+            <h2><div class="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host">${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}<span class="group-board-title-text">${escapeHtml(board.title)}</span></span></div></h2>
             <p class="subtitle">${structure.name}</p>
           </div>
           <div class="group-board-head-actions">
@@ -1374,15 +1378,11 @@ function renderGroup() {
             .map((phase, columnIndex) => {
               const noteItems = getColumnNotes(board.notes, columnIndex);
               const emptyClass = noteItems.length === 0 ? " column-empty" : "";
-              const phaseDescPreview = getPhaseDescription(phase);
-              const phaseIndicator =
-                phaseDescPreview.length > 0
-                  ? `<span class="phase-description-indicator" aria-hidden="true">ⓘ</span>`
-                  : "";
+              const phaseTitleText = escapeHtml(formatPhaseTitle(phase));
               return `
               <section class="column${emptyClass}">
                 <div class="phase-head">
-                  <h2 class="phase-title">${escapeHtml(formatPhaseTitle(phase))}${phaseIndicator}</h2>
+                  <h2 class="phase-title">${phaseTitleText}</h2>
                 </div>
                 <div class="notes">
                   ${noteItems
@@ -1806,13 +1806,22 @@ function exportCustomStructures() {
     schemaVersion: 1,
     exportedAt: Date.now(),
     appVersion: packageJson.version || "",
-    structures: customStructures.map((structure) => ({
-      id: structure.id,
-      uid: structure.uid,
-      name: structure.name,
-      phases: Array.isArray(structure.phases) ? structure.phases : [],
-      updatedAt: Number.isFinite(structure.updatedAt) ? structure.updatedAt : Date.now(),
-    })),
+    structures: customStructures.map((structure) => {
+      const row = {
+        id: structure.id,
+        uid: structure.uid,
+        name: structure.name,
+        phases: Array.isArray(structure.phases) ? structure.phases : [],
+        updatedAt: Number.isFinite(structure.updatedAt) ? structure.updatedAt : Date.now(),
+      };
+      if (typeof structure.description === "string" && structure.description.trim()) {
+        row.description = structure.description.trim();
+      }
+      if (typeof structure.author === "string" && structure.author.trim()) {
+        row.author = structure.author.trim();
+      }
+      return row;
+    }),
   };
   const stamp = new Date().toISOString().replace(/[:]/g, "-").slice(0, 19);
   downloadJsonFile(payload, `structurer-custom-structures-${stamp}.json`);
@@ -1902,7 +1911,32 @@ function parseImportedCustomStructures(rawText) {
     if (localBySameUid && localBySameUid.id !== id) {
       throw new Error(`Invalid custom structures file: uid "${uid}" conflicts with local id mapping.`);
     }
-    return { id, uid, name, phases, updatedAt };
+    const entry = { id, uid, name, phases, updatedAt };
+    if (Object.prototype.hasOwnProperty.call(item, "description")) {
+      if (typeof item.description !== "string") {
+        throw new Error(
+          `Invalid custom structures file: entry #${index + 1} description must be a string when present.`,
+        );
+      }
+      const descRes = validateStructureDescription(item.description);
+      if (!descRes.ok) {
+        throw new Error(`Invalid custom structures file: entry #${index + 1}: ${descRes.error}`);
+      }
+      entry.description = descRes.value;
+    }
+    if (Object.prototype.hasOwnProperty.call(item, "author")) {
+      if (typeof item.author !== "string") {
+        throw new Error(
+          `Invalid custom structures file: entry #${index + 1} author must be a string when present.`,
+        );
+      }
+      const authRes = validateStructureAuthor(item.author);
+      if (!authRes.ok) {
+        throw new Error(`Invalid custom structures file: entry #${index + 1}: ${authRes.error}`);
+      }
+      entry.author = authRes.value;
+    }
+    return entry;
   });
 
   return normalized;
@@ -1927,6 +1961,14 @@ function importCustomStructuresFromText(rawText) {
         localByUidMatch.name = incoming.name;
         localByUidMatch.phases = incoming.phases;
         localByUidMatch.updatedAt = incoming.updatedAt;
+        if (Object.prototype.hasOwnProperty.call(incoming, "description")) {
+          if (incoming.description) localByUidMatch.description = incoming.description;
+          else delete localByUidMatch.description;
+        }
+        if (Object.prototype.hasOwnProperty.call(incoming, "author")) {
+          if (incoming.author) localByUidMatch.author = incoming.author;
+          else delete localByUidMatch.author;
+        }
         customStructureActivity[localByUidMatch.uid] = importTimestamp;
         updatedCount += 1;
       } else {
@@ -1942,6 +1984,14 @@ function importCustomStructuresFromText(rawText) {
         localByFingerprintMatch.name = incoming.name;
         localByFingerprintMatch.phases = incoming.phases;
         localByFingerprintMatch.updatedAt = incoming.updatedAt;
+        if (Object.prototype.hasOwnProperty.call(incoming, "description")) {
+          if (incoming.description) localByFingerprintMatch.description = incoming.description;
+          else delete localByFingerprintMatch.description;
+        }
+        if (Object.prototype.hasOwnProperty.call(incoming, "author")) {
+          if (incoming.author) localByFingerprintMatch.author = incoming.author;
+          else delete localByFingerprintMatch.author;
+        }
         customStructureActivity[localByFingerprintMatch.uid] = importTimestamp;
         updatedCount += 1;
       } else {
@@ -1949,13 +1999,16 @@ function importCustomStructuresFromText(rawText) {
       }
       return;
     }
-    customStructures.push({
+    const created = {
       id: incoming.id,
       uid: incoming.uid,
       name: incoming.name,
       phases: incoming.phases,
       updatedAt: incoming.updatedAt,
-    });
+    };
+    if (incoming.description) created.description = incoming.description;
+    if (incoming.author) created.author = incoming.author;
+    customStructures.push(created);
     customStructureActivity[incoming.uid] = importTimestamp;
     createdCount += 1;
   });
@@ -2718,6 +2771,19 @@ createStructureForm.addEventListener("submit", async (event) => {
   const name = structureNameInput.value.trim();
   if (!name) return;
 
+  const rawDesc = structureDescriptionInput ? structureDescriptionInput.value : "";
+  const rawAuthor = structureAuthorInput ? structureAuthorInput.value : "";
+  const descRes = validateStructureDescription(rawDesc);
+  if (!descRes.ok) {
+    await appAlert(descRes.error);
+    return;
+  }
+  const authRes = validateStructureAuthor(rawAuthor);
+  if (!authRes.ok) {
+    await appAlert(authRes.error);
+    return;
+  }
+
   const phaseEntries = collectStructurePhaseRowsFromDOM()
     .map((row) => {
       const title = row.title.trim();
@@ -2742,18 +2808,23 @@ createStructureForm.addEventListener("submit", async (event) => {
 
   const createdAt = Date.now();
   const uid = generateUniqueUid();
-  customStructures.push({
+  const newStructure = {
     id,
     uid,
     name,
     phases: phaseEntries,
     updatedAt: createdAt,
-  });
+  };
+  if (descRes.value) newStructure.description = descRes.value;
+  if (authRes.value) newStructure.author = authRes.value;
+  customStructures.push(newStructure);
   customStructureActivity[uid] = createdAt;
   saveCustomStructures();
   saveCustomStructureActivity();
   renderStructureOptions(id);
   structureNameInput.value = "";
+  if (structureDescriptionInput) structureDescriptionInput.value = "";
+  if (structureAuthorInput) structureAuthorInput.value = "";
   renderStructurePhaseRows();
   await appAlert(`Structure "${name}" saved.`);
   closeDashboardCreateStructureModal();
@@ -2935,14 +3006,6 @@ groupBoardStackEl.addEventListener("click", (event) => {
 });
 
 groupBoardStackEl.addEventListener("dblclick", (event) => {
-  const storyTitleEl = event.target.closest('[data-role="board-title-dblclick"][data-board-id]');
-  if (storyTitleEl) {
-    event.preventDefault();
-    event.stopPropagation();
-    const bid = storyTitleEl.dataset.boardId;
-    if (bid) inlineTitleEdit.beginStory(bid);
-    return;
-  }
   if (event.target.closest("button")) return;
   const noteHead = event.target.closest(".group-note-readonly .note-head");
   if (!noteHead) return;
@@ -3412,6 +3475,25 @@ function initDashboardActionsExclusiveAccordion() {
   });
 }
 
+function initStructurePreviewModal() {
+  if (dashboardStructuresList) {
+    dashboardStructuresList.addEventListener("click", (event) => {
+      const btn = event.target.closest("button[data-structure-id]");
+      if (!btn) return;
+      const id = btn.getAttribute("data-structure-id");
+      if (id) openStructurePreviewModal(id);
+    });
+  }
+  if (closeStructurePreviewModalBtn) {
+    closeStructurePreviewModalBtn.addEventListener("click", () => closeStructurePreviewModal());
+  }
+  if (structurePreviewModalOverlay) {
+    structurePreviewModalOverlay.addEventListener("click", (event) => {
+      if (event.target === structurePreviewModalOverlay) closeStructurePreviewModal();
+    });
+  }
+}
+
 function closeDashboardCreateStoryModal() {
   if (!dashboardCreateStoryModalOverlay) return;
   dashboardCreateStoryModalOverlay.classList.add("hidden");
@@ -3420,6 +3502,52 @@ function closeDashboardCreateStoryModal() {
 function closeDashboardCreateStructureModal() {
   if (!dashboardCreateStructureModalOverlay) return;
   dashboardCreateStructureModalOverlay.classList.add("hidden");
+}
+
+function closeStructurePreviewModal() {
+  if (!structurePreviewModalOverlay) return;
+  structurePreviewModalOverlay.classList.add("hidden");
+}
+
+function openStructurePreviewModal(structureId) {
+  if (!structureId || !structurePreviewModalOverlay || !structurePreviewModalTitleEl || !structurePreviewModalPhasesEl) return;
+  const structure = getAllStructures()[structureId];
+  if (!structure) return;
+  structurePreviewModalTitleEl.textContent = structure.name || structureId;
+  if (structurePreviewModalMetaEl) {
+    const about =
+      typeof structure.description === "string" && structure.description.trim()
+        ? structure.description.trim()
+        : "";
+    const credit =
+      typeof structure.author === "string" && structure.author.trim() ? structure.author.trim() : "";
+    if (about || credit) {
+      const aboutBlock = about
+        ? `<p class="structure-preview-modal-about">${escapeHtml(about)}</p>`
+        : "";
+      const creditBlock = credit
+        ? `<p class="structure-preview-modal-credit"><span class="structure-preview-modal-credit-label">Credit</span> ${escapeHtml(credit)}</p>`
+        : "";
+      structurePreviewModalMetaEl.innerHTML = aboutBlock + creditBlock;
+      structurePreviewModalMetaEl.classList.remove("hidden");
+    } else {
+      structurePreviewModalMetaEl.innerHTML = "";
+      structurePreviewModalMetaEl.classList.add("hidden");
+    }
+  }
+  const phases = Array.isArray(structure.phases) ? structure.phases : [];
+  structurePreviewModalPhasesEl.innerHTML = phases
+    .map((phase) => {
+      const p = parsePhaseEntry(phase);
+      const title = p.title.trim() ? p.title : "(Untitled phase)";
+      const desc = getPhaseDescription(phase);
+      const descBlock = desc
+        ? `<p class="structure-preview-phase-desc">${escapeHtml(desc)}</p>`
+        : `<p class="structure-preview-phase-desc structure-preview-phase-desc--empty">No description</p>`;
+      return `<li><strong class="structure-preview-phase-title">${escapeHtml(title)}</strong>${descBlock}</li>`;
+    })
+    .join("");
+  structurePreviewModalOverlay.classList.remove("hidden");
 }
 
 function closeDashboardImportModal() {
@@ -4272,6 +4400,7 @@ applyWrapColumns();
 applyDevFlags();
 applyDemoVisibilityControl();
 initDashboardActionsExclusiveAccordion();
+initStructurePreviewModal();
 renderStructureOptions("hero_journey");
 renderStructurePhaseRows();
 syncRouteToState(true);

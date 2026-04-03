@@ -774,6 +774,25 @@
           <h2>Add a structure not listed</h2>
           <form id="create-structure-form" class="create-structure-form">
             <input id="structure-name-input" type="text" maxlength="80" placeholder="Structure name" required />
+            <label class="structure-meta-field-label" for="structure-description-input">About this structure (optional)</label>
+            <textarea
+              id="structure-description-input"
+              class="structure-description-input"
+              maxlength="4000"
+              rows="4"
+              placeholder="Short intro: what this template is and where it comes from. No links (http/https or //)."
+            ></textarea>
+            <label class="structure-meta-field-label" for="structure-author-input">Credit / author (optional)</label>
+            <input
+              id="structure-author-input"
+              type="text"
+              maxlength="180"
+              placeholder="Name, or: Your Name &lt;you@example.com&gt;"
+            />
+            <p class="subtitle structure-form-meta-hint">
+              Descriptions and credits cannot include web addresses. With an email, use exactly one pair of angle brackets:
+              <kbd>Name &lt;email@domain&gt;</kbd>.
+            </p>
             <p class="subtitle structure-form-phase-hint">
               Each block is one phase/column: a phase name and an optional description (shown as in-editor help for that column).
             </p>
@@ -785,6 +804,22 @@
           </form>
           <div class="modal-actions">
             <button id="close-dashboard-create-structure-modal" class="ghost-button" type="button">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="structure-preview-modal-overlay" class="modal-overlay hidden">
+        <div
+          class="modal modal--structure-preview"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="structure-preview-modal-title"
+        >
+          <h2 id="structure-preview-modal-title"></h2>
+          <div id="structure-preview-modal-meta" class="structure-preview-modal-meta hidden" aria-live="polite"></div>
+          <ol id="structure-preview-modal-phases" class="structure-preview-phases"></ol>
+          <div class="modal-actions">
+            <button id="close-structure-preview-modal" type="button" class="ghost-button">Close</button>
           </div>
         </div>
       </div>

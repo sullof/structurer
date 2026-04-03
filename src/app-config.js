@@ -13,6 +13,9 @@ export const BUILTIN_STRUCTURES = {
   hero_journey: {
     id: "hero_journey",
     name: "Hero's Journey",
+    description:
+      "Twelve stages that track a protagonist from ordinary life through ordeal and transformation to return with something that changes their world. The pattern synthesizes comparative mythology (Campbell’s monomyth) into a practical map for fiction and film; Christopher Vogler’s late-20th-century guide for screenwriters made this shape especially familiar in Hollywood.",
+    author: "After Joseph Campbell; widely used in writing craft via Christopher Vogler’s interpretations.",
     phases: [
       {
         title: "Ordinary World",
@@ -79,6 +82,9 @@ export const BUILTIN_STRUCTURES = {
   hero_thousand_faces: {
     id: "hero_thousand_faces",
     name: "Hero with a Thousand Faces",
+    description:
+      "Campbell’s narrative pattern of departure, initiation, and return, expressed as a sequence of mythic beats (call, aid, trials, revelation, atonement, and freedom). Useful when you want a classical arc that emphasizes symbolic death and rebirth more than beat-sheet commerce.",
+    author: "Joseph Campbell (The Hero with a Thousand Faces, 1949).",
     phases: [
       {
         title: "Call to Adventure",
@@ -170,6 +176,9 @@ export const BUILTIN_STRUCTURES = {
   three_act: {
     id: "three_act",
     name: "Three-Act Structure",
+    description:
+      "Divides the story into setup, confrontation, and resolution, with turning points that escalate stakes and narrow the protagonist’s options. It is the backbone of much Western drama, theatre, and screenwriting pedagogy—not a formula, but a rhythm of imbalance and restoration.",
+    author: "Traditional dramatic form; countless modern craft books and syllabi.",
     phases: [
       {
         title: "Act I - Setup",
@@ -216,6 +225,9 @@ export const BUILTIN_STRUCTURES = {
   save_the_cat: {
     id: "save_the_cat",
     name: "Save the Cat",
+    description:
+      "A fifteen-beat screenplay template that names each major pivot from opening image to final image, with explicit beats for theme, fun-and-games, midpoint, all-is-lost, and finale. Designed for clarity, pacing, and reader-friendly spec scripts.",
+    author: "Blake Snyder (Save the Cat!, 2005).",
     phases: [
       {
         title: "Opening Image",
@@ -297,6 +309,9 @@ export const BUILTIN_STRUCTURES = {
   story_circle: {
     id: "story_circle",
     name: "Story Circle",
+    description:
+      "Eight steps in a circle: need, go, search, find, take, return, change—mapping how a character leaves comfort, pays a price, and comes back different. Compact and iterative, it suits serialized TV and tight character arcs.",
+    author: "Dan Harmon (Channel 101 / Story Structure 104).",
     phases: [
       {
         title: "YOU - Establish a protagonist",
@@ -343,6 +358,9 @@ export const BUILTIN_STRUCTURES = {
   seven_point: {
     id: "seven_point",
     name: "7-Point Story Structure",
+    description:
+      "Seven anchors—hook, two plot turns, two pinch points, midpoint, resolution—often plotted twice (first pass for plot, second mirrored for character) so structure stays lean but symmetrical. Strong for outlining before you expand into scenes.",
+    author: "Dan Wells (7-Point Story Structure workshop).",
     phases: [
       {
         title: "Hook",
@@ -384,6 +402,9 @@ export const BUILTIN_STRUCTURES = {
   romancing_the_beat: {
     id: "romancing_the_beat",
     name: "Romancing the Beat",
+    description:
+      "Nine emotional beats tailored to romance: setup, meet, resistance, proximity, deepening desire, retreat, crisis, grand gesture, and commitment. Emphasizes internal need and relational push-pull rather than external plot machinery alone.",
+    author: "Gwen Hayes (Romancing the Beat).",
     phases: [
       {
         title: "Setup and Need",
@@ -435,6 +456,9 @@ export const BUILTIN_STRUCTURES = {
   mice_quotient: {
     id: "mice_quotient",
     name: "MICE Quotient",
+    description:
+      "Four thread types—Milieu (world), Idea (question), Character (inner change), Event (disruption)—each with an open and close. Helps diagnose what kind of story you are telling and avoid unsatisfying endings that resolve the wrong thread.",
+    author: "Orson Scott Card (often cited from his writing essays and workshops).",
     phases: [
       {
         title: "Milieu Question Open",
