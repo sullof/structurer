@@ -1803,7 +1803,7 @@ function normalizeStructureFingerprint(name, phases) {
 function exportCustomStructures() {
   const payload = {
     exportType: "structurer.custom-structures",
-    schemaVersion: 1,
+    schemaVersion: 2,
     exportedAt: Date.now(),
     appVersion: packageJson.version || "",
     structures: customStructures.map((structure) => {
@@ -1850,6 +1850,10 @@ function parseImportedCustomStructures(rawText) {
   const parsed = JSON.parse(rawText);
   if (!parsed || typeof parsed !== "object" || parsed.exportType !== "structurer.custom-structures") {
     throw new Error("Invalid custom structures file.");
+  }
+  const schemaVersion = parsed.schemaVersion;
+  if (schemaVersion != null && schemaVersion !== 1 && schemaVersion !== 2) {
+    throw new Error("Invalid custom structures file: unsupported schemaVersion (expected 1 or 2).");
   }
   if (!Array.isArray(parsed.structures) || parsed.structures.length === 0) {
     throw new Error("Invalid custom structures file: structures must be a non-empty array.");

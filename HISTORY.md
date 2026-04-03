@@ -1,5 +1,9 @@
 # History
 
+**1.13.2** - 2026-04-04
+- **Custom structures** (`structurer.custom-structures`): **export** now sets **`schemaVersion`: `2`** (was `1`) so the file format matches optional structure-level **`description`** and **`author`** introduced in 1.13.1; the `structures` array contract is unchanged.
+- **Import** now **validates `schemaVersion`**: **`1`**, **`2`**, or **omitted** (legacy files) are accepted; any other value fails with a clear error. Older exports without the field or with `1` continue to import as before.
+
 **1.13.1** - 2026-04-03
 - **Structure-level metadata** (separate from per-phase text): each structure can have an optional **`description`** (short “about this template”) and optional **`author`** / credit. Built-in presets in `app-config` now include curated descriptions and attribution lines.
 - **Custom structures**: **Add a structure not listed** adds optional **About this structure** and **Credit / author** fields after the name; values are validated client-side (max lengths, no `http`/`https`/`//` URLs or risky schemes/HTML patterns). **Author** accepts plain text or a single `Name <email@domain>` pair; the same rules apply on **import**.
