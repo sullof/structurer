@@ -1103,6 +1103,71 @@ a:hover {
 
 .import-actions {
   margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.paste-story-textarea {
+  width: 100%;
+  min-height: 240px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  font: inherit;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.help-inline-action {
+  margin-top: 4px;
+}
+
+.ai-analysis-prompt-card .ai-analysis-prompt-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ai-prompt-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ai-prompt-select,
+.ai-prompt-input {
+  width: 100%;
+  max-width: 520px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.ai-prompt-output-wrap {
+  margin-top: 8px;
+}
+
+.ai-prompt-output {
+  width: 100%;
+  min-height: 280px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  resize: vertical;
+  background: #f9fafb;
+}
+
+.ai-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .home-custom-structure h2 {
