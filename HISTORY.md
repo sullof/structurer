@@ -1,5 +1,8 @@
 # History
 
+**1.14.1** - 2026-04-05
+- **Story editor layout**: the phase grid again uses the **full content width** (edge-to-edge with the app chrome), matching the series view. Negative horizontal margins moved from **`#board`** to **`.editor-board-scroller`**, because **`overflow-x: auto`** on the scroller was clipping the board’s bleed and kept columns narrow with cramped note text.
+
 **1.14.0** - 2026-04-04
 - **Altered structures** (per-story): from **Story actions**, **Use altered structure for this story** copies the current template into a structure **used only by that story** (new `id`/`uid`, auto-named e.g. `Hero's Journey 2`). Altered structures **do not appear** in **Available structures** or the **new story** structure picker; **Export custom structures** omits them. **Double-click** the structure line under the story title to **rename** when it is altered (built-in templates stay read-only there).
 - **Lifecycle**: deleting the story or **resetting a demo** removes its altered structure; **orphan** altered rows are pruned on load if no board references their `ownerBoardUid`.
