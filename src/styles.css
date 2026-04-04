@@ -2019,8 +2019,31 @@ a:hover {
 .delete {
   border: 0;
   background: transparent;
-  font-size: 0.9rem;
+  padding: 6px;
+  margin: -2px -4px -2px 0;
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #4b5563;
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+.delete:hover {
+  color: #b91c1c;
+  background: rgba(185, 28, 28, 0.08);
+}
+
+.delete:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.delete svg {
+  display: block;
 }
 
 .note.is-collapsed .note-head {

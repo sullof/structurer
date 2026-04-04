@@ -1,5 +1,8 @@
 # History
 
+**1.14.4** - 2026-04-04
+- **Delete note control**: while editing a note, the header control is a **trash-can icon** (SVG) instead of **✕**, which many users read as “close” and tapped by mistake on mobile. **`aria-label="Delete note"`**, **`title`**, and a slightly larger **tap target** with subtle danger hover styling.
+
 **1.14.3** - 2026-04-04
 - **Modals (mobile)**: with a dialog open, touch-scrolling on the dimmed backdrop no longer scrolls the page behind it. A **`MutationObserver`** toggles document scroll lock (`position: fixed` on **`body`** + saved **`scrollY`**) whenever any **`.modal-overlay`** loses or gains **`.hidden`**. Overlays also use **`overscroll-behavior: contain`** where the overlay itself scrolls.
 
