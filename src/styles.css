@@ -64,10 +64,15 @@ body {
   overflow: visible;
 }
 
-.editor-board-scroller {
+/* Full-bleed like #group-view .group-board-stack: margins live on the scroll container so overflow-x
+   does not clip negative margins that used to sit on #board (board looked inset with cramped columns). */
+#editor-view:not(.hidden) .editor-board-scroller {
+  margin-left: calc(-1 * var(--app-padding-inline));
+  margin-right: calc(-1 * var(--app-padding-inline));
+  width: calc(100% + 2 * var(--app-padding-inline));
+  box-sizing: border-box;
   min-width: 0;
   overflow-x: auto;
-  /* overflow-y may compute to auto when overflow-x is not visible; box still grows with board height */
   overflow-y: visible;
 }
 
@@ -1654,8 +1659,6 @@ a:hover {
 
 /* Editor board: same language as group preview — no grey panel, contiguous grid, square phase cells */
 #editor-view:not(.hidden) #board.board {
-  margin-left: calc(-1 * var(--app-padding-inline));
-  margin-right: calc(-1 * var(--app-padding-inline));
   background: transparent;
   border: 0;
   border-top: 1px solid var(--line);
