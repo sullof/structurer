@@ -1,5 +1,8 @@
 # History
 
+**1.14.5** - 2026-04-04
+- **Built-in note types:** added **Location** and **Milestone** (`BUILTIN_NOTE_TYPES` in `app-config.js`).
+
 **1.14.4** - 2026-04-04
 - **Delete note control**: while editing a note, the header control is a **trash-can icon** (SVG) instead of **✕**, which many users read as “close” and tapped by mistake on mobile. **`aria-label="Delete note"`**, **`title`**, and a slightly larger **tap target** with subtle danger hover styling.
 - **Phase description indicator (ⓘ)**: in the column header, the icon is again **to the left of the phase title** (before the label in the toggle button DOM order). It had ended up visually **next to the magnifier / +** because the title span grew with **`flex: 1`** and pushed the indicator to the trailing edge.
