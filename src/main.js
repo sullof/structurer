@@ -1702,7 +1702,7 @@ function renderEditor() {
       const helpOpen = phaseDesc && phaseHelpOpenColumns.has(columnIndex);
       const phaseTitleLabel = escapeHtml(formatPhaseTitle(phase));
       const phaseTitleHtml = phaseDesc
-        ? `<button type="button" class="phase-title phase-title-toggle" data-role="phase-description-toggle" data-column="${columnIndex}" aria-expanded="${Boolean(helpOpen)}"${helpOpen ? ` aria-controls="phase-help-${columnIndex}"` : ""} aria-label="${helpOpen ? "Hide" : "Show"} phase description" title="Show or hide phase description"><span class="phase-title-label">${phaseTitleLabel}</span><span class="phase-description-indicator" aria-hidden="true">ⓘ</span></button>`
+        ? `<button type="button" class="phase-title phase-title-toggle" data-role="phase-description-toggle" data-column="${columnIndex}" aria-expanded="${Boolean(helpOpen)}"${helpOpen ? ` aria-controls="phase-help-${columnIndex}"` : ""} aria-label="${helpOpen ? "Hide" : "Show"} phase description" title="Show or hide phase description"><span class="phase-description-indicator" aria-hidden="true">ⓘ</span><span class="phase-title-label">${phaseTitleLabel}</span></button>`
         : `<h2 class="phase-title">${phaseTitleLabel}</h2>`;
       const helpPanel =
         phaseDesc && helpOpen
