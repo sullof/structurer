@@ -526,4 +526,6 @@ export const BUILTIN_NOTE_TYPES = [
   { id: "detail", label: "Detail", color: "#a5f3fc" },
   { id: "todo", label: "Todo", color: "#fed7aa" },
   { id: "other", label: "Other", color: "#e5e7eb" },
+  { id: "location", label: "Location", color: "#e9d5ef" },
+  { id: "milestone", label: "Milestone", color: "#fecaca" },
 ];
