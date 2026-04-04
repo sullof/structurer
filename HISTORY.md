@@ -1,5 +1,8 @@
 # History
 
+**1.15.1** - 2026-04-04
+- **Demos:** added **The Godfather** on **Hero's Journey** (`the-godfather-hero-journey-demo.json`). Landing **Demo map** updated. On load, any **new** demo definition in `DEMO_BOARD_DATA` that is not already present (same title + structure name) is **appended** automatically so existing installs pick it up without a full **Reset demos**.
+
 **1.15.0** - 2026-04-04
 - **Build AI import prompt** (`/build-analysis-prompt`): pick a **catalog structure** (built-in + custom, not per-story altered), enter the **work title** and optional **medium**, then copy a ready-made **LLM prompt** that asks for **only JSON** matching Structurer’s minimal story import shape (`title`, `structure` name, `notes` with `kind` / `column` / `order` / `text`, plus character fields when needed). Includes current **note type** and **archetype** ids. **Copy prompt** uses the clipboard when available.
 - **Help**: new FAQ *The work I want to analyze is not in the demos…* with a button to open **Build AI import prompt**; short note on verifying AI output and copyright. Import/merge FAQ mentions **file** vs **paste JSON**.

@@ -1,0 +1,208 @@
+{
+  "title": "The Godfather",
+  "structure": "Hero's Journey",
+  "notes": [
+    {
+      "kind": "plot",
+      "column": 0,
+      "order": 0,
+      "text": "The Corleone family leads a powerful crime syndicate in 1940s New York. Michael Corleone, the youngest son, is a decorated war hero who wants nothing to do with the family business."
+    },
+    {
+      "kind": "character",
+      "column": 0,
+      "order": 1,
+      "text": "Michael Corleone, the reluctant heir, is intelligent, reserved, and moralistic. He sees himself outside the criminal world.",
+      "characterName": "Michael Corleone",
+      "archetype": "hero"
+    },
+    {
+      "kind": "theme",
+      "column": 0,
+      "order": 2,
+      "text": "Theme of family vs. criminal enterprise: the Corleone family is bound by blood and violence."
+    },
+    {
+      "kind": "plot",
+      "column": 1,
+      "order": 0,
+      "text": "Virgil 'The Turk' Sollozzo asks Don Vito Corleone to enter the narcotics trade. Don Corleone refuses, leading to an assassination attempt on his life."
+    },
+    {
+      "kind": "character",
+      "column": 1,
+      "order": 1,
+      "text": "The family needs Michael's help. He is called back from his 'ordinary world' of civilian life.",
+      "characterName": "Michael Corleone",
+      "archetype": "hero"
+    },
+    {
+      "kind": "plot",
+      "column": 2,
+      "order": 0,
+      "text": "Michael initially resists involvement. He tells Kay, 'That's my family, Kay, not me.' He insists he is different."
+    },
+    {
+      "kind": "theme",
+      "column": 2,
+      "order": 1,
+      "text": "Michael's internal conflict: loyalty to family vs. personal morality. The refusal highlights his tragic innocence."
+    },
+    {
+      "kind": "character",
+      "column": 3,
+      "order": 0,
+      "text": "Don Vito Corleone, recovering from the assassination attempt, becomes Michael's mentor in power and pragmatism. He teaches Michael how 'the man behind the table' operates.",
+      "characterName": "Don Vito Corleone",
+      "archetype": "mentor"
+    },
+    {
+      "kind": "plot",
+      "column": 3,
+      "order": 1,
+      "text": "Tom Hagen and Sonny also act as mentors in the family's violent code. Michael learns the rules of the criminal world."
+    },
+    {
+      "kind": "plot",
+      "column": 4,
+      "order": 0,
+      "text": "Michael volunteers to kill Sollozzo and corrupt police captain McCluskey at a restaurant meeting. He crosses from civilian into murderer."
+    },
+    {
+      "kind": "character",
+      "column": 4,
+      "order": 1,
+      "text": "Michael's transformation begins: he retrieves a hidden gun, and his face becomes cold and determined.",
+      "characterName": "Michael Corleone",
+      "archetype": "hero"
+    },
+    {
+      "kind": "detail",
+      "column": 4,
+      "order": 2,
+      "text": "Iconic line: 'It's not personal, Sonny. It's strictly business.'"
+    },
+    {
+      "kind": "plot",
+      "column": 5,
+      "order": 0,
+      "text": "Michael hides in Sicily. He meets and marries Apollonia. Meanwhile, Sonny is murdered at a causeway tollbooth."
+    },
+    {
+      "kind": "character",
+      "column": 5,
+      "order": 1,
+      "text": "Tom Hagen, loyal consigliere, remains an ally. The five families, especially Barzini and Tattaglia, are enemies.",
+      "characterName": "Tom Hagen",
+      "archetype": "ally"
+    },
+    {
+      "kind": "character",
+      "column": 5,
+      "order": 2,
+      "text": "Virgil Sollozzo and McCluskey are early enemies (shadows). Barzini is the ultimate puppet-master shadow.",
+      "characterName": "Emilio Barzini",
+      "archetype": "shadow"
+    },
+    {
+      "kind": "theme",
+      "column": 5,
+      "order": 3,
+      "text": "Theme of loyalty and betrayal: the family is torn apart by internal and external enemies."
+    },
+    {
+      "kind": "plot",
+      "column": 6,
+      "order": 0,
+      "text": "Michael returns to New York after Apollonia is killed by a car bomb meant for him. He prepares to take over as Don and plans a series of revenge assassinations."
+    },
+    {
+      "kind": "character",
+      "column": 6,
+      "order": 1,
+      "text": "Michael hardens completely. He lies to Kay about becoming 'legitimate' while secretly planning the purge.",
+      "characterName": "Michael Corleone",
+      "archetype": "hero"
+    },
+    {
+      "kind": "plot",
+      "column": 7,
+      "order": 0,
+      "text": "During his nephew's baptism, Michael renounces Satan while his men murder the five family heads, Moe Greene, and others. This is his moral death."
+    },
+    {
+      "kind": "character",
+      "column": 7,
+      "order": 1,
+      "text": "The baptism scene cross-cut with murders: Michael becomes the new Godfather, losing his soul.",
+      "characterName": "Michael Corleone",
+      "archetype": "hero"
+    },
+    {
+      "kind": "theme",
+      "column": 7,
+      "order": 2,
+      "text": "Theme of corruption: religious sanctity juxtaposed with brutal murder. Michael's 'ordeal' is spiritual damnation."
+    },
+    {
+      "kind": "plot",
+      "column": 8,
+      "order": 0,
+      "text": "Michael eliminates all enemies. He becomes the undisputed Don of the most powerful crime family in New York. The 'reward' is power, but at the cost of his humanity."
+    },
+    {
+      "kind": "character",
+      "column": 8,
+      "order": 1,
+      "text": "Michael's reward: control. But he loses his innocence, his wife Kay, and his own conscience.",
+      "characterName": "Michael Corleone",
+      "archetype": "hero"
+    },
+    {
+      "kind": "plot",
+      "column": 9,
+      "order": 0,
+      "text": "Kay confronts Michael about the murders. He denies ordering the killing of Carlo, who betrayed Sonny. But we see Michael's men close the door on Kay, excluding her."
+    },
+    {
+      "kind": "character",
+      "column": 9,
+      "order": 1,
+      "text": "Michael lies to Kay's face, then accepts the title of Don from his men. The road back is a lie.",
+      "characterName": "Michael Corleone",
+      "archetype": "hero"
+    },
+    {
+      "kind": "plot",
+      "column": 10,
+      "order": 0,
+      "text": "Michael orders Carlo's murder. He has become what he once despised. The final resurrection is not of Michael the man, but of the new Godfather."
+    },
+    {
+      "kind": "character",
+      "column": 10,
+      "order": 1,
+      "text": "The old Michael is dead. The resurrected Michael is a cold, ruthless mafia boss.",
+      "characterName": "Michael Corleone",
+      "archetype": "hero"
+    },
+    {
+      "kind": "detail",
+      "column": 10,
+      "order": 2,
+      "text": "Final shot: a door closes on Kay, symbolizing Michael's total isolation."
+    },
+    {
+      "kind": "plot",
+      "column": 11,
+      "order": 0,
+      "text": "Michael returns with the 'elixir' of absolute power. He is now the new Don, having secured the family's future through violence and betrayal."
+    },
+    {
+      "kind": "theme",
+      "column": 11,
+      "order": 1,
+      "text": "The tragic elixir: power corrupts absolutely. Michael has everything and nothing."
+    }
+  ]
+}
