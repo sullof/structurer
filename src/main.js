@@ -41,6 +41,7 @@ import { createBoardInteractionsController } from "./board-interactions";
 import { createBoardNoteActionsController } from "./board-note-actions";
 import { createInlineTitleEditController } from "./inline-title-edit.js";
 import { appAlert, appDialog, closeAppAlertIfOpen, dismissAllAppAlerts } from "./app-alert.js";
+import { initModalScrollLock } from "./modal-scroll-lock.js";
 import packageJson from "../package.json";
 import { validateStructureAuthor, validateStructureDescription } from "./structure-metadata.js";
 
@@ -5193,6 +5194,7 @@ applyDemoVisibilityControl();
 initDashboardActionsExclusiveAccordion();
 initBoardActionsExclusiveAccordion();
 initStructurePreviewModal();
+initModalScrollLock();
 renderStructureOptions("hero_journey");
 renderStructurePhaseRows();
 syncRouteToState(true);

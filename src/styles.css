@@ -21,6 +21,18 @@
   box-sizing: border-box;
 }
 
+html.modal-scroll-locked {
+  overflow: hidden;
+}
+
+body.modal-scroll-locked {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -2062,6 +2074,7 @@ a:hover {
   place-items: center;
   padding: 20px;
   z-index: 50;
+  overscroll-behavior: contain;
 }
 
 .modal-overlay.hidden {

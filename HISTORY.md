@@ -1,5 +1,8 @@
 # History
 
+**1.14.3** - 2026-04-04
+- **Modals (mobile)**: with a dialog open, touch-scrolling on the dimmed backdrop no longer scrolls the page behind it. A **`MutationObserver`** toggles document scroll lock (`position: fixed` on **`body`** + saved **`scrollY`**) whenever any **`.modal-overlay`** loses or gains **`.hidden`**. Overlays also use **`overscroll-behavior: contain`** where the overlay itself scrolls.
+
 **1.14.2** - 2026-04-04
 - **Mobile story editor header**: on narrow viewports, the **Demo** badge, **story title**, and **structure name** line are **center-aligned** between the back and actions buttons. Series and phase views keep the previous **right-aligned** header treatment.
 - **Dashboard — structure preview** (Available structures): on **narrow viewports**, long descriptions no longer clip on the right. The preview dialog is a flex child, so default **`min-width: auto`** could keep it wider than the screen; added **`min-width: 0`**, **`max-width: 100%`**, and **`overflow-wrap: break-word`** on the modal and copy blocks so text wraps inside the viewport.
