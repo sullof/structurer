@@ -16,7 +16,17 @@ export function createNavigationController({
   applyColumnWidth,
   applyWrapColumns,
 }) {
-  const { landingView, homeView, groupView, editorView, phaseView, helpView, privacyView, termsView } = views;
+  const {
+    landingView,
+    homeView,
+    groupView,
+    editorView,
+    phaseView,
+    helpView,
+    privacyView,
+    termsView,
+    aiAnalysisPromptView,
+  } = views;
 
   function normalizePathname(pathname) {
     if (!pathname || pathname === "/") return "/";
@@ -45,6 +55,7 @@ export function createNavigationController({
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
+    if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
     renderHome();
   }
 
@@ -59,6 +70,7 @@ export function createNavigationController({
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
+    if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
   }
 
   function showHelp() {
@@ -72,6 +84,7 @@ export function createNavigationController({
     helpView.classList.remove("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
+    if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
   }
 
   function showPrivacy() {
@@ -83,6 +96,8 @@ export function createNavigationController({
     editorView.classList.add("hidden");
     if (phaseView) phaseView.classList.add("hidden");
     helpView.classList.add("hidden");
+    if (termsView) termsView.classList.add("hidden");
+    if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
     privacyView.classList.remove("hidden");
   }
 
@@ -95,7 +110,26 @@ export function createNavigationController({
     editorView.classList.add("hidden");
     if (phaseView) phaseView.classList.add("hidden");
     helpView.classList.add("hidden");
+    if (privacyView) privacyView.classList.add("hidden");
+    if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
     termsView.classList.remove("hidden");
+  }
+
+  function showAiAnalysisPrompt() {
+    setCurrentBoardId(null);
+    setCurrentGroupId(null);
+    landingView.classList.add("hidden");
+    homeView.classList.add("hidden");
+    groupView.classList.add("hidden");
+    editorView.classList.add("hidden");
+    if (phaseView) phaseView.classList.add("hidden");
+    helpView.classList.add("hidden");
+    if (privacyView) privacyView.classList.add("hidden");
+    if (termsView) termsView.classList.add("hidden");
+    if (aiAnalysisPromptView) aiAnalysisPromptView.classList.remove("hidden");
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
   }
 
   function showBoard(boardId) {
@@ -115,6 +149,7 @@ export function createNavigationController({
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
+    if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
     renderEditor();
     applyColumnWidth();
     applyWrapColumns();
@@ -145,6 +180,7 @@ export function createNavigationController({
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
+    if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
     if (typeof renderPhaseDetail === "function") {
       renderPhaseDetail(board.id, phaseIndex);
     }
@@ -169,6 +205,7 @@ export function createNavigationController({
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
+    if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
     renderGroup();
   }
 
@@ -234,6 +271,12 @@ export function createNavigationController({
     showTerms();
   }
 
+  function openAiAnalysisPrompt(replaceRoute = false) {
+    setBoardBackGroupId(null);
+    navigateTo("/build-analysis-prompt", replaceRoute);
+    showAiAnalysisPrompt();
+  }
+
   function syncRouteToState(replaceRoute = true) {
     const path = normalizePathname(window.location.pathname);
     if (path === "/") {
@@ -254,6 +297,10 @@ export function createNavigationController({
     }
     if (path === "/terms") {
       showTerms();
+      return;
+    }
+    if (path === "/build-analysis-prompt") {
+      showAiAnalysisPrompt();
       return;
     }
     if (path.startsWith("/group/")) {
@@ -312,6 +359,8 @@ export function createNavigationController({
     openPrivacy,
     openTerms,
     openGroup,
+    openAiAnalysisPrompt,
+    showAiAnalysisPrompt,
     syncRouteToState,
   };
 }
