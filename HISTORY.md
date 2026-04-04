@@ -1,6 +1,11 @@
 # History
 
-**1.14.1** - 2026-04-05
+**1.14.2** - 2026-04-04
+- **Mobile story editor header**: on narrow viewports, the **Demo** badge, **story title**, and **structure name** line are **center-aligned** between the back and actions buttons. Series and phase views keep the previous **right-aligned** header treatment.
+- **Dashboard — structure preview** (Available structures): on **narrow viewports**, long descriptions no longer clip on the right. The preview dialog is a flex child, so default **`min-width: auto`** could keep it wider than the screen; added **`min-width: 0`**, **`max-width: 100%`**, and **`overflow-wrap: break-word`** on the modal and copy blocks so text wraps inside the viewport.
+- **Dashboard — add / edit structure** (wide modals): on **`max-width: 640px`**, the sheet is **edge-to-edge** with **safe-area padding**; the **whole overlay scrolls** as one page. The inner **phase list** no longer uses its own scroll region (avoids cramped layout and action buttons overlapping fields). Desktop behavior is unchanged (viewport-height cap; only the phase list scrolls).
+
+**1.14.1** - 2026-04-04
 - **Story editor layout**: the phase grid again uses the **full content width** (edge-to-edge with the app chrome), matching the series view. Negative horizontal margins moved from **`#board`** to **`.editor-board-scroller`**, because **`overflow-x: auto`** on the scroller was clipping the board’s bleed and kept columns narrow with cramped note text.
 
 **1.14.0** - 2026-04-04
