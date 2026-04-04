@@ -7,17 +7,82 @@ export function createBoardNoteActionsController({
   normalizeOrders,
   touchBoard,
   renderEditor,
-  createCustomArchetype,
-  openNoteTypeColorPicker,
-  createCustomNoteType,
+  addNoteModal,
+  buildAddNoteModalBody,
+  getPhaseTitleForColumn,
 }) {
+  const { overlay, bodyRoot, titleEl, cancelBtn } = addNoteModal;
+
+  function isAddNoteModalOpen() {
+    return overlay && !overlay.classList.contains("hidden");
+  }
+
+  function closeAddNoteModal() {
+    if (!overlay) return;
+    overlay.classList.add("hidden");
+    overlay.setAttribute("aria-hidden", "true");
+    if (bodyRoot) bodyRoot.innerHTML = "";
+    if (titleEl) titleEl.textContent = "Add note";
+  }
+
+  function openAddNoteModal(columnIndex) {
+    if (!overlay || !bodyRoot || !buildAddNoteModalBody) return;
+    bodyRoot.innerHTML = buildAddNoteModalBody(columnIndex);
+    const phaseTitle = getPhaseTitleForColumn ? getPhaseTitleForColumn(columnIndex) : "";
+    if (titleEl) {
+      titleEl.textContent = phaseTitle ? `Add note to ${phaseTitle}` : "Add note";
+    }
+    overlay.classList.remove("hidden");
+    overlay.setAttribute("aria-hidden", "false");
+    const firstBtn = bodyRoot.querySelector("button");
+    if (firstBtn) firstBtn.focus();
+  }
+
+  function handleAddNoteModalAction(target) {
+    if (!(target instanceof HTMLElement)) return false;
+
+    if (target.dataset.role === "quick-add") {
+      boardInteractions.addNote(target.dataset.kind, Number(target.dataset.column));
+      closeAddNoteModal();
+      return true;
+    }
+
+    if (target.dataset.role === "quick-add-character") {
+      boardInteractions.addNote("character", Number(target.dataset.column), target.dataset.archetype);
+      closeAddNoteModal();
+      return true;
+    }
+
+    return false;
+  }
+
+  if (overlay) {
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) closeAddNoteModal();
+    });
+  }
+
+  if (bodyRoot) {
+    bodyRoot.addEventListener("click", (event) => {
+      const target = event.target;
+      if (handleAddNoteModalAction(target)) {
+        event.stopPropagation();
+      }
+    });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => closeAddNoteModal());
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (!isAddNoteModalOpen()) return;
+    closeAddNoteModal();
+  });
+
   function closeAllColumnMenus() {
-    boardEl.querySelectorAll('[data-role="column-menu"]').forEach((menu) => {
-      menu.classList.add("hidden");
-    });
-    boardEl.querySelectorAll('[data-role="character-submenu"]').forEach((submenu) => {
-      submenu.classList.add("hidden");
-    });
+    closeAddNoteModal();
   }
 
   /** Lets double-click on the note header toggle collapse before read→edit switches the DOM. */
@@ -30,55 +95,9 @@ export function createBoardNoteActionsController({
     if (target.dataset.role === "open-column-menu") {
       const columnEl = target.closest(".column");
       if (!columnEl) return;
-      const menu = columnEl.querySelector('[data-role="column-menu"]');
-      const willOpen = menu.classList.contains("hidden");
-      closeAllColumnMenus();
-      if (willOpen) {
-        menu.classList.remove("hidden");
-      }
-      return;
-    }
-
-    if (target.dataset.role === "toggle-character-submenu") {
-      const menu = target.closest('[data-role="column-menu"]');
-      if (!menu) return;
-      const submenu = menu.querySelector('[data-role="character-submenu"]');
-      submenu.classList.toggle("hidden");
-      return;
-    }
-
-    if (target.dataset.role === "quick-add") {
-      boardInteractions.addNote(target.dataset.kind, Number(target.dataset.column));
-      closeAllColumnMenus();
-      return;
-    }
-
-    if (target.dataset.role === "quick-add-character") {
-      boardInteractions.addNote("character", Number(target.dataset.column), target.dataset.archetype);
-      closeAllColumnMenus();
-      return;
-    }
-
-    if (target.dataset.role === "define-custom-archetype") {
-      const newName = window.prompt("Custom archetype name:");
-      if (!newName) return;
-      const created = createCustomArchetype(newName);
-      if (!created) return;
-      boardInteractions.addNote("character", Number(target.dataset.column), created.id);
-      closeAllColumnMenus();
-      return;
-    }
-
-    if (target.dataset.role === "define-custom-note-type") {
-      const newName = window.prompt("Custom note type name:");
-      if (!newName) return;
-      openNoteTypeColorPicker().then((pickedColor) => {
-        if (!pickedColor) return;
-        const createdType = createCustomNoteType(newName, pickedColor);
-        if (!createdType) return;
-        boardInteractions.addNote(createdType.id, Number(target.dataset.column));
-      });
-      closeAllColumnMenus();
+      const columnIndex = Number(columnEl.dataset.column);
+      if (Number.isNaN(columnIndex)) return;
+      openAddNoteModal(columnIndex);
       return;
     }
 
@@ -133,5 +152,5 @@ export function createBoardNoteActionsController({
     renderEditor();
   });
 
-  return { closeAllColumnMenus };
+  return { closeAllColumnMenus, closeAddNoteModal, isAddNoteModalOpen };
 }

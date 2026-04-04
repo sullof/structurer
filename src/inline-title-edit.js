@@ -1,8 +1,9 @@
 const STORY_INPUT = '[data-role="inline-story-title-input"]';
 const GROUP_INPUT = '[data-role="inline-group-title-input"]';
+const STRUCTURE_INPUT = '[data-role="inline-structure-name-input"]';
 
 /**
- * Shared inline title editing for story (board) titles and series (group) titles:
+ * Shared inline title editing for story (board) titles, series (group) titles, and altered structure names:
  * single active edit, ignore-first-outside-click, focus/select, Enter/Escape, focusout commit.
  */
 export function createInlineTitleEditController(options) {
@@ -19,6 +20,8 @@ export function createInlineTitleEditController(options) {
     renderHome,
     renderEditor,
     renderGroup,
+    canEditBoardStructure,
+    commitBoardStructureRenameFromInline,
   } = options;
 
   let editing = null;
@@ -30,6 +33,10 @@ export function createInlineTitleEditController(options) {
 
   function getEditingGroupId() {
     return editing?.kind === "group" ? editing.groupId : null;
+  }
+
+  function getEditingStructureBoardId() {
+    return editing?.kind === "structure" ? editing.boardId : null;
   }
 
   function renderAfterStoryTitleChange(boardId) {
@@ -44,6 +51,15 @@ export function createInlineTitleEditController(options) {
   function renderAfterGroupTitleChange(groupId) {
     renderHome();
     if (getCurrentGroupId() === groupId) renderGroup();
+  }
+
+  function renderAfterStructureNameChange(boardId) {
+    renderHome();
+    if (getCurrentBoardId() === boardId) renderEditor();
+    const gid = getCurrentGroupId();
+    if (gid && getGroups().some((g) => g.id === gid && g.boardIds.includes(boardId))) {
+      renderGroup();
+    }
   }
 
   function commitStory(boardId, rawValue) {
@@ -87,6 +103,25 @@ export function createInlineTitleEditController(options) {
     }
   }
 
+  function commitStructure(boardId, rawValue) {
+    if (editing?.kind !== "structure" || editing.boardId !== boardId) return;
+    const board = getBoards().find((b) => b.id === boardId);
+    editing = null;
+    if (!board) {
+      return;
+    }
+    const trimmed = String(rawValue ?? "").trim();
+    if (!trimmed) {
+      renderAfterStructureNameChange(boardId);
+      return;
+    }
+    if (typeof commitBoardStructureRenameFromInline === "function") {
+      commitBoardStructureRenameFromInline(boardId, trimmed);
+    } else {
+      renderAfterStructureNameChange(boardId);
+    }
+  }
+
   function flush() {
     if (editing?.kind === "story") {
       const id = editing.boardId;
@@ -98,6 +133,13 @@ export function createInlineTitleEditController(options) {
       const input = document.querySelector(GROUP_INPUT);
       const val = input ? input.value : (getGroups().find((g) => g.id === id)?.title ?? "");
       commitGroup(id, val);
+    } else if (editing?.kind === "structure") {
+      const id = editing.boardId;
+      const input = document.querySelector(`${STRUCTURE_INPUT}[data-board-id="${id}"]`);
+      const board = getBoards().find((b) => b.id === id);
+      const fallback = board?.structure ?? "";
+      const val = input ? input.value : fallback;
+      commitStructure(id, val);
     }
   }
 
@@ -114,7 +156,13 @@ export function createInlineTitleEditController(options) {
     return Boolean(root && root.contains(event.target));
   }
 
+  function isInsideStructureEdit(event, boardId) {
+    const root = document.querySelector("#structure-name");
+    return Boolean(root && root.contains(event.target));
+  }
+
   function beginStory(boardId) {
+    flush();
     if (clearBoardCardPendingOpenTimer) clearBoardCardPendingOpenTimer();
     editing = { kind: "story", boardId };
     ignoreNextOutsideClick = true;
@@ -138,12 +186,32 @@ export function createInlineTitleEditController(options) {
   }
 
   function beginGroup(groupId) {
+    flush();
     editing = { kind: "group", groupId };
     ignoreNextOutsideClick = true;
     renderHome();
     if (getCurrentBoardId()) renderEditor();
     renderGroup();
     const input = document.querySelector(GROUP_INPUT);
+    if (input) {
+      input.focus({ preventScroll: true });
+      input.select();
+      if (document.activeElement !== input) {
+        requestAnimationFrame(() => {
+          input.focus({ preventScroll: true });
+          input.select();
+        });
+      }
+    }
+  }
+
+  function beginStructure(boardId) {
+    if (typeof canEditBoardStructure !== "function" || !canEditBoardStructure(boardId)) return;
+    flush();
+    editing = { kind: "structure", boardId };
+    ignoreNextOutsideClick = true;
+    if (getCurrentBoardId() === boardId) renderEditor();
+    const input = document.querySelector(`${STRUCTURE_INPUT}[data-board-id="${boardId}"]`);
     if (input) {
       input.focus({ preventScroll: true });
       input.select();
@@ -169,10 +237,30 @@ export function createInlineTitleEditController(options) {
     if (getCurrentGroupId() === groupId) renderGroup();
   }
 
+  function cancelStructureEdit(boardId) {
+    if (editing?.kind !== "structure" || editing.boardId !== boardId) return;
+    editing = null;
+    renderAfterStructureNameChange(boardId);
+  }
+
   document.addEventListener(
     "keydown",
     (event) => {
       if (event.key !== "Escape" && event.key !== "Enter") return;
+      const structureInput = event.target.closest(STRUCTURE_INPUT);
+      if (structureInput) {
+        const bid = structureInput.dataset.boardId;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          cancelStructureEdit(bid);
+          return;
+        }
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commitStructure(bid, structureInput.value);
+          return;
+        }
+      }
       const groupInput = event.target.closest(GROUP_INPUT);
       if (groupInput) {
         const gid = groupInput.dataset.groupId;
@@ -206,6 +294,18 @@ export function createInlineTitleEditController(options) {
   document.addEventListener(
     "focusout",
     (event) => {
+      const structureTarget = event.target;
+      if (structureTarget?.matches?.(STRUCTURE_INPUT)) {
+        const bid = structureTarget.dataset.boardId;
+        if (editing?.kind === "structure" && editing.boardId === bid) {
+          const valueSnapshot = structureTarget.value;
+          queueMicrotask(() => {
+            if (editing?.kind !== "structure" || editing.boardId !== bid) return;
+            commitStructure(bid, valueSnapshot);
+          });
+        }
+        return;
+      }
       const groupTarget = event.target;
       if (groupTarget?.matches?.(GROUP_INPUT)) {
         const gid = groupTarget.dataset.groupId;
@@ -242,6 +342,13 @@ export function createInlineTitleEditController(options) {
         const input = document.querySelector(GROUP_INPUT);
         commitGroup(id, input ? input.value : getGroups().find((g) => g.id === id)?.title ?? "");
       }
+    } else if (editing?.kind === "structure") {
+      const id = editing.boardId;
+      if (!isInsideStructureEdit(event, id)) {
+        const input = document.querySelector(`${STRUCTURE_INPUT}[data-board-id="${id}"]`);
+        const board = getBoards().find((b) => b.id === id);
+        commitStructure(id, input ? input.value : board?.structure ?? "");
+      }
     } else if (editing?.kind === "story") {
       const id = editing.boardId;
       if (!isInsideStoryEdit(event, id)) {
@@ -254,8 +361,10 @@ export function createInlineTitleEditController(options) {
   return {
     getEditingStoryBoardId,
     getEditingGroupId,
+    getEditingStructureBoardId,
     beginStory,
     beginGroup,
+    beginStructure,
     flush,
     handleDocumentClick,
   };

@@ -40,11 +40,35 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 20px;
 }
 
 .view.hidden {
   display: none;
+}
+
+/* Workspace views: do not let the main flex column shrink them below content height. */
+#editor-view:not(.hidden),
+#phase-view:not(.hidden),
+#group-view:not(.hidden) {
+  flex-shrink: 0;
+}
+
+/* Do not put overflow-x on #editor-view: it becomes a scroll container (overflow-y computes to auto),
+   which breaks flex min-height for that item and can make the footer overlap painted board overflow.
+   Wide boards scroll inside .editor-board-scroller; #board stays overflow:visible for column menus. */
+#editor-view:not(.hidden) {
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.editor-board-scroller {
+  min-width: 0;
+  overflow-x: auto;
+  /* overflow-y may compute to auto when overflow-x is not visible; box still grows with board height */
+  overflow-y: visible;
 }
 
 .hidden {
@@ -950,6 +974,67 @@ a:hover {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
 }
 
+#structure-name {
+  margin: 4px 0 0;
+  min-height: 1.35em;
+}
+
+#structure-name .structure-name-inline-edit-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 100%;
+}
+
+#structure-name .structure-name-editable {
+  cursor: text;
+  border-bottom: 1px dashed transparent;
+}
+
+#structure-name .structure-name-editable:hover {
+  border-bottom-color: #cbd5e1;
+}
+
+.structure-name-altered-suffix {
+  font-weight: 500;
+  color: #64748b;
+  font-size: 0.88em;
+  white-space: nowrap;
+}
+
+.group-board-head .subtitle .structure-name-altered-suffix,
+.board-meta-line .structure-name-altered-suffix {
+  font-size: 0.92em;
+}
+
+.editor-topbar-center #structure-name .inline-structure-name-input.structure-name-input {
+  display: inline-block;
+  width: auto;
+  min-width: 10ch;
+  max-width: min(100%, 28rem);
+  padding: 4px 10px;
+  margin: 0;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.editor-topbar-center #structure-name .inline-structure-name-input.structure-name-input:focus,
+.editor-topbar-center #structure-name .inline-structure-name-input.structure-name-input:focus-visible {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
+}
+
 .group-reorder-add-row {
   margin-top: 14px;
   display: flex;
@@ -1173,9 +1258,72 @@ a:hover {
   cursor: not-allowed;
 }
 
+/* Wide structure modals (create + edit altered): stay in viewport; phase list scrolls */
+#edit-story-structure-modal-overlay.modal-overlay,
+#dashboard-create-structure-modal-overlay.modal-overlay {
+  overflow-y: auto;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 20px max(20px, env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+}
+
+#edit-story-structure-modal-overlay.modal-overlay:not(.hidden),
+#dashboard-create-structure-modal-overlay.modal-overlay:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+#edit-story-structure-modal-overlay .modal.modal--wide-create-structure,
 #dashboard-create-structure-modal-overlay .modal.modal--wide-create-structure {
   width: min(1100px, calc(100vw - 32px));
   max-width: 100%;
+  max-height: min(calc(100vh - 32px), calc(100dvh - 32px));
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#edit-story-structure-modal-overlay .modal.modal--wide-create-structure > h2,
+#dashboard-create-structure-modal-overlay .modal.modal--wide-create-structure > h2 {
+  flex-shrink: 0;
+}
+
+#edit-story-structure-modal-overlay .modal.modal--wide-create-structure > .subtitle {
+  flex-shrink: 0;
+}
+
+#edit-story-structure-modal-overlay .modal.modal--wide-create-structure .create-structure-form,
+#dashboard-create-structure-modal-overlay .modal.modal--wide-create-structure .create-structure-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+#edit-story-structure-modal-overlay .modal.modal--wide-create-structure .structure-phases-list,
+#dashboard-create-structure-modal-overlay .modal.modal--wide-create-structure .structure-phases-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 4px;
+}
+
+#edit-story-structure-modal-overlay .modal.modal--wide-create-structure .structure-form-actions,
+#dashboard-create-structure-modal-overlay .modal.modal--wide-create-structure .structure-form-actions {
+  flex-shrink: 0;
+}
+
+#edit-story-structure-modal-overlay .modal.modal--wide-create-structure > .modal-actions,
+#dashboard-create-structure-modal-overlay .modal.modal--wide-create-structure > .modal-actions {
+  flex-shrink: 0;
 }
 
 .create-structure-form {
@@ -1516,7 +1664,7 @@ a:hover {
   padding: 0;
   padding-bottom: 0;
   gap: 0;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 #editor-view:not(.hidden) #board.board .column {
@@ -1734,7 +1882,7 @@ a:hover {
   background: #fff;
   box-shadow: 0 8px 20px rgba(17, 24, 39, 0.12);
   padding: 6px;
-  z-index: 20;
+  z-index: 40;
 }
 
 .column-menu.hidden,
@@ -1916,15 +2064,17 @@ a:hover {
   display: none;
 }
 
-/* Dashboard Actions: modal grows with expanded section; overlay scrolls if taller than viewport.
+/* Dashboard / story Actions: expanded sections can grow; overlay scrolls if taller than viewport.
    display:flex must not apply when .hidden — otherwise it overrides .modal-overlay.hidden { display:none }. */
-#dashboard-actions-modal-overlay.modal-overlay {
+#dashboard-actions-modal-overlay.modal-overlay,
+#board-actions-modal-overlay.modal-overlay {
   overflow-y: auto;
   padding: max(20px, env(safe-area-inset-top, 0px)) 20px max(24px, env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
 }
 
-#dashboard-actions-modal-overlay.modal-overlay:not(.hidden) {
+#dashboard-actions-modal-overlay.modal-overlay:not(.hidden),
+#board-actions-modal-overlay.modal-overlay:not(.hidden) {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1952,6 +2102,10 @@ a:hover {
   margin: 10px 0 4px;
   max-height: min(50vh, 320px);
   overflow: auto;
+}
+
+.app-alert-custom-root:has(.app-dialog-custom-note-type) {
+  max-height: min(62vh, 440px);
 }
 
 .app-alert-custom-root.hidden {
@@ -1985,12 +2139,209 @@ a:hover {
   margin: 0;
 }
 
+.app-dialog-text-input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.app-dialog-text-input:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.app-dialog-section-label {
+  margin: 12px 0 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.app-dialog-custom-note-type {
+  padding-inline: 2px;
+}
+
+/* Inset ring avoids clipping: parent .app-alert-custom-root uses overflow:auto and
+   outline+outline-offset on the first swatch was cut off on the top/left. */
+.color-grid.color-grid--app-dialog-note-type {
+  margin-top: 0;
+  padding: 4px 2px 2px 4px;
+}
+
+.color-grid.color-grid--app-dialog-note-type .color-swatch.selected {
+  outline: none;
+  box-shadow: inset 0 0 0 3px rgba(17, 24, 39, 0.9);
+}
+
 .modal {
   width: min(560px, 100%);
   background: #fff;
   border-radius: 12px;
   border: 1px solid var(--line);
   padding: 16px;
+}
+
+/* Centered “add note” chooser (replaces column dropdown to avoid overflow clipping). */
+.modal.modal--add-note {
+  width: min(380px, calc(100vw - 32px));
+  max-height: min(calc(100vh - 40px), calc(100dvh - 40px));
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.modal.modal--add-note > h2 {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+
+#add-note-modal-body-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -2px;
+  padding: 0 2px;
+}
+
+.modal.modal--add-note .modal-actions {
+  flex-shrink: 0;
+  margin-top: 12px;
+  padding-top: 4px;
+}
+
+.add-note-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.add-note-modal-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr));
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.add-note-modal-type-chip {
+  margin: 0;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 10px;
+  padding: 10px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  text-align: center;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+}
+
+.add-note-modal-type-chip:hover {
+  filter: brightness(0.96);
+}
+
+.add-note-modal-type-chip:active {
+  filter: brightness(0.92);
+}
+
+.add-note-modal-type-chip:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.add-note-modal-archetype-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.add-note-modal-archetype-chip {
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--character) 55%, rgba(17, 24, 39, 0.22));
+  border-radius: 8px;
+  padding: 5px 8px 5px 6px;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  min-height: 36px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  background-color: var(--character);
+  color: #111827;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+}
+
+.add-note-modal-archetype-chip:hover {
+  filter: brightness(0.97);
+}
+
+.add-note-modal-archetype-chip:active {
+  filter: brightness(0.93);
+}
+
+.add-note-modal-archetype-chip:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.add-note-modal-archetype-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 1.35em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-note-modal-archetype-icon--placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.add-note-modal-archetype-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.25;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  hyphens: auto;
+  text-align: left;
+}
+
+.add-note-modal-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 10px 0 8px;
+  flex-shrink: 0;
+}
+
+.add-note-modal-section-title {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 /* Structure preview: stays within viewport; phases list scrolls inside the modal */
@@ -2217,6 +2568,11 @@ a:hover {
 
 .modal-edit-note-types {
   max-width: min(520px, calc(100vw - 32px));
+}
+
+.create-structure-form .structure-phase-remove-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .phase-detail-layout {

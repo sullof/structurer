@@ -34,13 +34,15 @@ export function saveSettings(settingsKey, settings) {
 export function loadCustomStructures(customStructuresKey) {
   const parsed = loadJsonItem(customStructuresKey, []);
   if (!Array.isArray(parsed)) return [];
-  return parsed.filter(
-    (item) =>
-      item &&
-      typeof item.id === "string" &&
-      typeof item.name === "string" &&
-      Array.isArray(item.phases),
-  );
+  return parsed.filter((item) => {
+    if (!item || typeof item.id !== "string" || typeof item.name !== "string" || !Array.isArray(item.phases)) {
+      return false;
+    }
+    if (item.isAlteredStructure === true) {
+      return typeof item.ownerBoardUid === "string" && item.ownerBoardUid.length > 0;
+    }
+    return true;
+  });
 }
 
 export function saveCustomStructures(customStructuresKey, customStructures) {

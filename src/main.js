@@ -28,10 +28,11 @@ import {
   saveSettings as saveSettingsToStorage,
 } from "./storage";
 import {
+  addNoteModalBodyTemplate,
   boardCardTemplate,
-  columnMenuTemplate,
   noteTemplate,
   renderStructureOptionsHtml,
+  structureAlteredEditPhaseRowTemplate,
   structurePhaseRowTemplate,
 } from "./ui-render";
 import { createGroupModalController } from "./group-modals";
@@ -39,7 +40,7 @@ import { createNavigationController } from "./navigation";
 import { createBoardInteractionsController } from "./board-interactions";
 import { createBoardNoteActionsController } from "./board-note-actions";
 import { createInlineTitleEditController } from "./inline-title-edit.js";
-import { appAlert, closeAppAlertIfOpen, dismissAllAppAlerts } from "./app-alert.js";
+import { appAlert, appDialog, closeAppAlertIfOpen, dismissAllAppAlerts } from "./app-alert.js";
 import packageJson from "../package.json";
 import { validateStructureAuthor, validateStructureDescription } from "./structure-metadata.js";
 
@@ -62,11 +63,11 @@ let phaseHelpOpenColumns = new Set();
 let phaseHelpBoardId = null;
 let editingPhaseCommentUid = null;
 let boardActionsModalBoardId = null;
+let editStoryStructureModalBoardId = null;
 let customStructures = loadCustomStructures();
 let customStructureActivity = loadCustomStructureActivity();
 let customArchetypes = loadCustomArchetypes();
 let customNoteTypes = loadCustomNoteTypes();
-let pendingNoteTypeColorResolve = null;
 const initialSettings = loadSettings();
 let columnMinWidth = initialSettings.columnMinWidth ?? DEFAULT_COLUMN_WIDTH;
 let wrapColumns = initialSettings.wrapColumns ?? true;
@@ -207,16 +208,23 @@ const toggleWrapColumnsBtn = document.querySelector("#toggle-wrap-columns");
 const editorBoardActionsBtn = document.querySelector("#editor-board-actions-btn");
 const groupViewActionsBtn = document.querySelector("#group-view-actions-btn");
 const modalEditNoteTypesBtn = document.querySelector("#modal-edit-note-types");
+const modalDefineCustomNoteTypeBtn = document.querySelector("#modal-define-custom-note-type");
+const modalDefineCustomArchetypeBtn = document.querySelector("#modal-define-custom-archetype");
+const boardActionsSectionsEl = document.querySelector("#board-actions-modal-sections");
+const boardActionsDemoSectionEl = document.querySelector("#board-actions-demo-section");
 const modalResetPhaseOrderBtn = document.querySelector("#modal-reset-phase-order");
+const modalEditStoryStructureBtn = document.querySelector("#modal-edit-story-structure");
+const editStoryStructureModalOverlay = document.querySelector("#edit-story-structure-modal-overlay");
+const closeEditStoryStructureModalBtn = document.querySelector("#close-edit-story-structure-modal");
+const editAlteredStructureForm = document.querySelector("#edit-altered-structure-form");
+const editAlteredStructurePhasesListEl = document.querySelector("#edit-altered-structure-phases-list");
+const editAlteredStructureAddRowBtn = document.querySelector("#edit-altered-structure-add-row");
 const resetDemoDataBtn = document.querySelector("#reset-demo-data");
 const resetAppDataBtn = document.querySelector("#reset-app-data");
 const resizeModalOverlay = document.querySelector("#resize-modal-overlay");
 const closeResizeModalBtn = document.querySelector("#close-resize-modal");
 const columnWidthSlider = document.querySelector("#column-width-slider");
 const columnWidthValue = document.querySelector("#column-width-value");
-const noteTypeColorModalOverlay = document.querySelector("#note-type-color-modal-overlay");
-const noteTypeColorGrid = document.querySelector("#note-type-color-grid");
-const cancelNoteTypeColorBtn = document.querySelector("#cancel-note-type-color");
 const editNoteTypesModalOverlay = document.querySelector("#edit-note-types-modal-overlay");
 const editNoteTypesListEl = document.querySelector("#edit-note-types-list");
 const cancelEditNoteTypesBtn = document.querySelector("#cancel-edit-note-types");
@@ -235,6 +243,10 @@ const phaseCommentCharCountEl = document.querySelector("#phase-comment-char-coun
 const savePhaseCommentBtn = document.querySelector("#save-phase-comment-btn");
 
 const boardEl = document.querySelector("#board");
+const addNoteModalOverlay = document.querySelector("#add-note-modal-overlay");
+const addNoteModalBodyRoot = document.querySelector("#add-note-modal-body-root");
+const addNoteModalTitleEl = document.querySelector("#add-note-modal-title");
+const addNoteModalCancelBtn = document.querySelector("#add-note-modal-cancel");
 const editorQuickHelpEl = document.querySelector("#editor-quick-help");
 const dismissEditorQuickHelpBtn = document.querySelector("#dismiss-editor-quick-help");
 const groupBoardStackEl = document.querySelector("#group-board-stack");
@@ -360,6 +372,368 @@ function getAllStructures() {
 
 function getAllStructureList() {
   return Object.values(getAllStructures());
+}
+
+function isAlteredStructureEntry(structure) {
+  return Boolean(
+    structure &&
+      structure.isAlteredStructure === true &&
+      typeof structure.ownerBoardUid === "string" &&
+      structure.ownerBoardUid,
+  );
+}
+
+/** Built-in + catalog custom structures only (excludes per-story altered structures). */
+function getCatalogStructureList() {
+  return getAllStructureList().filter((item) => !isAlteredStructureEntry(item));
+}
+
+function boardUsesOwnAlteredStructure(board) {
+  if (!board?.uid) return false;
+  const cfg = getStructureConfig(board.structureId);
+  return isAlteredStructureEntry(cfg) && cfg.ownerBoardUid === board.uid;
+}
+
+/** HTML: escaped structure title + visual-only <span>(altered)</span> when the board uses its own altered template. */
+function boardStructureDisplayLineHtml(board) {
+  const structure = getStructureConfig(board.structureId);
+  let html = escapeHtml(structure.name);
+  if (boardUsesOwnAlteredStructure(board)) {
+    html += ' <span class="structure-name-altered-suffix">(altered)</span>';
+  }
+  return html;
+}
+
+function removeAlteredStructuresOwnedByBoardUid(boardUid) {
+  if (!boardUid) return;
+  const next = customStructures.filter((s) => !isAlteredStructureEntry(s) || s.ownerBoardUid !== boardUid);
+  if (next.length === customStructures.length) return;
+  customStructures = next;
+  saveCustomStructures();
+}
+
+function pruneOrphanAlteredStructures() {
+  const uids = new Set(boards.map((b) => b.uid).filter(Boolean));
+  const next = customStructures.filter((s) => !isAlteredStructureEntry(s) || uids.has(s.ownerBoardUid));
+  if (next.length === customStructures.length) return;
+  customStructures = next;
+  saveCustomStructures();
+}
+
+function clonePhasesDeepForAlteredFork(phases) {
+  if (!Array.isArray(phases)) return [];
+  return phases.map((p) => {
+    const { title, description } = parsePhaseEntry(p);
+    return description ? { title, description } : { title };
+  });
+}
+
+function generateUniqueAlteredStructureId(seedName) {
+  const base = `altered_${slugifyTitle(seedName) || "structure"}`;
+  let id = base;
+  let suffix = 2;
+  while (getAllStructures()[id]) {
+    id = `${base}_${suffix}`;
+    suffix += 1;
+  }
+  return id;
+}
+
+function forkCurrentBoardToAlteredStructure(board) {
+  if (!board?.uid) return { ok: false, reason: "no-board" };
+  const cfg = getStructureConfig(board.structureId);
+  if (isAlteredStructureEntry(cfg) && cfg.ownerBoardUid === board.uid) {
+    return { ok: false, reason: "already-altered" };
+  }
+  const name = String(cfg.name || "").trim() || "Structure";
+  const id = generateUniqueAlteredStructureId(name);
+  const now = Date.now();
+  const newStructure = {
+    id,
+    uid: generateUniqueUid(),
+    name,
+    phases: clonePhasesDeepForAlteredFork(cfg.phases),
+    updatedAt: now,
+    isAlteredStructure: true,
+    ownerBoardUid: board.uid,
+  };
+  if (typeof cfg.description === "string" && cfg.description.trim()) {
+    newStructure.description = cfg.description.trim();
+  }
+  if (typeof cfg.author === "string" && cfg.author.trim()) {
+    newStructure.author = cfg.author.trim();
+  }
+  customStructures.push(newStructure);
+  board.structureId = id;
+  board.structure = name;
+  saveCustomStructures();
+  touchBoard(board);
+  saveBoards();
+  return { ok: true, structure: newStructure };
+}
+
+function isVisualColumnEmpty(board, visualIndex) {
+  if (!board || !Number.isInteger(visualIndex) || visualIndex < 0) return false;
+  const order = getBoardPhaseOrder(board);
+  if (visualIndex >= order.length) return false;
+  if (board.notes.some((note) => note.column === visualIndex)) return false;
+  normalizeBoardPhaseComments(board);
+  const uid = getPhaseUidByVisualColumn(board, visualIndex);
+  if (!uid) return true;
+  const comments = board.phaseComments[uid];
+  return !Array.isArray(comments) || comments.length === 0;
+}
+
+function showAlteredStructureIntroDialog() {
+  return appDialog({
+    title: "Edit the structure",
+    message: "",
+    confirmLabel: "Continue",
+    render(root, api) {
+      root.innerHTML = `
+        <p class="subtitle" style="margin-top:0;line-height:1.45;">
+          If you continue, Structurer will create an altered structure used only by this story.
+          Other stories keep using the shared template.
+          You can rename it under the story title (double-click the structure name).
+        </p>
+        <label class="factory-reset-confirm-checkbox" style="margin-top:14px;">
+          <input type="checkbox" id="altered-structure-intro-ack" />
+          <span>I understand this structure will be for this story only.</span>
+        </label>
+      `;
+      const cb = root.querySelector("#altered-structure-intro-ack");
+      api.setConfirmEnabled(false);
+      cb.addEventListener("change", () => api.setConfirmEnabled(Boolean(cb.checked)));
+      return () => (cb.checked ? true : null);
+    },
+  });
+}
+
+function collectAlteredStructurePhaseRowStatesFromDOM() {
+  if (!editAlteredStructurePhasesListEl) return [];
+  return [...editAlteredStructurePhasesListEl.querySelectorAll(".structure-phase-row")].map((row) => {
+    const raw = row.dataset.structurePhaseOrigin;
+    const parsed = raw === undefined || raw === "" ? null : Number(raw);
+    return {
+      originIndex: Number.isInteger(parsed) ? parsed : null,
+      title: row.querySelector('[data-role="phase-input"]')?.value ?? "",
+      description: row.querySelector('[data-role="phase-description-input"]')?.value ?? "",
+    };
+  });
+}
+
+function alteredPhaseRowCanRemoveFromBoard(board, originIndex) {
+  if (originIndex === null) return true;
+  const v = getBoardPhaseOrder(board).indexOf(originIndex);
+  if (v < 0) return false;
+  return isVisualColumnEmpty(board, v);
+}
+
+function renderAlteredStructureEditorRows(board, states) {
+  if (!editAlteredStructurePhasesListEl) return;
+  editAlteredStructurePhasesListEl.innerHTML = states
+    .map((state, i) => {
+      const canRemove = alteredPhaseRowCanRemoveFromBoard(board, state.originIndex);
+      const phase = normalizeStructureFormPhaseValue({
+        title: state.title,
+        description: state.description,
+      });
+      return structureAlteredEditPhaseRowTemplate(i, phase, state.originIndex, canRemove);
+    })
+    .join("");
+}
+
+function fillAlteredStructureEditorForm(board) {
+  const st = getStructureConfig(board.structureId);
+  const states = st.phases.map((phase, structureIndex) => {
+    const p = normalizeStructureFormPhaseValue(phase);
+    return {
+      originIndex: structureIndex,
+      title: p.title,
+      description: p.description,
+    };
+  });
+  renderAlteredStructureEditorRows(board, states);
+}
+
+async function applyAlteredStructureEditorSave(boardId) {
+  const board = boards.find((b) => b.id == boardId);
+  if (!board || !boardUsesOwnAlteredStructure(board)) return { ok: false };
+  const st = customStructures.find((s) => s.id === board.structureId);
+  if (!st || !Array.isArray(st.phases)) return { ok: false };
+  const oldN = st.phases.length;
+  const rows = collectAlteredStructurePhaseRowStatesFromDOM();
+  if (rows.length < 2) {
+    await appAlert("Please keep at least 2 phases.");
+    return { ok: false };
+  }
+
+  let seenNew = false;
+  const phaseEntries = [];
+  for (const r of rows) {
+    const title = r.title.trim();
+    if (!title) {
+      await appAlert("Every phase needs a name.");
+      return { ok: false };
+    }
+    const description = r.description.trim();
+    const phaseObj = description ? { title, description } : { title };
+
+    if (r.originIndex === null) {
+      seenNew = true;
+      phaseEntries.push({ kind: "new", phase: phaseObj });
+    } else {
+      if (seenNew) {
+        await appAlert("New phases must be added at the bottom of the list.");
+        return { ok: false };
+      }
+      const oi = r.originIndex;
+      if (!Number.isInteger(oi) || oi < 0 || oi >= oldN) {
+        await appAlert("Invalid phase list. Close this dialog and open Edit the structure again.");
+        return { ok: false };
+      }
+      const prevOld = phaseEntries.filter((e) => e.kind === "old").map((e) => e.oldIndex);
+      if (prevOld.length && oi <= prevOld[prevOld.length - 1]) {
+        await appAlert("Invalid phase list. Close this dialog and open Edit the structure again.");
+        return { ok: false };
+      }
+      phaseEntries.push({ kind: "old", oldIndex: oi, phase: phaseObj });
+    }
+  }
+
+  const keptSet = new Set(phaseEntries.filter((e) => e.kind === "old").map((e) => e.oldIndex));
+  for (let i = 0; i < oldN; i += 1) {
+    if (keptSet.has(i)) continue;
+    const v = getBoardPhaseOrder(board).indexOf(i);
+    if (v < 0 || !isVisualColumnEmpty(board, v)) {
+      await appAlert(
+        "Cannot drop a phase that still has notes or phase comments. Clear them first, or add the phase back.",
+      );
+      return { ok: false };
+    }
+  }
+
+  const oldOrder = [...getBoardPhaseOrder(board)];
+  const oldUids = [...ensureBoardPhaseUids(board)];
+  const R = new Set(
+    Array.from({ length: oldN }, (_, idx) => idx).filter((idx) => !keptSet.has(idx)),
+  );
+
+  const oldToNew = new Map();
+  const newPhases = [];
+  const newUids = [];
+  phaseEntries.forEach((e) => {
+    newPhases.push(e.phase);
+    if (e.kind === "old") {
+      oldToNew.set(e.oldIndex, newPhases.length - 1);
+      newUids.push(oldUids[e.oldIndex]);
+    } else {
+      newUids.push(generateUniqueUid());
+    }
+  });
+
+  const newOrder = [];
+  for (let v = 0; v < oldOrder.length; v += 1) {
+    const pid = oldOrder[v];
+    if (R.has(pid)) continue;
+    newOrder.push(oldToNew.get(pid));
+  }
+  const newTail = phaseEntries.filter((e) => e.kind === "new").length;
+  const oldKeptCount = keptSet.size;
+  for (let j = 0; j < newTail; j += 1) {
+    newOrder.push(oldKeptCount + j);
+  }
+
+  R.forEach((i) => {
+    const uid = oldUids[i];
+    if (uid && board.phaseComments && board.phaseComments[uid]) {
+      delete board.phaseComments[uid];
+    }
+  });
+
+  st.phases = newPhases;
+  board.phaseUids = newUids;
+  board.phaseOrder = newOrder;
+
+  const now = Date.now();
+  board.notes.forEach((note) => {
+    const pid = oldOrder[note.column];
+    if (pid === undefined || R.has(pid)) return;
+    const npid = oldToNew.get(pid);
+    if (!Number.isInteger(npid)) return;
+    const newCol = newOrder.indexOf(npid);
+    if (newCol >= 0) {
+      note.column = newCol;
+      note.updatedAt = now;
+    }
+  });
+
+  normalizeBoardPhaseComments(board);
+  normalizeOrders(board.notes, board.structureId);
+  st.updatedAt = now;
+  saveCustomStructures();
+  touchBoard(board);
+  saveBoards();
+  return { ok: true };
+}
+
+function openEditStoryStructureModal(boardId) {
+  if (!editStoryStructureModalOverlay) return;
+  const board = boards.find((b) => b.id == boardId);
+  if (!board || !boardUsesOwnAlteredStructure(board)) return;
+  editStoryStructureModalBoardId = boardId;
+  fillAlteredStructureEditorForm(board);
+  editStoryStructureModalOverlay.classList.remove("hidden");
+  const firstInput = editAlteredStructurePhasesListEl?.querySelector('[data-role="phase-input"]');
+  if (firstInput) firstInput.focus();
+}
+
+function closeEditStoryStructureModal() {
+  if (!editStoryStructureModalOverlay) return;
+  editStoryStructureModalOverlay.classList.add("hidden");
+  editStoryStructureModalBoardId = null;
+}
+
+function normalizePhasesFromAlteredStoryImport(phases, pathLabel = "alteredStructure.phases") {
+  if (!Array.isArray(phases) || phases.length < 2) {
+    throw new Error(`Invalid story JSON: ${pathLabel} must include at least 2 phases.`);
+  }
+  return phases.map((phase, index) => {
+    try {
+      return normalizeImportedStructurePhase(phase, `${pathLabel}[${index}]`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(msg.replace(/^Invalid custom structures file/, "Invalid story JSON"));
+    }
+  });
+}
+
+function createAlteredStructureForImportedStory(alteredPayload, ownerBoardUid, fallbackStructureName) {
+  const phases = normalizePhasesFromAlteredStoryImport(alteredPayload.phases);
+  const nameRaw =
+    typeof alteredPayload.name === "string" && alteredPayload.name.trim()
+      ? alteredPayload.name.trim()
+      : String(fallbackStructureName || "").trim() || "Altered structure";
+  const id = generateUniqueAlteredStructureId(nameRaw);
+  const now = Date.now();
+  const row = {
+    id,
+    uid: generateUniqueUid(),
+    name: nameRaw,
+    phases,
+    updatedAt: Number.isFinite(alteredPayload.updatedAt) ? alteredPayload.updatedAt : now,
+    isAlteredStructure: true,
+    ownerBoardUid,
+  };
+  if (typeof alteredPayload.description === "string" && alteredPayload.description.trim()) {
+    row.description = alteredPayload.description.trim();
+  }
+  if (typeof alteredPayload.author === "string" && alteredPayload.author.trim()) {
+    row.author = alteredPayload.author.trim();
+  }
+  customStructures.push(row);
+  saveCustomStructures();
+  return row;
 }
 
 function getStructureIdsUsedByBoards() {
@@ -503,31 +877,6 @@ function createCustomNoteType(label, color) {
   return noteType;
 }
 
-function openNoteTypeColorPicker() {
-  if (!noteTypeColorModalOverlay || !noteTypeColorGrid) return Promise.resolve(null);
-  const palette = getNoteTypeColorPalette();
-  const used = getUsedNoteTypeColors();
-  const available = palette.filter((color) => !used.has(color.toLowerCase()));
-  const choices = available.length > 0 ? available : palette;
-  noteTypeColorGrid.innerHTML = choices
-    .map(
-      (color, index) => `<button
-      type="button"
-      class="color-swatch ${index === 0 ? "selected" : ""}"
-      data-role="pick-note-type-color"
-      data-color="${color}"
-      aria-label="Choose color ${color}"
-      title="${color}"
-      style="background:${color};"
-    ></button>`,
-    )
-    .join("");
-  noteTypeColorModalOverlay.classList.remove("hidden");
-  return new Promise((resolve) => {
-    pendingNoteTypeColorResolve = resolve;
-  });
-}
-
 function applyDevFlags() {
   // Reset commands are now always available from the dashboard.
 }
@@ -549,6 +898,111 @@ function escapeHtml(text) {
     .replace(/</g, "&lt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function focusAppAlertConfirmIfEnabled() {
+  const confirmBtn = document.querySelector("#app-alert-confirm");
+  if (confirmBtn && !confirmBtn.disabled) confirmBtn.click();
+}
+
+function promptCustomArchetypeName() {
+  return appDialog({
+    title: "Custom archetype",
+    message: "Enter a name for this archetype.",
+    confirmLabel: "Add",
+    render(root, api) {
+      root.innerHTML = `
+        <fieldset class="app-dialog-fieldset">
+          <legend class="app-dialog-legend">Name</legend>
+          <input
+            type="text"
+            id="structurer-custom-archetype-input"
+            class="app-dialog-text-input"
+            maxlength="80"
+            autocomplete="off"
+            aria-label="Archetype name"
+          />
+        </fieldset>`;
+      const input = root.querySelector("#structurer-custom-archetype-input");
+      const sync = () => api.setConfirmEnabled(input.value.trim().length > 0);
+      input.addEventListener("input", sync);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (input.value.trim()) focusAppAlertConfirmIfEnabled();
+        }
+      });
+      sync();
+      window.setTimeout(() => input.focus(), 0);
+      return () => {
+        const v = input.value.trim();
+        return v.length ? v : null;
+      };
+    },
+  });
+}
+
+function promptCustomNoteType() {
+  return appDialog({
+    title: "Custom note type",
+    message: "Choose a name and a color for this type.",
+    confirmLabel: "Add",
+    render(root, api) {
+      const palette = getNoteTypeColorPalette();
+      const used = getUsedNoteTypeColors();
+      const available = palette.filter((color) => !used.has(color.toLowerCase()));
+      const choices = available.length > 0 ? available : palette;
+      let selectedColor = choices[0] || "#f3f4f6";
+      const choicesHtml = choices
+        .map(
+          (color, index) =>
+            `<button type="button" class="color-swatch${index === 0 ? " selected" : ""}" data-role="pick-custom-note-type-color" data-color="${escapeHtml(
+              color,
+            )}" aria-label="Color ${escapeHtml(color)}" title="${escapeHtml(color)}" style="background:${escapeHtml(color)};"></button>`,
+        )
+        .join("");
+      root.innerHTML = `
+        <div class="app-dialog-custom-note-type">
+          <fieldset class="app-dialog-fieldset">
+            <legend class="app-dialog-legend">Type name</legend>
+            <input
+              type="text"
+              id="structurer-custom-note-type-input"
+              class="app-dialog-text-input"
+              maxlength="80"
+              autocomplete="off"
+              aria-label="Note type name"
+            />
+          </fieldset>
+          <p class="app-dialog-section-label">Color</p>
+          <div class="color-grid color-grid--app-dialog-note-type">${choicesHtml}</div>
+        </div>`;
+      const input = root.querySelector("#structurer-custom-note-type-input");
+      const grid = root.querySelector(".color-grid");
+      const sync = () => api.setConfirmEnabled(input.value.trim().length > 0 && Boolean(selectedColor));
+      input.addEventListener("input", sync);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (input.value.trim() && selectedColor) focusAppAlertConfirmIfEnabled();
+        }
+      });
+      grid.addEventListener("click", (e) => {
+        const btn = e.target.closest('[data-role="pick-custom-note-type-color"]');
+        if (!btn) return;
+        selectedColor = btn.dataset.color;
+        grid.querySelectorAll(".color-swatch").forEach((b) => b.classList.toggle("selected", b === btn));
+        sync();
+      });
+      sync();
+      window.setTimeout(() => input.focus(), 0);
+      return () => {
+        const label = input.value.trim();
+        if (!label || !selectedColor) return null;
+        return { label, color: selectedColor };
+      };
+    },
+  });
 }
 
 function syncEditNoteTypeRowSwatches(row) {
@@ -801,8 +1255,11 @@ function getStructureConfig(structureId) {
 }
 
 function renderStructureOptions(selectedId = null) {
-  const structures = getAllStructureList();
-  const activeId = selectedId || boardStructureSelect.value || "hero_journey";
+  const structures = getCatalogStructureList();
+  let activeId = selectedId || boardStructureSelect.value || "hero_journey";
+  if (!structures.some((s) => s.id === activeId)) {
+    activeId = structures[0]?.id || "hero_journey";
+  }
   boardStructureSelect.innerHTML = renderStructureOptionsHtml(structures, activeId);
 }
 
@@ -1088,6 +1545,7 @@ function getBoardPhases(board) {
 }
 
 function reorderPhaseAndNotes(board, sourceIndex, targetIndex) {
+  if (!boardUsesOwnAlteredStructure(board)) return;
   const phaseCount = getStructureConfig(board.structureId).phases.length;
   if (sourceIndex === targetIndex || sourceIndex < 0 || targetIndex < 0) return;
   if (sourceIndex >= phaseCount || targetIndex >= phaseCount) return;
@@ -1147,7 +1605,7 @@ function renderHome() {
       const structure = getStructureConfig(board.structureId);
       return boardCardTemplate(
         board,
-        structure.name,
+        boardStructureDisplayLineHtml(board),
         formatDate(board.updatedAt),
         isDemoBoard(board),
         inlineTitleEdit.getEditingStoryBoardId(),
@@ -1164,7 +1622,7 @@ function renderHome() {
     const oneHourMs = 60 * 60 * 1000;
     const now = Date.now();
     const customIds = new Set(customStructures.map((structure) => structure.id));
-    const structureItems = getAllStructureList()
+    const structureItems = getCatalogStructureList()
       .map((structure) => {
         const isCustom = customIds.has(structure.id);
         const activityAt = Number(customStructureActivity[structure.uid]) || 0;
@@ -1216,13 +1674,23 @@ function renderEditor() {
   const noteTypes = getAllNoteTypes();
   const editingId = editingNoteId;
   const isModifiedOrder = isPhaseOrderModified(board);
+  const allowPhaseReorder = boardUsesOwnAlteredStructure(board);
 
   const editorTitleMarkup =
     board.id === inlineTitleEdit.getEditingStoryBoardId()
       ? `<input class="inline-story-title-input editor-title-input" type="text" maxlength="80" value="${escapeHtml(board.title)}" data-role="inline-story-title-input" data-board-id="${board.id}" aria-label="Story name" />`
       : `<span class="editor-title-text" data-role="board-title-dblclick">${escapeHtml(board.title)}</span>`;
   editorTitle.innerHTML = `<div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}${editorTitleMarkup}</span></div>`;
-  structureNameEl.textContent = isModifiedOrder ? `${structure.name} (modified)` : structure.name;
+  const structDisplayBase = structure.name;
+  const structDisplay = isModifiedOrder ? `${structDisplayBase} (modified)` : structDisplayBase;
+  const canEditStructureName = boardUsesOwnAlteredStructure(board);
+  const alteredSuffixHtml = ' <span class="structure-name-altered-suffix">(altered)</span>';
+  const structureSubtitleMarkup = canEditStructureName
+    ? board.id === inlineTitleEdit.getEditingStructureBoardId()
+      ? `<span class="structure-name-inline-edit-row"><input class="inline-structure-name-input structure-name-input" type="text" maxlength="80" value="${escapeHtml(structure.name)}" data-role="inline-structure-name-input" data-board-id="${board.id}" aria-label="Structure template name" />${alteredSuffixHtml}</span>`
+      : `<span class="structure-name-editable" data-role="structure-name-dblclick" data-board-id="${board.id}" title="Double-click to rename">${escapeHtml(structure.name)}${isModifiedOrder ? " (modified)" : ""}${alteredSuffixHtml}</span>`
+    : escapeHtml(structDisplay);
+  structureNameEl.innerHTML = structureSubtitleMarkup;
   boardEl.innerHTML = phases
     .map((phase, columnIndex) => {
       const noteItems = getColumnNotes(board.notes, columnIndex);
@@ -1233,7 +1701,7 @@ function renderEditor() {
       const helpOpen = phaseDesc && phaseHelpOpenColumns.has(columnIndex);
       const phaseTitleLabel = escapeHtml(formatPhaseTitle(phase));
       const phaseTitleHtml = phaseDesc
-        ? `<button type="button" class="phase-title phase-title-toggle" data-role="phase-description-toggle" data-column="${columnIndex}" aria-expanded="${Boolean(helpOpen)}"${helpOpen ? ` aria-controls="phase-help-${columnIndex}"` : ""} aria-label="${helpOpen ? "Hide" : "Show"} phase description" title="Show or hide phase description"><span class="phase-description-indicator" aria-hidden="true">ⓘ</span><span class="phase-title-label">${phaseTitleLabel}</span></button>`
+        ? `<button type="button" class="phase-title phase-title-toggle" data-role="phase-description-toggle" data-column="${columnIndex}" aria-expanded="${Boolean(helpOpen)}"${helpOpen ? ` aria-controls="phase-help-${columnIndex}"` : ""} aria-label="${helpOpen ? "Hide" : "Show"} phase description" title="Show or hide phase description"><span class="phase-title-label">${phaseTitleLabel}</span><span class="phase-description-indicator" aria-hidden="true">ⓘ</span></button>`
         : `<h2 class="phase-title">${phaseTitleLabel}</h2>`;
       const helpPanel =
         phaseDesc && helpOpen
@@ -1244,7 +1712,11 @@ function renderEditor() {
         <div class="phase-head">
           <div class="phase-head-top">
             <div class="phase-title-wrap">
-              <button class="phase-drag" data-role="phase-drag-handle" title="Drag phase" draggable="true">⋮⋮</button>
+              ${
+                allowPhaseReorder
+                  ? '<button class="phase-drag" data-role="phase-drag-handle" title="Drag to reorder phase columns" draggable="true">⋮⋮</button>'
+                  : ""
+              }
               ${phaseTitleHtml}
             </div>
             <div class="phase-head-actions">
@@ -1253,7 +1725,6 @@ function renderEditor() {
             </div>
           </div>
           ${helpPanel}
-          ${columnMenuTemplate(columnIndex, archetypes, noteTypes)}
         </div>
         <div class="notes">${noteItems
           .map((note) =>
@@ -1380,7 +1851,7 @@ function renderGroup() {
         <header class="group-board-head">
           <div>
             <h2><div class="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host">${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}<span class="group-board-title-text">${escapeHtml(board.title)}</span></span></div></h2>
-            <p class="subtitle">${structure.name}</p>
+            <p class="subtitle">${boardStructureDisplayLineHtml(board)}</p>
           </div>
           <div class="group-board-head-actions">
             <button class="ghost-button" data-role="open-board-from-group" data-board-id="${board.id}" type="button">Edit story</button>
@@ -1475,6 +1946,40 @@ function commitGroupTitleRenameFromModal(groupId, rawValue) {
   return { ok: true, changed: true };
 }
 
+function commitBoardStructureRenameFromInline(boardId, trimmed) {
+  const board = boards.find((b) => b.id === boardId);
+  if (!board || !boardUsesOwnAlteredStructure(board)) return;
+  const idx = customStructures.findIndex((s) => s.id === board.structureId);
+  if (idx < 0) return;
+  const name = String(trimmed ?? "").trim();
+  if (!name) {
+    renderHome();
+    if (currentBoardId === boardId) renderEditor();
+    if (currentGroupId && groups.some((g) => g.id === currentGroupId && g.boardIds.includes(boardId))) {
+      renderGroup();
+    }
+    return;
+  }
+  if (name === customStructures[idx].name) {
+    renderHome();
+    if (currentBoardId === boardId) renderEditor();
+    if (currentGroupId && groups.some((g) => g.id === currentGroupId && g.boardIds.includes(boardId))) {
+      renderGroup();
+    }
+    return;
+  }
+  customStructures[idx].name = name;
+  board.structure = name;
+  customStructures[idx].updatedAt = Date.now();
+  saveCustomStructures();
+  touchBoard(board);
+  renderHome();
+  if (currentBoardId === boardId) renderEditor();
+  if (currentGroupId && groups.some((g) => g.id === currentGroupId && g.boardIds.includes(boardId))) {
+    renderGroup();
+  }
+}
+
 const inlineTitleEdit = createInlineTitleEditController({
   getBoards: () => boards,
   getGroups: () => groups,
@@ -1491,6 +1996,11 @@ const inlineTitleEdit = createInlineTitleEditController({
   renderHome,
   renderEditor,
   renderGroup,
+  canEditBoardStructure: (boardId) => {
+    const b = boards.find((x) => x.id === boardId);
+    return Boolean(b && boardUsesOwnAlteredStructure(b));
+  },
+  commitBoardStructureRenameFromInline,
 });
 
 const groupModalController = createGroupModalController({
@@ -1547,7 +2057,7 @@ function createBoard(title, structureId = "hero_journey") {
 }
 
 function createDemoBoardFromJson(demoData) {
-  const structureEntry = getAllStructureList().find(
+  const structureEntry = getCatalogStructureList().find(
     (item) => item.name === (demoData.structure || "Hero's Journey"),
   );
   const structure = structureEntry || BUILTIN_STRUCTURES.hero_journey;
@@ -1616,6 +2126,7 @@ function resetSingleDemoBoard(board) {
     }
   }
   if (!demoData) return;
+  removeAlteredStructuresOwnedByBoardUid(board.uid);
   const fresh = createDemoBoardFromJson(demoData);
   board.structureId = fresh.structureId;
   board.structure = fresh.structure;
@@ -1746,7 +2257,9 @@ function boardToExportPayload(board) {
     (archetype) =>
       usedArchetypeIds.has(archetype.id) && !BUILTIN_ARCHETYPES.some((builtin) => builtin.id === archetype.id),
   );
-  return {
+  const payload = {
+    exportType: "structurer.story",
+    schemaVersion: 1,
     uid: board.uid,
     updatedAt: board.updatedAt,
     title: board.title,
@@ -1772,6 +2285,21 @@ function boardToExportPayload(board) {
         collapsed: Boolean(note.collapsed),
       })),
   };
+  if (boardUsesOwnAlteredStructure(board)) {
+    const st = getStructureConfig(board.structureId);
+    payload.alteredStructure = {
+      name: st.name,
+      phases: clonePhasesDeepForAlteredFork(st.phases),
+      updatedAt: Number.isFinite(st.updatedAt) ? st.updatedAt : Date.now(),
+    };
+    if (typeof st.description === "string" && st.description.trim()) {
+      payload.alteredStructure.description = st.description.trim();
+    }
+    if (typeof st.author === "string" && st.author.trim()) {
+      payload.alteredStructure.author = st.author.trim();
+    }
+  }
+  return payload;
 }
 
 function downloadBoard(board) {
@@ -1819,7 +2347,7 @@ function exportCustomStructures() {
     schemaVersion: 2,
     exportedAt: Date.now(),
     appVersion: packageJson.version || "",
-    structures: customStructures.map((structure) => {
+    structures: customStructures.filter((s) => !isAlteredStructureEntry(s)).map((structure) => {
       const row = {
         id: structure.id,
         uid: structure.uid,
@@ -2139,6 +2667,11 @@ function restoreFullAppBackupFromText(rawText) {
 function closeBoardActionsModal() {
   boardActionsModalOverlay.classList.add("hidden");
   boardActionsModalBoardId = null;
+  if (boardActionsSectionsEl) {
+    boardActionsSectionsEl.querySelectorAll("details.dashboard-actions-section").forEach((details) => {
+      details.open = false;
+    });
+  }
 }
 
 function closeDeleteStoryModal() {
@@ -2200,13 +2733,30 @@ function openBoardActionsModal(boardId) {
   }
   if (modalResetPhaseOrderBtn) {
     const canReset = Boolean(board && isPhaseOrderModified(board));
+    const altered = Boolean(board && boardUsesOwnAlteredStructure(board));
     modalResetPhaseOrderBtn.disabled = !canReset;
-    modalResetPhaseOrderBtn.title = canReset ? "" : "Phase order already matches the structure";
+    if (!canReset) {
+      modalResetPhaseOrderBtn.title = altered
+        ? "Phase order already matches the structure"
+        : "Phase order matches the template. Use Story actions → Edit the structure to create an altered copy, then you can reorder columns by dragging.";
+    } else {
+      modalResetPhaseOrderBtn.title = "Restore phase columns to the order defined by the structure template";
+    }
+  }
+  if (modalEditStoryStructureBtn) {
+    const altered = Boolean(board && boardUsesOwnAlteredStructure(board));
+    modalEditStoryStructureBtn.disabled = false;
+    modalEditStoryStructureBtn.title = altered
+      ? "Add phases or remove empty ones for this story's template only."
+      : "Creates a story-specific structure copy, then opens the structure editor.";
+  }
+  if (boardActionsDemoSectionEl) {
+    const isDemo = Boolean(board && isDemoBoard(board));
+    boardActionsDemoSectionEl.hidden = !isDemo;
   }
   if (modalResetDemoBoardBtn) {
     const isDemo = Boolean(board && isDemoBoard(board));
-    modalResetDemoBoardBtn.classList.toggle("hidden", !isDemo);
-    modalResetDemoBoardBtn.disabled = !isDemo;
+    modalResetDemoBoardBtn.disabled = false;
     modalResetDemoBoardBtn.title = isDemo ? "Restore this demo story to its original notes" : "";
   }
 }
@@ -2306,8 +2856,72 @@ function importBoardFromJson(rawText) {
 
   const normalizeKey = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
 
-  const structureEntry = getAllStructureList().find((item) => item.name === parsed.structure);
-  const structure = structureEntry || BUILTIN_STRUCTURES.hero_journey;
+  const existingByUid =
+    typeof parsed.uid === "string" && parsed.uid
+      ? boards.find((board) => board.uid === parsed.uid)
+      : null;
+  const resolvedBoardUid =
+    typeof parsed.uid === "string" && parsed.uid ? parsed.uid : generateUniqueUid();
+
+  let structure;
+  if (existingByUid) {
+    if (parsed.alteredStructure && typeof parsed.alteredStructure === "object" && Array.isArray(parsed.alteredStructure.phases)) {
+      const cfg = getStructureConfig(existingByUid.structureId);
+      if (!isAlteredStructureEntry(cfg) || cfg.ownerBoardUid !== existingByUid.uid) {
+        throw new Error(
+          `Cannot merge story "${existingByUid.title}": this import includes an altered structure that does not match this story on this device.`,
+        );
+      }
+      const importedPhases = normalizePhasesFromAlteredStoryImport(parsed.alteredStructure.phases);
+      const idx = customStructures.findIndex((s) => s.id === cfg.id);
+      if (idx < 0) {
+        throw new Error(`Cannot merge story "${existingByUid.title}": altered structure is missing locally.`);
+      }
+      customStructures[idx].phases = importedPhases;
+      if (Object.prototype.hasOwnProperty.call(parsed.alteredStructure, "description")) {
+        if (typeof parsed.alteredStructure.description === "string" && parsed.alteredStructure.description.trim()) {
+          customStructures[idx].description = parsed.alteredStructure.description.trim();
+        } else {
+          delete customStructures[idx].description;
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(parsed.alteredStructure, "author")) {
+        if (typeof parsed.alteredStructure.author === "string" && parsed.alteredStructure.author.trim()) {
+          customStructures[idx].author = parsed.alteredStructure.author.trim();
+        } else {
+          delete customStructures[idx].author;
+        }
+      }
+      const importName =
+        typeof parsed.alteredStructure.name === "string" && parsed.alteredStructure.name.trim()
+          ? parsed.alteredStructure.name.trim()
+          : typeof parsed.structure === "string" && parsed.structure.trim()
+            ? parsed.structure.trim()
+            : cfg.name;
+      customStructures[idx].name = importName;
+      existingByUid.structure = importName;
+      if (Number.isFinite(parsed.alteredStructure.updatedAt)) {
+        customStructures[idx].updatedAt = parsed.alteredStructure.updatedAt;
+      }
+      saveCustomStructures();
+      structure = getStructureConfig(existingByUid.structureId);
+    } else if (boardUsesOwnAlteredStructure(existingByUid)) {
+      structure = getStructureConfig(existingByUid.structureId);
+    } else {
+      const structureEntry = getCatalogStructureList().find((item) => item.name === parsed.structure);
+      structure = structureEntry || BUILTIN_STRUCTURES.hero_journey;
+    }
+  } else if (
+    parsed.alteredStructure &&
+    typeof parsed.alteredStructure === "object" &&
+    Array.isArray(parsed.alteredStructure.phases)
+  ) {
+    structure = createAlteredStructureForImportedStory(parsed.alteredStructure, resolvedBoardUid, parsed.structure);
+  } else {
+    const structureEntry = getCatalogStructureList().find((item) => item.name === parsed.structure);
+    structure = structureEntry || BUILTIN_STRUCTURES.hero_journey;
+  }
+
   const noteTypeIdMap = new Map();
   const archetypeIdMap = new Map();
 
@@ -2457,11 +3071,20 @@ function importBoardFromJson(rawText) {
     };
   });
 
-  const existingByUid =
-    typeof parsed.uid === "string" && parsed.uid
-      ? boards.find((board) => board.uid === parsed.uid)
-      : null;
+  const mergeTrustsImportedAlteredLayout =
+    Boolean(existingByUid) &&
+    Boolean(
+      parsed.alteredStructure &&
+        typeof parsed.alteredStructure === "object" &&
+        Array.isArray(parsed.alteredStructure.phases),
+    ) &&
+    boardUsesOwnAlteredStructure(existingByUid);
+
   if (existingByUid) {
+    if (mergeTrustsImportedAlteredLayout) {
+      existingByUid.phaseUids = [...normalizedImportedPhaseUids];
+      existingByUid.phaseOrder = [...importedPhaseOrder];
+    }
     ensureBoardPhaseUids(existingByUid);
     normalizeBoardPhaseComments(existingByUid);
     const existingPhaseOrder = getBoardPhaseOrder(existingByUid);
@@ -2470,24 +3093,29 @@ function importBoardFromJson(rawText) {
         `Cannot merge story "${existingByUid.title}": structure mismatch (${existingByUid.structure} vs ${structure.name}).`,
       );
     }
-    const sameOrder =
-      existingPhaseOrder.length === importedPhaseOrder.length &&
-      existingPhaseOrder.every((value, index) => value === importedPhaseOrder[index]);
-    if (!sameOrder) {
-      const structurePhases = getStructureConfig(existingByUid.structureId).phases;
-      const error = new Error(`Cannot merge story "${existingByUid.title}" because phase order differs.`);
-      error.code = "PHASE_ORDER_CONFLICT";
-      error.phaseOrderConflict = {
-        boardTitle: existingByUid.title,
-        currentOrder: existingPhaseOrder.map((phaseIndex) =>
-          formatPhaseTitle(structurePhases[phaseIndex]) || "-",
-        ),
-        importedOrder: importedPhaseOrder.map((phaseIndex) =>
-          formatPhaseTitle(structurePhases[phaseIndex]) || "-",
-        ),
-      };
-      throw error;
+    if (!mergeTrustsImportedAlteredLayout) {
+      const sameOrder =
+        existingPhaseOrder.length === importedPhaseOrder.length &&
+        existingPhaseOrder.every((value, index) => value === importedPhaseOrder[index]);
+      if (!sameOrder) {
+        const structurePhases = getStructureConfig(existingByUid.structureId).phases;
+        const error = new Error(`Cannot merge story "${existingByUid.title}" because phase order differs.`);
+        error.code = "PHASE_ORDER_CONFLICT";
+        error.phaseOrderConflict = {
+          boardTitle: existingByUid.title,
+          currentOrder: existingPhaseOrder.map((phaseIndex) =>
+            formatPhaseTitle(structurePhases[phaseIndex]) || "-",
+          ),
+          importedOrder: importedPhaseOrder.map((phaseIndex) =>
+            formatPhaseTitle(structurePhases[phaseIndex]) || "-",
+          ),
+        };
+        throw error;
+      }
     }
+
+    const maxNoteColumn = Math.max(0, phaseCount - 1);
+    const clampNoteColumn = (col) => Math.max(0, Math.min(Number.isInteger(col) ? col : 0, maxNoteColumn));
 
     const localByUid = new Map(existingByUid.notes.map((note) => [note.uid, note]));
     notes.forEach((importedNote) => {
@@ -2498,12 +3126,13 @@ function importBoardFromJson(rawText) {
         existingByUid.notes.push({
           ...importedNote,
           id: nextId,
+          column: clampNoteColumn(importedNote.column),
         });
         return;
       }
       if ((importedNote.updatedAt || 0) > (localNote.updatedAt || 0)) {
         localNote.kind = importedNote.kind;
-        localNote.column = importedNote.column;
+        localNote.column = clampNoteColumn(importedNote.column);
         localNote.order = importedNote.order;
         localNote.text = importedNote.text;
         localNote.characterName = importedNote.characterName;
@@ -2568,6 +3197,13 @@ function importBoardFromJson(rawText) {
       existingByUid.phaseComments[phaseUid] = comments.sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
     });
 
+    if (mergeTrustsImportedAlteredLayout) {
+      const keep = new Set(existingByUid.phaseUids);
+      Object.keys(existingByUid.phaseComments).forEach((uid) => {
+        if (!keep.has(uid)) delete existingByUid.phaseComments[uid];
+      });
+    }
+
     if (importedBoardUpdatedAt > (existingByUid.updatedAt || 0)) {
       existingByUid.title = title;
       existingByUid.slug = ensureUniqueSlug(slugifyTitle(title), existingByUid.id);
@@ -2599,7 +3235,7 @@ function importBoardFromJson(rawText) {
     .reduce((max, comment) => Math.max(max, Number(comment?.id) || 0), 0);
   const newBoard = {
     id: crypto.randomUUID(),
-    uid: typeof parsed.uid === "string" ? parsed.uid : generateUniqueUid(),
+    uid: resolvedBoardUid,
     updatedAt: importedBoardUpdatedAt,
     title,
     slug: ensureUniqueSlug(slugifyTitle(title)),
@@ -2747,6 +3383,10 @@ const boardInteractions = createBoardInteractionsController({
   renderEditor,
   setEditingNoteId: (id) => {
     editingNoteId = id;
+  },
+  canReorderPhases: () => {
+    const b = getCurrentBoard();
+    return Boolean(b && boardUsesOwnAlteredStructure(b));
   },
 });
 
@@ -3168,29 +3808,6 @@ if (phaseCommentsListEl) {
   });
 }
 
-if (noteTypeColorGrid) {
-  noteTypeColorGrid.addEventListener("click", (event) => {
-    const btn = event.target.closest('[data-role="pick-note-type-color"]');
-    if (!btn || !pendingNoteTypeColorResolve) return;
-    const picked = btn.dataset.color;
-    noteTypeColorModalOverlay.classList.add("hidden");
-    const resolve = pendingNoteTypeColorResolve;
-    pendingNoteTypeColorResolve = null;
-    resolve(picked);
-  });
-}
-
-if (cancelNoteTypeColorBtn) {
-  cancelNoteTypeColorBtn.addEventListener("click", () => {
-    noteTypeColorModalOverlay.classList.add("hidden");
-    if (pendingNoteTypeColorResolve) {
-      const resolve = pendingNoteTypeColorResolve;
-      pendingNoteTypeColorResolve = null;
-      resolve(null);
-    }
-  });
-}
-
 if (editNoteTypesListEl) {
   editNoteTypesListEl.addEventListener("click", async (event) => {
     const delBtn = event.target.closest('[data-role="delete-custom-note-type"]');
@@ -3303,6 +3920,12 @@ if (modalResetDemoBoardBtn) {
 
 if (editorView) {
   editorView.addEventListener("dblclick", (event) => {
+    const structureEl = event.target.closest('[data-role="structure-name-dblclick"]');
+    if (structureEl && currentBoardId) {
+      event.preventDefault();
+      inlineTitleEdit.beginStructure(currentBoardId);
+      return;
+    }
     const titleEl = event.target.closest('[data-role="board-title-dblclick"]');
     if (!titleEl || !currentBoardId) return;
     event.preventDefault();
@@ -3326,6 +3949,32 @@ if (modalEditNoteTypesBtn) {
   });
 }
 
+if (modalDefineCustomArchetypeBtn) {
+  modalDefineCustomArchetypeBtn.addEventListener("click", () => {
+    closeBoardActionsModal();
+    promptCustomArchetypeName().then((name) => {
+      if (!name) return;
+      const created = createCustomArchetype(name);
+      if (!created) return;
+      if (currentBoardId) renderEditor();
+      renderHome();
+    });
+  });
+}
+
+if (modalDefineCustomNoteTypeBtn) {
+  modalDefineCustomNoteTypeBtn.addEventListener("click", () => {
+    closeBoardActionsModal();
+    promptCustomNoteType().then((result) => {
+      if (!result) return;
+      const createdType = createCustomNoteType(result.label, result.color);
+      if (!createdType) return;
+      if (currentBoardId) renderEditor();
+      renderHome();
+    });
+  });
+}
+
 if (modalResetPhaseOrderBtn) {
   modalResetPhaseOrderBtn.addEventListener("click", () => {
     const boardId = boardActionsModalBoardId;
@@ -3344,6 +3993,97 @@ if (modalResetPhaseOrderBtn) {
     ) {
       renderGroup();
     }
+  });
+}
+
+if (modalEditStoryStructureBtn) {
+  modalEditStoryStructureBtn.addEventListener("click", async () => {
+    const boardId = boardActionsModalBoardId;
+    if (!boardId) return;
+    const board = boards.find((item) => item.id == boardId);
+    if (!board) return;
+    closeBoardActionsModal();
+    if (!boardUsesOwnAlteredStructure(board)) {
+      const agreed = await showAlteredStructureIntroDialog();
+      if (!agreed) return;
+      const result = forkCurrentBoardToAlteredStructure(board);
+      if (!result.ok) {
+        if (result.reason === "already-altered") {
+          await appAlert("This story already uses an altered structure. Rename it below the story title (double-click).");
+        }
+        return;
+      }
+      renderStructureOptions();
+      if (currentBoardId === boardId) {
+        renderEditor();
+      }
+      renderHome();
+    }
+    openEditStoryStructureModal(boardId);
+  });
+}
+
+if (closeEditStoryStructureModalBtn) {
+  closeEditStoryStructureModalBtn.addEventListener("click", () => {
+    closeEditStoryStructureModal();
+  });
+}
+
+if (editStoryStructureModalOverlay) {
+  editStoryStructureModalOverlay.addEventListener("click", (event) => {
+    if (event.target === editStoryStructureModalOverlay) {
+      closeEditStoryStructureModal();
+    }
+  });
+}
+
+if (editAlteredStructureAddRowBtn && editAlteredStructurePhasesListEl) {
+  editAlteredStructureAddRowBtn.addEventListener("click", () => {
+    const boardId = editStoryStructureModalBoardId;
+    if (!boardId) return;
+    const board = boards.find((item) => item.id == boardId);
+    if (!board) return;
+    const states = collectAlteredStructurePhaseRowStatesFromDOM();
+    states.push({ originIndex: null, title: "", description: "" });
+    renderAlteredStructureEditorRows(board, states);
+    const inputs = editAlteredStructurePhasesListEl.querySelectorAll('[data-role="phase-input"]');
+    const last = inputs[inputs.length - 1];
+    if (last) last.focus();
+  });
+}
+
+if (editAlteredStructurePhasesListEl) {
+  editAlteredStructurePhasesListEl.addEventListener("click", (event) => {
+    const removeButton = event.target.closest('button[data-role="remove-phase-row"]');
+    if (!removeButton || removeButton.disabled) return;
+    const boardId = editStoryStructureModalBoardId;
+    if (!boardId) return;
+    const board = boards.find((item) => item.id == boardId);
+    if (!board) return;
+    const row = removeButton.closest(".structure-phase-row");
+    if (!row || !editAlteredStructurePhasesListEl.contains(row)) return;
+    const rows = editAlteredStructurePhasesListEl.querySelectorAll(".structure-phase-row");
+    if (rows.length <= 2) return;
+    row.remove();
+    const states = collectAlteredStructurePhaseRowStatesFromDOM();
+    renderAlteredStructureEditorRows(board, states);
+  });
+}
+
+if (editAlteredStructureForm) {
+  editAlteredStructureForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const boardId = editStoryStructureModalBoardId;
+    if (!boardId) return;
+    const result = await applyAlteredStructureEditorSave(boardId);
+    if (!result.ok) return;
+    renderStructureOptions();
+    if (currentBoardId === boardId) {
+      renderEditor();
+    }
+    renderHome();
+    closeEditStoryStructureModal();
+    await appAlert("Structure updated.");
   });
 }
 
@@ -3430,6 +4170,10 @@ modalDeleteBoardBtn.addEventListener("click", () => {
 });
 
 function performDeleteStory(deletedId) {
+  const doomed = boards.find((item) => item.id === deletedId);
+  if (doomed?.uid) {
+    removeAlteredStructuresOwnedByBoardUid(doomed.uid);
+  }
   boards = boards.filter((item) => item.id !== deletedId);
   groups.forEach((g) => {
     g.boardIds = g.boardIds.filter((id) => id !== deletedId);
@@ -3488,16 +4232,24 @@ function closeDashboardActionsModal() {
   }
 }
 
-function initDashboardActionsExclusiveAccordion() {
-  if (!dashboardActionsSectionsEl) return;
-  dashboardActionsSectionsEl.addEventListener("toggle", (event) => {
+function initExclusiveAccordionForActionsModal(sectionsRoot) {
+  if (!sectionsRoot) return;
+  sectionsRoot.addEventListener("toggle", (event) => {
     const details = event.target;
     if (!(details instanceof HTMLDetailsElement) || !details.matches(".dashboard-actions-section")) return;
     if (!details.open) return;
-    dashboardActionsSectionsEl.querySelectorAll("details.dashboard-actions-section").forEach((other) => {
+    sectionsRoot.querySelectorAll("details.dashboard-actions-section").forEach((other) => {
       if (other !== details) other.open = false;
     });
   });
+}
+
+function initDashboardActionsExclusiveAccordion() {
+  initExclusiveAccordionForActionsModal(dashboardActionsSectionsEl);
+}
+
+function initBoardActionsExclusiveAccordion() {
+  initExclusiveAccordionForActionsModal(boardActionsSectionsEl);
 }
 
 function initStructurePreviewModal() {
@@ -4345,9 +5097,21 @@ const boardNoteActions = createBoardNoteActionsController({
   normalizeOrders,
   touchBoard,
   renderEditor,
-  createCustomArchetype,
-  openNoteTypeColorPicker,
-  createCustomNoteType,
+  addNoteModal: {
+    overlay: addNoteModalOverlay,
+    bodyRoot: addNoteModalBodyRoot,
+    titleEl: addNoteModalTitleEl,
+    cancelBtn: addNoteModalCancelBtn,
+  },
+  buildAddNoteModalBody: (columnIndex) =>
+    addNoteModalBodyTemplate(columnIndex, getAllArchetypes(), getAllNoteTypes()),
+  getPhaseTitleForColumn: (columnIndex) => {
+    const board = getCurrentBoard();
+    if (!board) return "";
+    const phases = getBoardPhases(board);
+    const phase = phases[columnIndex];
+    return phase ? formatPhaseTitle(phase) : "";
+  },
 });
 
 document.addEventListener("click", (event) => {
@@ -4356,10 +5120,10 @@ document.addEventListener("click", (event) => {
   if (!event.target.closest(".options-wrap")) {
     closeOptionsMenu();
   }
-  if (!event.target.closest(".phase-head")) {
+  if (!event.target.closest(".phase-head") && !event.target.closest("#add-note-modal-overlay")) {
     boardNoteActions.closeAllColumnMenus();
   }
-  if (!event.target.closest(".note")) {
+  if (!event.target.closest(".note") && !event.target.closest("#add-note-modal-overlay")) {
     if (editingNoteId !== null) {
       editingNoteId = null;
       renderEditor();
@@ -4416,6 +5180,7 @@ groups.forEach((group) => {
   group.boardIds = group.boardIds.filter((boardId) => boards.some((board) => board.id === boardId));
 });
 migrateUniqueUids();
+pruneOrphanAlteredStructures();
 saveBoards();
 saveGroups();
 window.addEventListener("popstate", () => {
@@ -4426,6 +5191,7 @@ applyWrapColumns();
 applyDevFlags();
 applyDemoVisibilityControl();
 initDashboardActionsExclusiveAccordion();
+initBoardActionsExclusiveAccordion();
 initStructurePreviewModal();
 renderStructureOptions("hero_journey");
 renderStructurePhaseRows();

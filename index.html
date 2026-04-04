@@ -176,9 +176,11 @@
                 Journey, Story Circle, or a custom structure) and renders each phase as a column.
               </p>
               <p>
-                You can think of a story as a visual planning canvas: you place notes inside phases, reorder phases
-                when needed, and refine the story over time. A story also stores its own phase order, notes, and update
-                history used for merge operations during import.
+                You can think of a story as a visual planning canvas: you place notes inside phases and refine the
+                story over time. To <strong>reorder phase columns</strong> by dragging, the story must use an
+                <strong>altered structure</strong> (Story actions → <strong>Edit the structure</strong> creates a
+                story-specific copy). A story also stores its own phase order, notes, and update history used for merge
+                operations during import.
               </p>
             </div>
           </details>
@@ -292,7 +294,9 @@
               </p>
               <p>
                 Drag notes with the handle (<strong>⋮⋮</strong>) to reorder them inside a phase or move them across
-                phases. You can collapse notes for compact reading and open them in edit mode when needed.
+                phases. When the story uses an <strong>altered structure</strong>, a second handle beside the phase title
+                lets you reorder columns. You can collapse notes for compact reading and open them in edit mode when
+                needed.
               </p>
             </div>
           </details>
@@ -324,11 +328,11 @@
             <summary>How do I create custom note types and custom archetypes?</summary>
             <div class="help-faq-content">
               <p>
-                Use the phase <strong>+</strong> menu:
+                Open the story board, then <strong>Actions</strong> → <strong>Note types &amp; archetypes</strong>:
               </p>
               <ul>
-                <li><strong>Define custom note type...</strong> to create a new note category and choose its color.</li>
-                <li><strong>Define custom archetype...</strong> inside the character submenu to add a new archetype.</li>
+                <li><strong>Add custom note type</strong> to create a new note category and choose its color.</li>
+                <li><strong>Add custom archetype</strong> to add a new character archetype.</li>
               </ul>
               <p>
                 These custom definitions are saved in your browser and become reusable across stories.
@@ -611,7 +615,9 @@
           </div>
         </header>
 
-        <section id="board" class="board" aria-label="Hero's journey story"></section>
+        <div class="editor-board-scroller">
+          <section id="board" class="board" aria-label="Hero's journey story"></section>
+        </div>
       </section>
 
       <section id="phase-view" class="view hidden">
@@ -662,17 +668,6 @@
           </div>
         </div>
       </div>
-      <div id="note-type-color-modal-overlay" class="modal-overlay hidden">
-        <div class="modal" role="dialog" aria-modal="true" aria-label="Choose note type color">
-          <h2>Choose a color</h2>
-          <p class="subtitle">Pick a color for this custom note type.</p>
-          <div id="note-type-color-grid" class="color-grid"></div>
-          <div class="modal-actions">
-            <button id="cancel-note-type-color" class="ghost-button" type="button">Cancel</button>
-          </div>
-        </div>
-      </div>
-
       <div id="edit-note-types-modal-overlay" class="modal-overlay hidden">
         <div class="modal modal-edit-note-types" role="dialog" aria-modal="true" aria-labelledby="edit-note-types-title">
           <h2 id="edit-note-types-title">Edit note types</h2>
@@ -895,16 +890,73 @@
       <div id="board-actions-modal-overlay" class="modal-overlay hidden">
         <div class="modal board-actions-modal" role="dialog" aria-modal="true" aria-label="Story actions">
           <h2>Story actions</h2>
-          <div class="board-actions-modal-list">
-            <button id="modal-add-board-to-group" class="ghost-button" type="button">Add story to series</button>
-            <button id="modal-export-board" class="ghost-button" type="button">Export the story</button>
-            <button id="modal-edit-note-types" class="ghost-button" type="button">Edit note types</button>
-            <button id="modal-reset-phase-order" class="ghost-button" type="button">Reset phase order</button>
-            <button id="modal-reset-demo-board" class="ghost-button" type="button">Reset this demo story</button>
-            <button id="modal-delete-board" class="ghost-button danger-menu-item" type="button">Delete the story</button>
+          <p class="subtitle dashboard-actions-modal-intro">Open a category to see commands.</p>
+          <div id="board-actions-modal-sections" class="board-actions-modal-list dashboard-actions-modal-sections">
+            <details class="dashboard-actions-section">
+              <summary class="dashboard-actions-section-summary">Note types &amp; archetypes</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="modal-edit-note-types" class="ghost-button" type="button">Edit note types</button>
+                <button id="modal-define-custom-note-type" class="ghost-button" type="button">Add custom note type</button>
+                <button id="modal-define-custom-archetype" class="ghost-button" type="button">Add custom archetype</button>
+              </div>
+            </details>
+            <details class="dashboard-actions-section">
+              <summary class="dashboard-actions-section-summary">Structure</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="modal-reset-phase-order" class="ghost-button" type="button">Reset phase order</button>
+                <button id="modal-edit-story-structure" class="ghost-button" type="button">Edit the structure</button>
+              </div>
+            </details>
+            <details class="dashboard-actions-section" id="board-actions-demo-section" hidden>
+              <summary class="dashboard-actions-section-summary">Demo</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="modal-reset-demo-board" class="ghost-button" type="button">Reset this demo story</button>
+              </div>
+            </details>
+            <details class="dashboard-actions-section">
+              <summary class="dashboard-actions-section-summary">Story &amp; export</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="modal-add-board-to-group" class="ghost-button" type="button">Add story to series</button>
+                <button id="modal-export-board" class="ghost-button" type="button">Export the story</button>
+              </div>
+            </details>
+            <details class="dashboard-actions-section">
+              <summary class="dashboard-actions-section-summary">Danger zone</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="modal-delete-board" class="ghost-button danger-menu-item" type="button">Delete the story</button>
+              </div>
+            </details>
           </div>
           <div class="modal-actions">
             <button id="close-board-actions-modal" class="ghost-button" type="button">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="edit-story-structure-modal-overlay" class="modal-overlay hidden">
+        <div
+          class="modal modal--wide-create-structure"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-story-structure-modal-title"
+        >
+          <h2 id="edit-story-structure-modal-title">Edit the structure</h2>
+          <p class="subtitle">
+            These changes apply only to this story's altered template. Rename the template under the story title (double-click).
+          </p>
+          <form id="edit-altered-structure-form" class="create-structure-form">
+            <p class="subtitle structure-form-phase-hint">
+              Each row is one phase/column (same as when you add a library structure). You can remove a row only if that phase has no
+              notes and no phase comments in this story. At least two phases must remain.
+            </p>
+            <div id="edit-altered-structure-phases-list" class="structure-phases-list"></div>
+            <div class="structure-form-actions">
+              <button id="edit-altered-structure-add-row" class="ghost-button" type="button">Add row</button>
+              <button class="ghost-button" type="submit">Save</button>
+            </div>
+          </form>
+          <div class="modal-actions">
+            <button id="close-edit-story-structure-modal" class="ghost-button" type="button">Cancel</button>
           </div>
         </div>
       </div>
@@ -1059,6 +1111,21 @@
             <button id="confirm-restore-backup" class="ghost-button danger-menu-item" type="button" disabled>
               Restore backup
             </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="add-note-modal-overlay" class="modal-overlay hidden" aria-hidden="true">
+        <div
+          class="modal modal--add-note"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-note-modal-title"
+        >
+          <h2 id="add-note-modal-title">Add note</h2>
+          <div id="add-note-modal-body-root"></div>
+          <div class="modal-actions">
+            <button id="add-note-modal-cancel" type="button" class="ghost-button">Cancel</button>
           </div>
         </div>
       </div>

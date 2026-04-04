@@ -5,6 +5,33 @@ function escapeHtml(text) {
     .replace(/"/g, "&quot;");
 }
 
+/** @returns {[number, number, number] | null} */
+function parseNoteTypeHex(hex) {
+  const raw = String(hex ?? "").trim();
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(raw);
+  if (!m) return null;
+  let h = m[1];
+  if (h.length === 3) {
+    h = `${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`;
+  }
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+function normalizedNoteTypeHex(hex) {
+  const rgb = parseNoteTypeHex(hex);
+  if (!rgb) return null;
+  const [r, g, b] = rgb;
+  return `#${[r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function inkForNoteTypeBackground(hex) {
+  const rgb = parseNoteTypeHex(hex);
+  if (!rgb) return "#111827";
+  const [r, g, b] = rgb;
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq > 165 ? "#111827" : "#f9fafb";
+}
+
 export function renderStructureOptionsHtml(structures, selectedId) {
   return structures
     .map((structure) => {
@@ -43,7 +70,54 @@ export function structurePhaseRowTemplate(index, phase = { title: "", descriptio
   `;
 }
 
-export function boardCardTemplate(board, structureName, updatedAtText, isDemo = false, editingStoryTitleBoardId = null) {
+/**
+ * Phase row for editing a per-story altered structure: tracks `data-structure-phase-origin` (structure index) or empty for new rows.
+ * Remove is disabled when the phase is not empty on the board.
+ */
+export function structureAlteredEditPhaseRowTemplate(
+  rowIndex,
+  phase = { title: "", description: "" },
+  structurePhaseOrigin,
+  canRemove,
+) {
+  const title = escapeHtml(phase.title ?? "");
+  const description = escapeHtml(phase.description ?? "");
+  const originAttr =
+    structurePhaseOrigin === null || structurePhaseOrigin === undefined
+      ? ""
+      : ` data-structure-phase-origin="${Number(structurePhaseOrigin)}"`;
+  const removeDisabled = canRemove ? "" : " disabled";
+  const removeTitle = canRemove
+    ? ' title="Remove row"'
+    : ' title="You can remove this phase only when it has no notes and no phase comments in this story."';
+  return `
+    <div class="structure-phase-row"${originAttr}>
+      <span class="phase-row-index">${rowIndex + 1}.</span>
+      <input
+        type="text"
+        class="structure-phase-name-input"
+        data-role="phase-input"
+        maxlength="80"
+        placeholder="Phase name"
+        value="${title}"
+        required
+        aria-label="Phase name"
+      />
+      <textarea
+        class="structure-phase-description-input"
+        data-role="phase-description-input"
+        maxlength="1200"
+        rows="2"
+        placeholder="Optional help text for this column"
+        aria-label="Phase description (optional)"
+      >${description}</textarea>
+      <button type="button" class="ghost-button structure-phase-remove-btn" data-role="remove-phase-row" aria-label="Remove row"${removeDisabled}${removeTitle}>✕</button>
+    </div>
+  `;
+}
+
+/** @param structureLineHtml — escaped name plus optional UI markers (e.g. altered suffix span); not double-escaped */
+export function boardCardTemplate(board, structureLineHtml, updatedAtText, isDemo = false, editingStoryTitleBoardId = null) {
   const noteCount = board.notes.length;
   const safeTitle = escapeHtml(board.title);
   const titleMarkup =
@@ -55,7 +129,7 @@ export function boardCardTemplate(board, structureName, updatedAtText, isDemo = 
       <div>
         <strong><div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${isDemo ? '<span class="demo-label">Demo</span> ' : ""}${titleMarkup}</span></div></strong>
         <div class="board-meta">
-          <div class="board-meta-line">${structureName} • ${noteCount} notes</div>
+          <div class="board-meta-line">${structureLineHtml} • ${noteCount} notes</div>
           <div class="board-meta-line">Updated ${updatedAtText}</div>
         </div>
       </div>
@@ -145,48 +219,63 @@ export function noteTemplate(note, archetypes, archetype, noteType, isEditing = 
   `;
 }
 
-export function columnMenuTemplate(columnIndex, archetypes, noteTypes) {
+/** Body markup for the centered “add note” modal (not embedded in column — avoids overflow clipping). */
+export function addNoteModalBodyTemplate(columnIndex, archetypes, noteTypes) {
   const nonCharacterTypes = noteTypes.filter((type) => type.id !== "character");
   const hasCharacter = noteTypes.some((type) => type.id === "character");
+  const typeGrid =
+    nonCharacterTypes.length === 0
+      ? ""
+      : `
+      <div class="add-note-modal-type-grid" role="group" aria-label="Note type">
+        ${nonCharacterTypes
+          .map((type) => {
+            const bg = normalizedNoteTypeHex(type.color) || "#f3f4f6";
+            const fg = inkForNoteTypeBackground(type.color);
+            const safeBg = escapeHtml(bg);
+            const safeFg = escapeHtml(fg);
+            return `<button
+        type="button"
+        class="add-note-modal-type-chip"
+        data-role="quick-add"
+        data-kind="${escapeHtml(type.id)}"
+        data-column="${columnIndex}"
+        style="background-color: ${safeBg}; color: ${safeFg};"
+      >
+        ${escapeHtml(type.label)}
+      </button>`;
+          })
+          .join("")}
+      </div>`;
   return `
-    <div class="column-menu hidden" data-role="column-menu">
-      ${nonCharacterTypes
-        .map(
-          (type) => `<button class="menu-item" data-role="quick-add" data-kind="${type.id}" data-column="${columnIndex}">
-        Add ${type.label.toLowerCase()} note
-      </button>`,
-        )
-        .join("")}
+    <div class="add-note-modal-body" data-role="add-note-modal-body">
+      ${typeGrid}
       ${
         hasCharacter
-          ? `<button class="menu-item" data-role="toggle-character-submenu">
-        Add character note ▸
-      </button>`
+          ? `
+      <div class="add-note-modal-divider" role="presentation"></div>
+      <p class="add-note-modal-section-title">Character</p>
+      <div class="add-note-modal-archetype-grid" role="group" aria-label="Archetype">
+        ${archetypes
+          .map((archetype) => {
+            const icon = archetype.icon ? String(archetype.icon).trim() : "";
+            const iconHtml = icon
+              ? `<span class="add-note-modal-archetype-icon" aria-hidden="true">${escapeHtml(icon)}</span>`
+              : `<span class="add-note-modal-archetype-icon add-note-modal-archetype-icon--placeholder" aria-hidden="true"></span>`;
+            return `<button
+        type="button"
+        class="add-note-modal-archetype-chip"
+        data-role="quick-add-character"
+        data-column="${columnIndex}"
+        data-archetype="${escapeHtml(archetype.id)}"
+      >
+        ${iconHtml}<span class="add-note-modal-archetype-label">${escapeHtml(archetype.label)}</span>
+      </button>`;
+          })
+          .join("")}
+      </div>`
           : ""
       }
-      <div class="submenu hidden" data-role="character-submenu">
-        <div class="submenu-title">Choose archetype</div>
-        ${archetypes
-          .map(
-            (archetype) => `
-          <button
-            class="menu-item"
-            data-role="quick-add-character"
-            data-column="${columnIndex}"
-            data-archetype="${archetype.id}"
-          >
-            ${archetype.icon} ${archetype.label}
-          </button>
-        `,
-          )
-          .join("")}
-        <button class="menu-item" data-role="define-custom-archetype" data-column="${columnIndex}">
-          ✨ Define custom archetype...
-        </button>
-      </div>
-      <button class="menu-item" data-role="define-custom-note-type" data-column="${columnIndex}">
-        🏷️ Define custom note type...
-      </button>
     </div>
   `;
 }

@@ -8,6 +8,7 @@ export function createBoardInteractionsController({
   touchBoard,
   renderEditor,
   setEditingNoteId,
+  canReorderPhases,
 }) {
   let draggedNoteId = null;
   let draggedPhaseIndex = null;
@@ -133,6 +134,10 @@ export function createBoardInteractionsController({
   boardEl.addEventListener("dragstart", (event) => {
     const target = event.target;
     if (target.closest('[data-role="phase-drag-handle"]')) {
+      if (typeof canReorderPhases === "function" && !canReorderPhases()) {
+        event.preventDefault();
+        return;
+      }
       const columnEl = target.closest(".column");
       if (!columnEl) return;
       draggedPhaseIndex = Number(columnEl.dataset.column);
@@ -168,6 +173,7 @@ export function createBoardInteractionsController({
 
   boardEl.addEventListener("dragover", (event) => {
     if (draggedPhaseIndex !== null) {
+      if (typeof canReorderPhases === "function" && !canReorderPhases()) return;
       const columnEl = event.target.closest(".column");
       const placeholderEl = event.target.closest(".phase-drop-placeholder");
       if (!columnEl && !placeholderEl) return;
@@ -200,6 +206,7 @@ export function createBoardInteractionsController({
 
   boardEl.addEventListener("drop", (event) => {
     if (draggedPhaseIndex !== null) {
+      if (typeof canReorderPhases === "function" && !canReorderPhases()) return;
       const columnEl = event.target.closest(".column");
       const placeholderEl = event.target.closest(".phase-drop-placeholder");
       if (!columnEl && !placeholderEl) return;
