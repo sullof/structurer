@@ -1649,6 +1649,15 @@ a:hover {
   color: crimson;
 }
 
+/* Non-demo story cards: stronger border so they read clearly next to [Demo] labels */
+.board-card-user {
+  border-color: #a4b3c8;
+}
+
+.board-card-user:hover {
+  border-color: #64748b;
+}
+
 .board-card-ai-prompt-cta {
   grid-template-columns: 1fr;
   border-style: dashed;

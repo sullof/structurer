@@ -1,18 +1,18 @@
 ---
-description: Branch is source of truth for release version; align package.json and HISTORY
+description: User sets version and HISTORY header; agent follows package.json for changelog
 alwaysApply: true
 ---
 
-# Version and HISTORY workflow
+# Version and `HISTORY.md`
 
-1. **Run `git branch --show-current` first** whenever you are about to record release work in `HISTORY.md` or change `package.json` / `package-lock.json` version.
+The **maintainer** adds the new release block at the top of `HISTORY.md` and updates **`package.json`** / **`package-lock.json`** before (or when starting) work on that release.
 
-2. **The branch name commands the current release version.** If the user created or switched to a branch like `version-1-15-5-bug-fix` or `version-1-15-5`, that means they will push that line of work and **`package.json` must match** (here **1.15.5**). New changelog entries for that work go in a **new top section** `**1.15.5**` in `HISTORY.md`. Do not ask whether to bump—the branch already decided.
+The **agent** must:
 
-3. On a branch tied to the **previous** release (e.g. `version-1-15-4` with `package.json` **1.15.4**), **do not** bump the version; **append** bullets only under the existing **`1.15.4`** block.
+1. Read **`package.json`** `"version"` to know the **current** release (e.g. `1.15.5`).
+2. **Append changelog bullets** only under the matching top section in `HISTORY.md` (same version string as in `package.json`).
+3. **Not** bump version, **not** create a new top `HISTORY` section, and **not** infer version from the git branch—unless the user explicitly asks the agent to do that.
 
-4. Derive semver from the branch when it follows `version-M-m-p` with optional suffix (e.g. `version-1-15-5-bug-fix` → **1.15.5**). If the pattern is unclear, ask once.
+**Dates:** use the real calendar day when writing bullets (`Today's date:` in user info or the user’s message).
 
-Never retroactively edit old `HISTORY.md` sections for **past** shipped versions (e.g. 1.9.x). Moving a bullet from the wrong section to the correct release block for work that has not shipped yet is fine.
-
-**Release dates in `HISTORY.md`:** use the **actual calendar date** of the release (from the user message or the `Today's date:` field in user info). Do not invent “the next day” or guess; if unsure, ask or use the same date as other entries from that session when the user confirms it is still the same day.
+**Never** retroactively edit old `HISTORY.md` sections for past shipped versions.

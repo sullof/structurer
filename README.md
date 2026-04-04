@@ -72,12 +72,12 @@ You can also create and save your own custom structures directly in the dashboar
 - Three-Act Structure -> The Matrix Reloaded
 - Three-Act Structure -> Jurassic Park
 - Save the Cat -> Blade Runner
-- Save the Cat -> The Matrix Revolution
+- Save the Cat -> The Matrix Revolutions
 - Story Circle -> Finding Nemo
 - 7-Point Story Structure -> The Hunger Games
 - Romancing the Beat -> Pride and Prejudice
 - MICE Quotient -> Inception
-- Series demo -> The Matrix Trilogy (The Matrix -> The Matrix Reloaded -> The Matrix Revolution)
+- Series demo -> The Matrix Trilogy (The Matrix -> The Matrix Reloaded -> The Matrix Revolutions)
 
 ## Tech Stack
 

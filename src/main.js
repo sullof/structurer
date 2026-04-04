@@ -1532,8 +1532,9 @@ function groupCardTemplate(group) {
           .map((title) => `<li class="group-board-list-item">${escapeHtml(title)}</li>`)
           .join("")}</ul>`
       : `<div class="board-meta-line">No stories yet</div>`;
+  const userSeriesClass = dashboardGroupTier(group) === 0 ? " board-card-user" : "";
   return `
-    <article class="board-card" data-group-id="${group.id}" role="button" tabindex="0" aria-label="Open series ${group.title}">
+    <article class="board-card${userSeriesClass}" data-group-id="${group.id}" role="button" tabindex="0" aria-label="Open series ${group.title}">
       <div>
         <strong>${isDemoSeries ? '<span class="demo-label">Demo</span> ' : ""}${group.title}</strong>
         <div class="board-meta">
@@ -1633,13 +1634,23 @@ function renderHome() {
         return b && isDemoOrAiAnalysisBoard(b);
       });
     })
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+    .sort((a, b) => {
+      const ta = dashboardGroupTier(a);
+      const tb = dashboardGroupTier(b);
+      if (ta !== tb) return ta - tb;
+      return b.updatedAt - a.updatedAt;
+    });
   groupsList.innerHTML = sortedGroups.map(groupCardTemplate).join("");
   groupsList.style.display = sortedGroups.length > 0 ? "grid" : "none";
 
   const sortedBoards = [...boards]
     .filter((board) => showDemoBoards || !isDemoOrAiAnalysisBoard(board))
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+    .sort((a, b) => {
+      const ta = dashboardStoryTier(a);
+      const tb = dashboardStoryTier(b);
+      if (ta !== tb) return ta - tb;
+      return b.updatedAt - a.updatedAt;
+    });
   boardsList.innerHTML =
     sortedBoards
       .map((board) => {
@@ -2178,6 +2189,27 @@ function isDemoOrAiAnalysisBoard(board) {
   return isDemoBoard(board) || isAiAnalysisImportBoard(board);
 }
 
+/** Dashboard ordering: 0 = user-authored, 1 = AI analysis import, 2 = demo. */
+function dashboardStoryTier(board) {
+  if (!board) return 2;
+  if (isDemoBoard(board)) return 2;
+  if (isAiAnalysisImportBoard(board)) return 1;
+  return 0;
+}
+
+/** Series tier: same buckets — any user story forces tier 0; else min of members. */
+function dashboardGroupTier(group) {
+  let minTier = 2;
+  for (const id of group.boardIds || []) {
+    const b = boards.find((item) => item.id === id);
+    if (!b) continue;
+    const t = dashboardStoryTier(b);
+    if (t === 0) return 0;
+    minTier = Math.min(minTier, t);
+  }
+  return minTier;
+}
+
 function resetSingleDemoBoard(board) {
   if (!board) return;
   const boardSlug = board.slug || slugifyTitle(board.title || "");
@@ -2272,7 +2304,7 @@ function ensureMatrixTrilogySeriesDemo() {
   const trilogyTitle = "The Matrix Trilogy";
   const matrixTitle = "The Matrix";
   const reloadedTitle = "The Matrix Reloaded";
-  const revolutionTitle = "The Matrix Revolution";
+  const revolutionTitle = "The Matrix Revolutions";
 
   const getDemoStoryIdByTitle = (title) =>
     boards.find((b) => b.title === title && demoBoardIds.includes(b.id))?.id || null;

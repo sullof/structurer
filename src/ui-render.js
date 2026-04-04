@@ -131,8 +131,9 @@ export function boardCardTemplate(
     board.id === editingStoryTitleBoardId
       ? `<input class="inline-story-title-input board-card-title-input" type="text" maxlength="80" value="${escapeHtml(board.title)}" data-role="inline-story-title-input" data-board-id="${board.id}" aria-label="Story name" />`
       : `<span class="board-card-title-text" data-role="board-title-dblclick" data-board-id="${board.id}">${safeTitle}</span>`;
+  const userCardClass = !isDemo && !isAiAnalysisImport ? " board-card-user" : "";
   return `
-    <article class="board-card" data-board-id="${board.id}" role="button" tabindex="0" aria-label="Open ${safeTitle}">
+    <article class="board-card${userCardClass}" data-board-id="${board.id}" role="button" tabindex="0" aria-label="Open ${safeTitle}">
       <div>
         <strong><div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${isDemo ? '<span class="demo-label">Demo</span> ' : ""}${isAiAnalysisImport ? '<span class="analysis-label">AI analysis</span> ' : ""}${titleMarkup}</span></div></strong>
         <div class="board-meta">

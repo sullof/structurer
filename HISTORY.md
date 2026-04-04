@@ -1,7 +1,13 @@
 # History
 
+**1.15.6** - 2026-04-04
+- **Series demo:** **The Matrix Trilogy** is created again on load when the three Matrix demo boards exist; `ensureMatrixTrilogySeriesDemo` now matches the third film title **The Matrix Revolutions** (plural), same as `matrix-revolution-save-the-cat-demo.json`. Landing **Demo map** and **README** use the same spelling.
+- **Dashboard — order:** **Stories** and **Series** list in three blocks: **your** stories first, **AI analysis** imports second, **demos** last; within each block, **updated** date descending (`main.js`).
+- **Dashboard — borders:** **Darker gray border** (`board-card-user`) on story cards that are **your** work only (not demo, not AI import) and on **Series** that include **at least one** such story, for consistency next to **[Demo]** / **AI analysis** cards (`ui-render.js`, `main.js`, `styles.css`).
+
 **1.15.5** - 2026-04-04
 - **Delete note:** trash control now uses `closest('[data-role="delete"]')` so clicks on the SVG paths inside the button reliably delete the note (`board-note-actions.js`).
+- **Dashboard — Stories & Series:** boards and groups that include **any** non-demo, non–AI-analysis story list **first**; curated-only demo/AI rows follow. Within each block, order is still by **updated** date descending.
 
 **1.15.4** - 2026-04-04
 - **Demos:** replaced **Back to the Future (Save the Cat)** with **Blade Runner (Save the Cat)** (`blade-runner-save-the-cat-demo.json`). Detailed beat-by-beat analysis covering all 15 columns with plot, character, theme, location, subplot, and detail notes. Landing **Demo map** and **README** updated. On load, the new demo is **appended** automatically; existing installs can **Reset demos** to remove Back to the Future.
