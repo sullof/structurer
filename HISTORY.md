@@ -2,6 +2,7 @@
 
 **1.15.4** - 2026-04-04
 - **Demos:** replaced **Back to the Future (Save the Cat)** with **Blade Runner (Save the Cat)** (`blade-runner-save-the-cat-demo.json`). Detailed beat-by-beat analysis covering all 15 columns with plot, character, theme, location, subplot, and detail notes. Landing **Demo map** and **README** updated. On load, the new demo is **appended** automatically; existing installs can **Reset demos** to remove Back to the Future.
+- **Demos (content):** expanded every other built-in demo story JSON to the same kind of depth as **Blade Runner** (many more notes per phase, mix of **plot**, **character**, **theme**, **location**, **subplot**, and **detail** where it fits the work). Updated: **Finding Nemo** (Story Circle), **The Hunger Games** (7-Point), **Jurassic Park** and **The Matrix Reloaded** (Three-Act), **Inception** (MICE Quotient), **The Matrix Revolutions** (Save the Cat), **The Matrix** and **The Godfather** (Hero’s Journey), **Pride and Prejudice** (Romancing the Beat), **The Odyssey** and **Harry Potter** (Hero with a Thousand Faces). Demo JSON no longer uses the removed **`other`** note kind. **Reset demo story** / **Reset demos** pick up the new text from `src/data/*-demo.json`.
 - **Note types:** removed the built-in **Other** type (phase descriptions cover general commentary; **Todo** remains for actionable items). Notes with legacy `kind: "other"` still display via the existing unknown-type fallback.
 
 **1.15.3** - 2026-04-04
