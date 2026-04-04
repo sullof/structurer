@@ -2201,6 +2201,27 @@ function replaceDemoBoardsOnly() {
   saveBoards();
 }
 
+/** Append any new `DEMO_BOARD_DATA` entries missing from local boards (title + structure), and flag them as demos. */
+function ensureMissingDemoBoardsPresent() {
+  let added = false;
+  DEMO_BOARD_DATA.forEach((demo) => {
+    const demoSlug = slugifyTitle(demo.title || "");
+    const structureName = demo.structure || "Hero's Journey";
+    const exists = boards.some(
+      (b) => slugifyTitle(b.title || "") === demoSlug && b.structure === structureName,
+    );
+    if (exists) return;
+    const board = createDemoBoardFromJson(demo);
+    boards.push(board);
+    demoBoardIds.push(board.id);
+    added = true;
+  });
+  if (added) {
+    saveDemoBoardIds();
+    saveBoards();
+  }
+}
+
 function ensureMatrixTrilogySeriesDemo() {
   const normalize = (value) => String(value || "").trim().toLowerCase();
   const trilogyTitle = "The Matrix Trilogy";
@@ -5367,6 +5388,7 @@ if (loadedBoards === null) {
   saveDemoBoardIds();
 }
 
+ensureMissingDemoBoardsPresent();
 ensureMatrixTrilogySeriesDemo();
 
 boards.forEach((board) => {
