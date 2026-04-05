@@ -45,8 +45,8 @@
               </p>
               <p>
                 You can also import community extension packs (custom structures) from the dashboard
-                <strong>⋯ Actions → Structure</strong> (<strong>Import/merge a custom structure</strong> or
-                <strong>Import/merge pasting JSON</strong>) to expand your available structure library.
+                <strong>⋯ Actions → Structure → Import/merge custom structures</strong>, then pick
+                <strong>Import from a file</strong> or <strong>Paste custom structures JSON</strong>.
               </p>
             </article>
             <article class="landing-card card-about-demos">
@@ -389,7 +389,7 @@
               </p>
               <p>
                 You can also import ready-made custom structure packs from dashboard
-                <strong>⋯ Actions → Structure</strong> using <strong>Import/merge a custom structure</strong>.
+                <strong>⋯ Actions → Structure → Import/merge custom structures</strong>.
               </p>
             </div>
           </details>
@@ -418,8 +418,8 @@
               </p>
               <p>
                 To use one: download a JSON file from the extensions catalog, open dashboard
-                <strong>⋯ Actions → Structure</strong>, click <strong>Import/merge a custom structure</strong> and select
-                the file, or use <strong>Import/merge pasting JSON</strong> to paste JSON directly.
+                <strong>⋯ Actions → Structure → Import/merge custom structures</strong>, then choose
+                <strong>Import from a file</strong> or <strong>Paste custom structures JSON</strong>.
               </p>
               <p>
                 See the catalog in
@@ -465,10 +465,9 @@
             <summary>How do export, import, and merge work?</summary>
             <div class="help-faq-content">
               <p>
-                Export a story from dashboard story actions. Import from <strong>⋯ Actions → Story</strong>:
-                <strong>Import/merge a saved story</strong> (then <strong>Import story (file)</strong> or
-                <strong>Paste story JSON</strong> in the dialog), or open <strong>Import/merge pasting JSON</strong>
-                directly.
+                Export a story from dashboard story actions. Import from <strong>⋯ Actions → Story</strong> →
+                <strong>Import/merge a story</strong>, then choose <strong>Import from a file</strong> or
+                <strong>Paste story JSON</strong> in the dialog.
               </p>
               <ul>
                 <li>If the imported story UID is new, Structurer creates a new story.</li>
@@ -482,6 +481,29 @@
               <p>
                 If phase order differs between the two versions, merge is blocked and Structurer shows a side-by-side
                 conflict modal so you can align the story manually and retry.
+              </p>
+            </div>
+          </details>
+
+          <details class="help-faq-item">
+            <summary>I created a story or a custom structure. Can I share it just by sending a link?</summary>
+            <div class="help-faq-content">
+              <p>
+                <strong>No.</strong> Structurer keeps your work in <strong>this browser’s storage</strong> only. The
+                hosted app has <strong>no server-side copy</strong> of your boards and no per-user URLs that carry your
+                data. If you send someone a link (even a story URL with a slug), they only open <strong>their</strong>
+                local app — they will <strong>not</strong> see your story or structures.
+              </p>
+              <p>
+                To share a <strong>story</strong>, export it from <strong>Story actions</strong> (⋯ on the board) and send
+                the JSON file or text. The recipient imports it from the dashboard
+                <strong>⋯ Actions → Story → Import/merge a story</strong> (<strong>Import from a file</strong> or
+                <strong>Paste story JSON</strong>).
+              </p>
+              <p>
+                To share a <strong>custom structure template</strong> (phases only, not note content), use dashboard
+                <strong>⋯ Actions → Structure → Export custom structures</strong> and send that JSON; the recipient uses
+                <strong>Import/merge custom structures</strong>.
               </p>
             </div>
           </details>
@@ -615,8 +637,8 @@
                 treated like a normal story.
               </li>
               <li>
-                On the dashboard, open <strong>⋯ Actions → Story → Import/merge pasting JSON</strong> and paste the JSON
-                into Structurer.
+                On the dashboard, open <strong>⋯ Actions → Story → Import/merge a story</strong>, then
+                <strong>Paste story JSON</strong>, and paste the JSON into Structurer.
               </li>
               <li>
                 If the imported story UID is new, Structurer creates a board. If that UID already exists, Structurer merges
@@ -746,6 +768,49 @@
             <strong>Forking and redistribution (GPLv3).</strong> If you fork or redistribute Structurer, you must
             republish any derivative work under the GNU GPLv3 (and include the corresponding source code).
           </p>
+        </section>
+      </section>
+
+      <section id="not-found-view" class="view hidden">
+        <header class="not-found-header">
+          <h1>Page not found</h1>
+        </header>
+
+        <section class="help-card not-found-card">
+          <div data-not-found-panel="generic" class="not-found-panel">
+            <h2>We could not find that page</h2>
+            <p>
+              This address is not a page in Structurer. If you typed it yourself, check for typos. Otherwise use the
+              buttons below to continue.
+            </p>
+            <div class="not-found-actions">
+              <button id="not-found-generic-dashboard" type="button" class="landing-primary-button">Go to dashboard</button>
+              <button id="not-found-generic-landing" type="button" class="ghost-button">Back to home</button>
+            </div>
+          </div>
+          <div data-not-found-panel="sharing" class="not-found-panel hidden">
+            <h2>This link does not open someone else’s story or series</h2>
+            <p>
+              Structurer keeps your stories, series, and notes only in <strong>this browser’s storage</strong>. URLs like
+              <code class="not-found-code">/your-story</code>, <code class="not-found-code">/group/…</code>, or
+              <code class="not-found-code">/slug/phase/1</code> point at data on <em>your</em> device—they are not
+              shareable web pages and do not load content from a server.
+            </p>
+            <p>
+              If someone sent you a link hoping you would see their board, ask them for a <strong>story export</strong>
+              (JSON) and use <strong>⋯ Actions → Story → Import/merge a story</strong> on your dashboard. For custom
+              structure templates, they can share exported structure JSON and you can import it under
+              <strong>⋯ Actions → Structure</strong>.
+            </p>
+            <p>
+              The Help page has a short FAQ on sharing links versus files.
+            </p>
+            <div class="not-found-actions">
+              <button id="not-found-sharing-dashboard" type="button" class="landing-primary-button">Go to dashboard</button>
+              <button id="not-found-sharing-help" type="button" class="ghost-button">Open Help</button>
+              <button id="not-found-sharing-landing" type="button" class="ghost-button">Back to home</button>
+            </div>
+          </div>
         </section>
       </section>
 
@@ -938,10 +1003,7 @@
               <summary class="dashboard-actions-section-summary">Story</summary>
               <div class="dashboard-actions-section-body">
                 <button id="open-create-story-action" class="ghost-button" type="button">Create a new story</button>
-                <button id="open-import-story-action" class="ghost-button" type="button">Import/merge a saved story</button>
-                <button id="dashboard-import-story-paste-action" class="ghost-button" type="button">
-                  Import/merge pasting JSON
-                </button>
+                <button id="open-import-story-action" class="ghost-button" type="button">Import/merge a story</button>
               </div>
             </details>
             <details class="dashboard-actions-section">
@@ -956,10 +1018,7 @@
                 <button id="open-create-structure-action" class="ghost-button" type="button">Add a structure not listed</button>
                 <button id="dashboard-export-structures-action" class="ghost-button" type="button">Export custom structures</button>
                 <button id="dashboard-import-structures-action" class="ghost-button" type="button">
-                  Import/merge a custom structure
-                </button>
-                <button id="dashboard-import-structures-paste-action" class="ghost-button" type="button">
-                  Import/merge pasting JSON
+                  Import/merge custom structures
                 </button>
                 <button id="dashboard-remove-structures-action" class="ghost-button" type="button" disabled>
                   Remove a structure
@@ -981,7 +1040,6 @@
             </details>
           </div>
           <input id="restore-app-backup-input" type="file" accept="application/json,.json" hidden />
-          <input id="import-custom-structures-input" type="file" accept="application/json,.json" hidden />
           <div class="modal-actions">
             <button id="close-dashboard-actions-modal" class="ghost-button" type="button">Close</button>
           </div>
@@ -1082,10 +1140,29 @@
         </div>
       </div>
 
+      <div id="dashboard-import-structures-modal-overlay" class="modal-overlay hidden">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Import/merge custom structures">
+          <h2>Import/merge custom structures</h2>
+          <p class="subtitle">
+            Valid <code>structurer.custom-structures</code> JSON (dashboard export or approved extension pack).
+          </p>
+          <div class="import-actions">
+            <button id="import-custom-structures-file-button" class="ghost-button" type="button">Import from a file</button>
+            <input id="import-custom-structures-input" type="file" accept="application/json,.json" hidden />
+            <button id="open-import-structures-paste-from-modal" class="ghost-button" type="button">
+              Paste custom structures JSON
+            </button>
+          </div>
+          <div class="modal-actions">
+            <button id="close-dashboard-import-structures-modal" class="ghost-button" type="button">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <div id="dashboard-import-structures-paste-modal-overlay" class="modal-overlay hidden">
-        <div class="modal" role="dialog" aria-modal="true" aria-label="Import/merge pasting JSON (custom structure)">
-          <h2>Import/merge pasting JSON</h2>
-          <p class="subtitle">Paste a valid `structurer.custom-structures` JSON payload.</p>
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Paste custom structures JSON">
+          <h2>Paste custom structures JSON</h2>
+          <p class="subtitle">Paste a valid <code>structurer.custom-structures</code> JSON payload.</p>
           <form id="import-structures-paste-form">
             <textarea
               id="import-structures-paste-text"
@@ -1102,11 +1179,11 @@
       </div>
 
       <div id="dashboard-import-modal-overlay" class="modal-overlay hidden">
-        <div class="modal" role="dialog" aria-modal="true" aria-label="Import/merge a saved story">
-          <h2>Import/merge a saved story</h2>
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Import/merge a story">
+          <h2>Import/merge a story</h2>
           <p class="subtitle">Load a story JSON exported from Structurer.</p>
           <div class="import-actions">
-            <button id="import-board-button" class="ghost-button" type="button">Import story (file)</button>
+            <button id="import-board-button" class="ghost-button" type="button">Import from a file</button>
             <input id="import-board-input" type="file" accept="application/json,.json" hidden />
             <button id="open-import-story-paste-from-modal" class="ghost-button" type="button">Paste story JSON</button>
           </div>

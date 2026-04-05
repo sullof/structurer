@@ -85,6 +85,7 @@ const aiAnalysisPromptView = document.querySelector("#ai-analysis-prompt-view");
 const groupView = document.querySelector("#group-view");
 const editorView = document.querySelector("#editor-view");
 const phaseView = document.querySelector("#phase-view");
+const notFoundView = document.querySelector("#not-found-view");
 const groupsList = document.querySelector("#groups-list");
 const boardsList = document.querySelector("#boards-list");
 const dashboardStructuresList = document.querySelector("#dashboard-structures-list");
@@ -170,7 +171,6 @@ const dashboardFactoryResetActionBtn = document.querySelector("#dashboard-factor
 const dashboardExportBackupActionBtn = document.querySelector("#dashboard-export-backup-action");
 const dashboardExportStructuresActionBtn = document.querySelector("#dashboard-export-structures-action");
 const dashboardImportStructuresActionBtn = document.querySelector("#dashboard-import-structures-action");
-const dashboardImportStructuresPasteActionBtn = document.querySelector("#dashboard-import-structures-paste-action");
 const dashboardRemoveStructuresActionBtn = document.querySelector("#dashboard-remove-structures-action");
 const dashboardRemoveStructuresModalOverlay = document.querySelector("#dashboard-remove-structures-modal-overlay");
 const removeStructuresListEl = document.querySelector("#remove-structures-list");
@@ -180,6 +180,10 @@ const confirmRemoveStructuresBtn = document.querySelector("#confirm-remove-struc
 const dashboardRestoreBackupActionBtn = document.querySelector("#dashboard-restore-backup-action");
 const restoreAppBackupInput = document.querySelector("#restore-app-backup-input");
 const importCustomStructuresInput = document.querySelector("#import-custom-structures-input");
+const dashboardImportStructuresModalOverlay = document.querySelector("#dashboard-import-structures-modal-overlay");
+const closeDashboardImportStructuresModalBtn = document.querySelector("#close-dashboard-import-structures-modal");
+const importCustomStructuresFileButton = document.querySelector("#import-custom-structures-file-button");
+const openImportStructuresPasteFromModalBtn = document.querySelector("#open-import-structures-paste-from-modal");
 const dashboardImportStructuresPasteModalOverlay = document.querySelector("#dashboard-import-structures-paste-modal-overlay");
 const closeDashboardImportStructuresPasteModalBtn = document.querySelector("#close-dashboard-import-structures-paste-modal");
 const importStructuresPasteForm = document.querySelector("#import-structures-paste-form");
@@ -192,7 +196,6 @@ const dashboardImportStoryPasteModalOverlay = document.querySelector("#dashboard
 const closeDashboardImportStoryPasteModalBtn = document.querySelector("#close-dashboard-import-story-paste-modal");
 const importStoryPasteForm = document.querySelector("#import-story-paste-form");
 const importStoryPasteText = document.querySelector("#import-story-paste-text");
-const dashboardImportStoryPasteActionBtn = document.querySelector("#dashboard-import-story-paste-action");
 const aiPromptStructureSelect = document.querySelector("#ai-prompt-structure-select");
 const aiPromptWorkTitleInput = document.querySelector("#ai-prompt-work-title");
 const aiPromptMediumSelect = document.querySelector("#ai-prompt-medium-select");
@@ -211,6 +214,11 @@ const goHelpFromDashboardBtn = document.querySelector("#go-help-from-dashboard")
 const goDashboardFromHelpBtn = document.querySelector("#go-dashboard-from-help");
 const goDashboardFromPrivacyBtn = document.querySelector("#go-dashboard-from-privacy");
 const goDashboardFromTermsBtn = document.querySelector("#go-dashboard-from-terms");
+const notFoundGenericDashboardBtn = document.querySelector("#not-found-generic-dashboard");
+const notFoundGenericLandingBtn = document.querySelector("#not-found-generic-landing");
+const notFoundSharingDashboardBtn = document.querySelector("#not-found-sharing-dashboard");
+const notFoundSharingHelpBtn = document.querySelector("#not-found-sharing-help");
+const notFoundSharingLandingBtn = document.querySelector("#not-found-sharing-landing");
 const goDashboardFromBoardBtn = document.querySelector("#go-dashboard-from-board");
 const goDashboardFromGroupBtn = document.querySelector("#go-dashboard-from-group");
 const goPrivacyFromFooterBtn = document.querySelector("#go-privacy-from-footer");
@@ -1831,6 +1839,7 @@ const navigation = createNavigationController({
     groupView,
     editorView,
     phaseView,
+    notFoundView,
   },
   homeRoute: HOME_ROUTE,
   getBoards: () => boards,
@@ -2516,8 +2525,21 @@ function normalizeImportedStructurePhase(phase, pathLabel) {
   throw new Error(`Invalid custom structures file: ${pathLabel} must be a string or { title, description? }.`);
 }
 
+/**
+ * Remove LLM/chat noise (e.g. `json` + ``` fences, intro text) by keeping the span from the first `{` to the last `}`.
+ * Structurer story and custom-structures exports are a single root JSON object.
+ */
+function stripLeadingTrailingOutsideJsonObject(rawText) {
+  const s = String(rawText ?? "").trim();
+  if (!s) return s;
+  const open = s.indexOf("{");
+  const close = s.lastIndexOf("}");
+  if (open === -1 || close === -1 || close < open) return s;
+  return s.slice(open, close + 1);
+}
+
 function parseImportedCustomStructures(rawText) {
-  const parsed = JSON.parse(rawText);
+  const parsed = JSON.parse(stripLeadingTrailingOutsideJsonObject(rawText));
   if (!parsed || typeof parsed !== "object" || parsed.exportType !== "structurer.custom-structures") {
     throw new Error("Invalid custom structures file.");
   }
@@ -2978,7 +3000,7 @@ function openPhaseOrderConflictModal(payload) {
 }
 
 function importBoardFromJson(rawText) {
-  const parsed = JSON.parse(rawText);
+  const parsed = JSON.parse(stripLeadingTrailingOutsideJsonObject(rawText));
   if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.notes)) {
     throw new Error("Invalid story JSON format.");
   }
@@ -3398,6 +3420,7 @@ async function tryImportBoardFromJsonWithFeedback(rawText) {
   try {
     importBoardFromJson(rawText);
     closeDashboardImportModal();
+    closeDashboardImportStructuresModal();
     closeDashboardActionsModal();
     closeDashboardImportStoryPasteModal();
     await appAlert("Story imported successfully.");
@@ -3761,6 +3784,36 @@ if (goDashboardFromPrivacyBtn) {
 if (goDashboardFromTermsBtn) {
   goDashboardFromTermsBtn.addEventListener("click", () => {
     openHome();
+  });
+}
+
+if (notFoundGenericDashboardBtn) {
+  notFoundGenericDashboardBtn.addEventListener("click", () => {
+    openHome();
+  });
+}
+
+if (notFoundGenericLandingBtn) {
+  notFoundGenericLandingBtn.addEventListener("click", () => {
+    openLanding();
+  });
+}
+
+if (notFoundSharingDashboardBtn) {
+  notFoundSharingDashboardBtn.addEventListener("click", () => {
+    openHome();
+  });
+}
+
+if (notFoundSharingHelpBtn) {
+  notFoundSharingHelpBtn.addEventListener("click", () => {
+    openHelp();
+  });
+}
+
+if (notFoundSharingLandingBtn) {
+  notFoundSharingLandingBtn.addEventListener("click", () => {
+    openLanding();
   });
 }
 
@@ -4495,6 +4548,21 @@ function closeDashboardImportModal() {
   dashboardImportModalOverlay.classList.add("hidden");
 }
 
+function closeDashboardImportStructuresModal() {
+  if (!dashboardImportStructuresModalOverlay) return;
+  dashboardImportStructuresModalOverlay.classList.add("hidden");
+}
+
+function openDashboardImportStructuresModal() {
+  if (!dashboardImportStructuresModalOverlay) return;
+  closeDashboardActionsModal();
+  closeDashboardRemoveStructuresModal();
+  closeDashboardImportStructuresPasteModal();
+  closeDashboardImportStoryPasteModal();
+  closeDashboardImportModal();
+  dashboardImportStructuresModalOverlay.classList.remove("hidden");
+}
+
 function closeDashboardImportStoryPasteModal() {
   if (!dashboardImportStoryPasteModalOverlay) return;
   dashboardImportStoryPasteModalOverlay.classList.add("hidden");
@@ -4508,6 +4576,7 @@ function openDashboardImportStoryPasteModal() {
   closeDashboardActionsModal();
   closeDashboardRemoveStructuresModal();
   closeDashboardImportModal();
+  closeDashboardImportStructuresModal();
   closeDashboardImportStructuresPasteModal();
   dashboardImportStoryPasteModalOverlay.classList.remove("hidden");
   if (importStoryPasteText) importStoryPasteText.focus();
@@ -4623,6 +4692,7 @@ function openDashboardRemoveStructuresModal() {
   closeDashboardCreateStoryModal();
   closeDashboardCreateStructureModal();
   closeDashboardImportStructuresPasteModal();
+  closeDashboardImportStructuresModal();
   closeDashboardImportStoryPasteModal();
   closeDashboardImportModal();
   closeDashboardCreateSeriesModal();
@@ -4638,6 +4708,7 @@ function openDashboardActionsModal() {
   closeDashboardCreateStoryModal();
   closeDashboardCreateStructureModal();
   closeDashboardImportStructuresPasteModal();
+  closeDashboardImportStructuresModal();
   closeDashboardImportStoryPasteModal();
   closeDashboardImportModal();
   closeDashboardCreateSeriesModal();
@@ -4650,6 +4721,7 @@ function openDashboardCreateStoryModal() {
   if (!dashboardCreateStoryModalOverlay) return;
   closeDashboardActionsModal();
   closeDashboardRemoveStructuresModal();
+  closeDashboardImportStructuresModal();
   dashboardCreateStoryModalOverlay.classList.remove("hidden");
   // Focus for faster input.
   if (boardTitleInput) boardTitleInput.focus();
@@ -4659,6 +4731,7 @@ function openDashboardCreateStructureModal() {
   if (!dashboardCreateStructureModalOverlay) return;
   closeDashboardActionsModal();
   closeDashboardRemoveStructuresModal();
+  closeDashboardImportStructuresModal();
   dashboardCreateStructureModalOverlay.classList.remove("hidden");
   // Focus for faster input.
   if (structureNameInput) structureNameInput.focus();
@@ -4668,6 +4741,7 @@ function openDashboardImportModal() {
   if (!dashboardImportModalOverlay) return;
   closeDashboardActionsModal();
   closeDashboardRemoveStructuresModal();
+  closeDashboardImportStructuresModal();
   closeDashboardImportStoryPasteModal();
   dashboardImportModalOverlay.classList.remove("hidden");
 }
@@ -4676,6 +4750,7 @@ function openDashboardCreateSeriesModal() {
   if (!dashboardCreateSeriesModalOverlay) return;
   closeDashboardActionsModal();
   closeDashboardRemoveStructuresModal();
+  closeDashboardImportStructuresModal();
   dashboardCreateSeriesModalOverlay.classList.remove("hidden");
 }
 
@@ -4684,6 +4759,8 @@ function openDashboardImportStructuresPasteModal() {
   closeDashboardActionsModal();
   closeDashboardRemoveStructuresModal();
   closeDashboardImportStoryPasteModal();
+  closeDashboardImportModal();
+  closeDashboardImportStructuresModal();
   dashboardImportStructuresPasteModalOverlay.classList.remove("hidden");
   if (importStructuresPasteText) importStructuresPasteText.focus();
 }
@@ -4788,15 +4865,21 @@ if (openCreateSeriesActionBtn) {
   });
 }
 
-if (dashboardImportStructuresPasteActionBtn) {
-  dashboardImportStructuresPasteActionBtn.addEventListener("click", () => {
-    openDashboardImportStructuresPasteModal();
-  });
-}
-
 if (closeDashboardImportModalBtn) {
   closeDashboardImportModalBtn.addEventListener("click", () => {
     closeDashboardImportModal();
+  });
+}
+
+if (closeDashboardImportStructuresModalBtn) {
+  closeDashboardImportStructuresModalBtn.addEventListener("click", () => {
+    closeDashboardImportStructuresModal();
+  });
+}
+
+if (openImportStructuresPasteFromModalBtn) {
+  openImportStructuresPasteFromModalBtn.addEventListener("click", () => {
+    openDashboardImportStructuresPasteModal();
   });
 }
 
@@ -4809,12 +4892,6 @@ if (openImportStoryPasteFromModalBtn) {
 if (closeDashboardImportStoryPasteModalBtn) {
   closeDashboardImportStoryPasteModalBtn.addEventListener("click", () => {
     closeDashboardImportStoryPasteModal();
-  });
-}
-
-if (dashboardImportStoryPasteActionBtn) {
-  dashboardImportStoryPasteActionBtn.addEventListener("click", () => {
-    openDashboardImportStoryPasteModal();
   });
 }
 
@@ -4917,6 +4994,12 @@ if (dashboardCreateStructureModalOverlay) {
 if (dashboardImportModalOverlay) {
   dashboardImportModalOverlay.addEventListener("click", (event) => {
     if (event.target === dashboardImportModalOverlay) closeDashboardImportModal();
+  });
+}
+
+if (dashboardImportStructuresModalOverlay) {
+  dashboardImportStructuresModalOverlay.addEventListener("click", (event) => {
+    if (event.target === dashboardImportStructuresModalOverlay) closeDashboardImportStructuresModal();
   });
 }
 
@@ -5038,6 +5121,7 @@ function openResetDemosModal() {
   closeDashboardCreateStoryModal();
   closeDashboardCreateStructureModal();
   closeDashboardImportModal();
+  closeDashboardImportStructuresModal();
   closeDashboardImportStoryPasteModal();
   closeDashboardImportStructuresPasteModal();
   closeDashboardCreateSeriesModal();
@@ -5062,6 +5146,7 @@ function openRestoreBackupModal(rawText) {
   closeDashboardCreateStoryModal();
   closeDashboardCreateStructureModal();
   closeDashboardImportModal();
+  closeDashboardImportStructuresModal();
   closeDashboardImportStoryPasteModal();
   closeDashboardImportStructuresPasteModal();
   closeDashboardCreateSeriesModal();
@@ -5217,6 +5302,13 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   if (
+    dashboardImportStructuresModalOverlay &&
+    !dashboardImportStructuresModalOverlay.classList.contains("hidden")
+  ) {
+    closeDashboardImportStructuresModal();
+    return;
+  }
+  if (
     dashboardImportStoryPasteModalOverlay &&
     !dashboardImportStoryPasteModalOverlay.classList.contains("hidden")
   ) {
@@ -5275,7 +5367,9 @@ if (dashboardFactoryResetActionBtn) {
     closeDashboardActionsModal();
     closeDashboardCreateStoryModal();
     closeDashboardCreateStructureModal();
+    closeDashboardImportModal();
     closeDashboardImportStoryPasteModal();
+    closeDashboardImportStructuresModal();
     closeDashboardImportStructuresPasteModal();
     openFactoryResetModal();
   });
@@ -5295,18 +5389,26 @@ if (dashboardExportStructuresActionBtn) {
   });
 }
 
-if (dashboardImportStructuresActionBtn && importCustomStructuresInput) {
+if (dashboardImportStructuresActionBtn) {
   dashboardImportStructuresActionBtn.addEventListener("click", () => {
-    closeDashboardActionsModal();
+    openDashboardImportStructuresModal();
+  });
+}
+
+if (importCustomStructuresFileButton && importCustomStructuresInput) {
+  importCustomStructuresFileButton.addEventListener("click", () => {
     importCustomStructuresInput.click();
   });
+}
 
+if (importCustomStructuresInput) {
   importCustomStructuresInput.addEventListener("change", async (event) => {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
     try {
       const text = await file.text();
       const result = importCustomStructuresFromText(text);
+      closeDashboardImportStructuresModal();
       await appAlert(getCustomStructureImportSuccessMessage(result));
     } catch (error) {
       await appAlert(getCustomStructureImportErrorMessage(error));

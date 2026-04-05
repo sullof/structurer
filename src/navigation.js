@@ -1,3 +1,16 @@
+function pathLooksLikeSharedStructurerLink(pathname) {
+  if (pathname === "/group") return false;
+  if (pathname.startsWith("/group/")) {
+    return pathname.slice("/group/".length).length > 0;
+  }
+  if (/^\/[^/]+\/phase\/\d+$/.test(pathname)) {
+    return true;
+  }
+  const segment = pathname.slice(1);
+  if (!segment || segment.includes("/")) return false;
+  return /^[a-z0-9][a-z0-9_]*$/i.test(segment) && segment.length <= 200;
+}
+
 export function createNavigationController({
   views,
   homeRoute,
@@ -26,6 +39,7 @@ export function createNavigationController({
     privacyView,
     termsView,
     aiAnalysisPromptView,
+    notFoundView,
   } = views;
 
   function normalizePathname(pathname) {
@@ -56,6 +70,7 @@ export function createNavigationController({
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
     if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
+    if (notFoundView) notFoundView.classList.add("hidden");
     renderHome();
   }
 
@@ -71,6 +86,7 @@ export function createNavigationController({
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
     if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
+    if (notFoundView) notFoundView.classList.add("hidden");
   }
 
   function showHelp() {
@@ -85,6 +101,7 @@ export function createNavigationController({
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
     if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
+    if (notFoundView) notFoundView.classList.add("hidden");
   }
 
   function showPrivacy() {
@@ -98,6 +115,7 @@ export function createNavigationController({
     helpView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
     if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
+    if (notFoundView) notFoundView.classList.add("hidden");
     privacyView.classList.remove("hidden");
   }
 
@@ -112,6 +130,7 @@ export function createNavigationController({
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
+    if (notFoundView) notFoundView.classList.add("hidden");
     termsView.classList.remove("hidden");
   }
 
@@ -126,6 +145,7 @@ export function createNavigationController({
     helpView.classList.add("hidden");
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
+    if (notFoundView) notFoundView.classList.add("hidden");
     if (aiAnalysisPromptView) aiAnalysisPromptView.classList.remove("hidden");
     requestAnimationFrame(() => {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -150,6 +170,7 @@ export function createNavigationController({
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
     if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
+    if (notFoundView) notFoundView.classList.add("hidden");
     renderEditor();
     applyColumnWidth();
     applyWrapColumns();
@@ -181,6 +202,7 @@ export function createNavigationController({
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
     if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
+    if (notFoundView) notFoundView.classList.add("hidden");
     if (typeof renderPhaseDetail === "function") {
       renderPhaseDetail(board.id, phaseIndex);
     }
@@ -206,7 +228,41 @@ export function createNavigationController({
     if (privacyView) privacyView.classList.add("hidden");
     if (termsView) termsView.classList.add("hidden");
     if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
+    if (notFoundView) notFoundView.classList.add("hidden");
     renderGroup();
+  }
+
+  function showNotFound(variant) {
+    if (!notFoundView) {
+      openLanding();
+      return;
+    }
+    setCurrentBoardId(null);
+    setCurrentGroupId(null);
+    landingView.classList.add("hidden");
+    homeView.classList.add("hidden");
+    groupView.classList.add("hidden");
+    editorView.classList.add("hidden");
+    if (phaseView) phaseView.classList.add("hidden");
+    helpView.classList.add("hidden");
+    if (privacyView) privacyView.classList.add("hidden");
+    if (termsView) termsView.classList.add("hidden");
+    if (aiAnalysisPromptView) aiAnalysisPromptView.classList.add("hidden");
+    const genericPanel = notFoundView.querySelector('[data-not-found-panel="generic"]');
+    const sharingPanel = notFoundView.querySelector('[data-not-found-panel="sharing"]');
+    if (genericPanel && sharingPanel) {
+      if (variant === "sharing") {
+        genericPanel.classList.add("hidden");
+        sharingPanel.classList.remove("hidden");
+      } else {
+        sharingPanel.classList.add("hidden");
+        genericPanel.classList.remove("hidden");
+      }
+    }
+    notFoundView.classList.remove("hidden");
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
   }
 
   function openBoard(boardId, replaceRoute = false, fromGroupId = null) {
@@ -303,11 +359,15 @@ export function createNavigationController({
       showAiAnalysisPrompt();
       return;
     }
+    if (path === "/group") {
+      showNotFound("generic");
+      return;
+    }
     if (path.startsWith("/group/")) {
       const slug = path.slice("/group/".length);
       const group = getGroups().find((item) => item.slug === slug);
       if (!group) {
-        openHome(replaceRoute);
+        showNotFound("sharing");
         return;
       }
       showGroup(group.id);
@@ -319,7 +379,7 @@ export function createNavigationController({
       const board = getBoards().find((item) => item.slug === slug);
       const oneBasedIndex = Number(phaseIndexRaw);
       if (!board || !Number.isInteger(oneBasedIndex)) {
-        openLanding(replaceRoute);
+        showNotFound("sharing");
         return;
       }
       const phaseCount = getStructureConfig(board.structureId).phases.length;
@@ -335,7 +395,8 @@ export function createNavigationController({
     const slug = path.slice(1);
     const board = getBoards().find((item) => item.slug === slug);
     if (!board) {
-      openLanding(replaceRoute);
+      const variant = pathLooksLikeSharedStructurerLink(path) ? "sharing" : "generic";
+      showNotFound(variant);
       return;
     }
     setBoardBackGroupId(null);
@@ -361,6 +422,7 @@ export function createNavigationController({
     openGroup,
     openAiAnalysisPrompt,
     showAiAnalysisPrompt,
+    showNotFound,
     syncRouteToState,
   };
 }

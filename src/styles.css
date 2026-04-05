@@ -459,6 +459,37 @@ a:hover {
   font-size: 1rem;
 }
 
+.not-found-header {
+  text-align: center;
+  padding: 20px 16px 8px;
+}
+
+.not-found-header h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.not-found-card .not-found-panel > p:last-of-type {
+  margin-bottom: 0;
+}
+
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.not-found-code {
+  font-size: 0.9em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  border: 1px solid var(--line);
+}
+
 .help-card ul {
   margin: 0;
   padding-left: 18px;
