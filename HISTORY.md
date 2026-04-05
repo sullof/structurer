@@ -1,9 +1,15 @@
 # History
 
+**1.16.1** - 2026-04-04
+- Editor: scroll to new note and focus its textarea; viewport auto-scroll while dragging notes or phases.
+- Editor: default capped note height (long text scrolls inside); corner resize handle; **Options → Note height mode** dialog; classic full-height opt-in (`legacyFullHeightNoteCards`, in app backup settings).
+- Editor: short notes stay content-sized in capped mode; resize can reset to auto; character archetype chips in add-note modal work when clicking icon/label.
+- Editor: opening edit on a collapsed note expands it; collapsing a note exits edit mode.
+
 **1.16.0** - 2026-04-05
-- **Story JSON (`structurer.story`):** **Export** now uses **`schemaVersion`: `3`**, adds root **`structureId`** (canonical framework id), and keeps **`structure`** as the display name only. **Import** accepts **`schemaVersion` `1` or `2`** (or omitted): resolve framework by **`structure`** name as before; **`schemaVersion` `3`**: resolve by **`structureId`** only—missing id or unknown id fails with a message that suggests **Reset demos** or importing custom structures first. Imports that include **`alteredStructure`** are unchanged (no `structureId` requirement for that path). **`build-analysis-prompt`** output asks the model for **`schemaVersion` 3**, **`structureId`**, **`structure`**, and **`aiAnalysisImport`** (`main.js`, `ai-story-analysis-prompt.js`, `index.html`).
-- **Structure template JSON:** preview **Export** writes **`exportType`: `structurer.structure`** (same **`structures`** array and **`schemaVersion` `2`** as before). **Import** also accepts legacy **`structurer.custom-structures`**. **Ids are not rewritten** on export. On import, an entry whose **`id`** matches a **local built-in** key is **skipped** (no duplicate custom row); if that **`id`** is not built-in in the recipient app, it is merged into **custom structures** as usual. Download filename is **`{structureId}.json`** only (aligned with extension packs; OS duplicate handling). Per-story **altered** templates stay off the preview list (`main.js`, `index.html`, `README.md`, Help FAQ).
-- **Dashboard:** saving **Add a structure not listed** immediately refreshes **Available structures** via **`renderHome()`** so the new template appears without leaving the dashboard (`main.js`).
+- Story export/import: **schemaVersion 3** with **`structureId`**; older imports unchanged; v3 resolves by id; AI import prompt updated accordingly.
+- Structure template packs: **`structurer.structure`** export/import (plus legacy **`structurer.custom-structures`**); skip built-in ids on import; download as **`{structureId}.json`**.
+- Dashboard: **Available structures** refreshes right after **Add a structure not listed**.
 
 **1.15.8** - 2026-04-05
 - **Build AI import prompt:** new **Language of the analysis text** control (preset languages plus **Other…** with a custom name). The generated instructions stay in English; the prompt tells the model to write each note’s `text` (and similar prose) in the chosen language while keeping JSON keys, `kind` / `archetype` ids, and the exact `structure` string unchanged (`index.html`, `main.js`, `ai-story-analysis-prompt.js`). Help FAQ on mapping a work to a structure mentions this option.

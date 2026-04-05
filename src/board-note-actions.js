@@ -40,15 +40,19 @@ export function createBoardNoteActionsController({
 
   function handleAddNoteModalAction(target) {
     if (!(target instanceof HTMLElement)) return false;
+    const chip = target.closest(
+      '[data-role="quick-add"], [data-role="quick-add-character"]',
+    );
+    if (!(chip instanceof HTMLElement)) return false;
 
-    if (target.dataset.role === "quick-add") {
-      boardInteractions.addNote(target.dataset.kind, Number(target.dataset.column));
+    if (chip.dataset.role === "quick-add") {
+      boardInteractions.addNote(chip.dataset.kind, Number(chip.dataset.column));
       closeAddNoteModal();
       return true;
     }
 
-    if (target.dataset.role === "quick-add-character") {
-      boardInteractions.addNote("character", Number(target.dataset.column), target.dataset.archetype);
+    if (chip.dataset.role === "quick-add-character") {
+      boardInteractions.addNote("character", Number(chip.dataset.column), chip.dataset.archetype);
       closeAddNoteModal();
       return true;
     }
@@ -118,6 +122,9 @@ export function createBoardNoteActionsController({
       renderEditor();
       return;
     }
+    if (target.closest?.('[data-role="note-text-resize-grip"]')) {
+      return;
+    }
     if (!target.closest("textarea, input, select, button")) {
       if (pendingEditTimer) {
         clearTimeout(pendingEditTimer);
@@ -126,6 +133,14 @@ export function createBoardNoteActionsController({
       if (event.detail < 2) {
         pendingEditTimer = window.setTimeout(() => {
           pendingEditTimer = null;
+          const currentBoard = getCurrentBoard();
+          const openNote = currentBoard?.notes.find((item) => item.id === id);
+          if (!openNote) return;
+          if (openNote.collapsed) {
+            openNote.collapsed = false;
+            openNote.updatedAt = Date.now();
+            touchBoard(currentBoard);
+          }
           setEditingNoteId(id);
           renderEditor();
         }, EDIT_CLICK_DELAY_MS);
@@ -149,6 +164,9 @@ export function createBoardNoteActionsController({
     if (!note) return;
     note.collapsed = !note.collapsed;
     note.updatedAt = Date.now();
+    if (note.collapsed && getEditingNoteId() === id) {
+      setEditingNoteId(null);
+    }
     touchBoard(board);
     renderEditor();
   });

@@ -169,7 +169,17 @@ export function dashboardAiPromptCtaCardTemplate() {
 /** Trash icon for delete-note — ✕ reads as “close” on mobile and caused mistaken deletions. */
 const NOTE_DELETE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
 
-export function noteTemplate(note, archetypes, archetype, noteType, isEditing = false) {
+/** Corner lines similar to the native textarea resize grip (adaptive note height). */
+const NOTE_TEXT_RESIZE_HANDLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3 13 L13 3" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/><path d="M6.5 13 L13 6.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/><path d="M10 13 L13 10" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>`;
+
+export function noteTemplate(
+  note,
+  archetypes,
+  archetype,
+  noteType,
+  isEditing = false,
+  legacyFullHeightNoteCards = false,
+) {
   const collapsed = Boolean(note.collapsed);
   const textPreview = (note.text || "").trim();
   const characterLabel =
@@ -209,6 +219,36 @@ export function noteTemplate(note, archetypes, archetype, noteType, isEditing = 
     `
       : "";
 
+  const adaptiveHeightStyle = note.customHeight
+    ? `height: ${note.customHeight}px; max-height: none;`
+    : "";
+  const legacyTextareaStyle = note.customHeight ? `height: ${note.customHeight}px;` : "";
+
+  const legacyNoteBody =
+    isEditing
+      ? `<textarea
+        data-role="text"
+        data-note-id="${note.id}"
+        style="${legacyTextareaStyle}"
+        placeholder="Write your note..."
+      >${note.text || ""}</textarea>`
+      : `<div class="note-readonly-text">${(note.text || "").trim() || " "}</div>`;
+
+  const adaptiveNoteBody =
+    isEditing
+      ? `<textarea
+        class="note-text-body note-text-body--adaptive"
+        data-role="text"
+        data-note-id="${note.id}"
+        style="${adaptiveHeightStyle}"
+        placeholder="Write your note..."
+      >${note.text || ""}</textarea>`
+      : `<div class="note-readonly-text note-text-body note-text-body--adaptive" data-note-id="${note.id}" style="${adaptiveHeightStyle}">${(note.text || "").trim() || " "}</div>`;
+
+  const adaptiveWrap = legacyFullHeightNoteCards
+    ? legacyNoteBody
+    : `<div class="note-adaptive-wrap">${adaptiveNoteBody}<button type="button" class="note-text-resize-handle" data-role="note-text-resize-grip" data-note-id="${note.id}" title="Drag to resize height" aria-label="Resize note text height" draggable="false">${NOTE_TEXT_RESIZE_HANDLE_SVG}</button></div>`;
+
   return `
     <article class="note ${collapsed ? "is-collapsed" : ""}${isEditing ? " is-note-editing" : ""}" data-id="${note.id}" data-kind="${note.kind}" draggable="true" style="--note-bg: ${
     noteType?.color || "#f3f4f6"
@@ -230,18 +270,7 @@ export function noteTemplate(note, archetypes, archetype, noteType, isEditing = 
         </div>
       </div>
       ${characterUI}
-      ${
-        collapsed
-          ? ""
-          : isEditing
-            ? `<textarea
-        data-role="text"
-        data-note-id="${note.id}"
-        style="${note.customHeight ? `height: ${note.customHeight}px;` : ""}"
-        placeholder="Write your note..."
-      >${note.text || ""}</textarea>`
-            : `<div class="note-readonly-text">${(note.text || "").trim() || " "}</div>`
-      }
+      ${collapsed ? "" : adaptiveWrap}
     </article>
   `;
 }

@@ -2287,6 +2287,77 @@ a:hover {
   line-height: 1.35;
 }
 
+/* Adaptive note body: cap tall text; optional user height via corner handle (see main.js). */
+.note-adaptive-wrap {
+  position: relative;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.note-text-body--adaptive {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 74px;
+  max-height: min(70vh, 520px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 12px;
+  padding-bottom: 10px;
+}
+
+.note-readonly-text.note-text-body--adaptive {
+  margin-top: 0;
+  /* Let short notes match content; cap + scroll still apply via max-height on the shared class. */
+  min-height: 0;
+}
+
+.note textarea.note-text-body--adaptive {
+  resize: none;
+  /* Beats later `.note textarea { min-height: 74px }` so auto-resize can go below 74 when there is text. */
+  min-height: 0;
+}
+
+.note .note-text-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  width: 22px;
+  height: 22px;
+  /* Pull into the visual corner like a native textarea grip (slight overlap past the inner edge). */
+  margin: 0 -7px -7px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #6b7280;
+  cursor: ns-resize;
+  touch-action: none;
+  box-shadow: none;
+}
+
+.note .note-text-resize-handle svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.note .note-text-resize-handle:hover {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.note .note-text-resize-handle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+  color: #2563eb;
+}
+
 .note-readonly-character {
   border: 1px solid rgba(17, 24, 39, 0.15);
   border-radius: 8px;
@@ -2800,6 +2871,16 @@ a:hover {
   align-items: center;
   gap: 10px;
   margin-top: 10px;
+}
+
+.modal-actions.modal-actions-stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.modal-actions.modal-actions-stack .ghost-button {
+  width: 100%;
+  justify-content: center;
 }
 
 .factory-reset-confirm-checkbox {

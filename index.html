@@ -953,6 +953,7 @@
               <div id="options-menu" class="options-menu hidden">
                 <button id="open-resize-modal" class="menu-item menu-item-desktop-only" type="button">Resize columns</button>
                 <button id="toggle-wrap-columns" class="menu-item menu-item-desktop-only" type="button">Wrap columns: Off</button>
+                <button id="open-note-height-mode-modal" class="menu-item menu-item-desktop-only" type="button">Note height mode</button>
               </div>
             </div>
           </div>
@@ -1024,6 +1025,22 @@
           <p id="column-width-value" class="board-meta"></p>
           <div class="modal-actions">
             <button id="close-resize-modal" class="ghost-button" type="button">Close</button>
+          </div>
+        </div>
+      </div>
+      <div id="note-height-mode-modal-overlay" class="modal-overlay hidden">
+        <div
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="note-height-mode-title"
+          aria-describedby="note-height-mode-current"
+        >
+          <h2 id="note-height-mode-title">Note height mode</h2>
+          <p id="note-height-mode-current" class="subtitle"></p>
+          <div class="modal-actions modal-actions-stack">
+            <button id="note-height-mode-switch-btn" class="ghost-button" type="button"></button>
+            <button id="close-note-height-mode-modal" class="ghost-button" type="button">Close</button>
           </div>
         </div>
       </div>

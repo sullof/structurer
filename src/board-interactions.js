@@ -17,6 +17,41 @@ export function createBoardInteractionsController({
   let phaseDropPreviewIndex = null;
   let resizingNoteId = null;
 
+  /** HTML5 drag does not bubble `dragover` to `#board` when the pointer is over the header/footer; scroll the window from `document` instead. */
+  function onDocumentDragOverAutoScroll(event) {
+    if (draggedNoteId === null && draggedPhaseIndex === null) return;
+    const y = event.clientY;
+    const margin = 72;
+    const innerH = window.innerHeight;
+    const maxStep = 28;
+    if (y < margin) {
+      const t = y <= 0 ? 1 : 1 - y / margin;
+      window.scrollBy(0, -Math.max(6, Math.ceil(maxStep * t)));
+    } else if (y > innerH - margin) {
+      const t = y >= innerH ? 1 : 1 - (innerH - y) / margin;
+      window.scrollBy(0, Math.max(6, Math.ceil(maxStep * t)));
+    }
+  }
+
+  function attachDocumentDragAutoScroll() {
+    document.addEventListener("dragover", onDocumentDragOverAutoScroll, { passive: true });
+  }
+
+  function detachDocumentDragAutoScroll() {
+    document.removeEventListener("dragover", onDocumentDragOverAutoScroll, { passive: true });
+  }
+
+  function scrollToNewNoteAndFocusTextarea(noteId) {
+    const el = boardEl.querySelector(`.note[data-id="${noteId}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    const ta = el.querySelector('textarea[data-role="text"]');
+    if (!ta) return;
+    ta.focus({ preventScroll: true });
+    const len = ta.value.length;
+    ta.setSelectionRange(len, len);
+  }
+
   function getDropIndex(notesContainer, pointerY) {
     const candidateNotes = [...notesContainer.querySelectorAll(".note")].filter(
       (noteEl) => Number(noteEl.dataset.id) !== draggedNoteId,
@@ -129,6 +164,10 @@ export function createBoardInteractionsController({
     setEditingNoteId(newNoteId);
     touchBoard(board);
     renderEditor();
+    const id = newNoteId;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => scrollToNewNoteAndFocusTextarea(id));
+    });
   }
 
   boardEl.addEventListener("dragstart", (event) => {
@@ -143,6 +182,7 @@ export function createBoardInteractionsController({
       draggedPhaseIndex = Number(columnEl.dataset.column);
       event.dataTransfer.effectAllowed = "move";
       event.dataTransfer.setData("text/plain", `phase:${draggedPhaseIndex}`);
+      attachDocumentDragAutoScroll();
       return;
     }
     if (target.closest(".note")) {
@@ -153,6 +193,7 @@ export function createBoardInteractionsController({
         noteEl.classList.add("is-dragging");
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", String(draggedNoteId));
+        attachDocumentDragAutoScroll();
         return;
       }
       event.preventDefault();
@@ -169,6 +210,7 @@ export function createBoardInteractionsController({
     noteEl.classList.add("is-dragging");
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", String(draggedNoteId));
+    attachDocumentDragAutoScroll();
   });
 
   boardEl.addEventListener("dragover", (event) => {
@@ -243,6 +285,7 @@ export function createBoardInteractionsController({
   });
 
   boardEl.addEventListener("dragend", () => {
+    detachDocumentDragAutoScroll();
     draggedNoteId = null;
     draggedPhaseIndex = null;
     armedNoteDragId = null;
@@ -267,6 +310,10 @@ export function createBoardInteractionsController({
   boardEl.addEventListener("mouseup", (event) => {
     const target = event.target;
     if (!target.matches('textarea[data-role="text"]') || resizingNoteId === null) return;
+    if (target.classList.contains("note-text-body--adaptive")) {
+      resizingNoteId = null;
+      return;
+    }
     const board = getCurrentBoard();
     if (!board) return;
     const note = board.notes.find((item) => item.id === resizingNoteId);

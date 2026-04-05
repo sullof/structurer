@@ -81,6 +81,8 @@ const initialSettings = loadSettings();
 let columnMinWidth = initialSettings.columnMinWidth ?? DEFAULT_COLUMN_WIDTH;
 let wrapColumns = initialSettings.wrapColumns ?? true;
 let showDemoBoards = initialSettings.showDemoBoards ?? true;
+/** When true: full-height note bodies and native textarea resize while editing only (classic). */
+let legacyFullHeightNoteCards = initialSettings.legacyFullHeightNoteCards ?? false;
 
 const landingView = document.querySelector("#landing-view");
 const homeView = document.querySelector("#home-view");
@@ -243,6 +245,7 @@ const optionsButton = document.querySelector("#options-button");
 const optionsMenu = document.querySelector("#options-menu");
 const openResizeModalBtn = document.querySelector("#open-resize-modal");
 const toggleWrapColumnsBtn = document.querySelector("#toggle-wrap-columns");
+const openNoteHeightModeMenuBtn = document.querySelector("#open-note-height-mode-modal");
 const editorBoardActionsBtn = document.querySelector("#editor-board-actions-btn");
 const groupViewActionsBtn = document.querySelector("#group-view-actions-btn");
 const modalEditNoteTypesBtn = document.querySelector("#modal-edit-note-types");
@@ -261,6 +264,9 @@ const resetDemoDataBtn = document.querySelector("#reset-demo-data");
 const resetAppDataBtn = document.querySelector("#reset-app-data");
 const resizeModalOverlay = document.querySelector("#resize-modal-overlay");
 const closeResizeModalBtn = document.querySelector("#close-resize-modal");
+const noteHeightModeCurrentEl = document.querySelector("#note-height-mode-current");
+const noteHeightModeSwitchBtn = document.querySelector("#note-height-mode-switch-btn");
+const closeNoteHeightModeModalBtn = document.querySelector("#close-note-height-mode-modal");
 const columnWidthSlider = document.querySelector("#column-width-slider");
 const columnWidthValue = document.querySelector("#column-width-value");
 const editNoteTypesModalOverlay = document.querySelector("#edit-note-types-modal-overlay");
@@ -384,7 +390,12 @@ function loadSettings() {
 }
 
 function saveSettings() {
-  saveSettingsToStorage(SETTINGS_KEY, { columnMinWidth, wrapColumns, showDemoBoards });
+  saveSettingsToStorage(SETTINGS_KEY, {
+    columnMinWidth,
+    wrapColumns,
+    showDemoBoards,
+    legacyFullHeightNoteCards,
+  });
 }
 
 function loadCustomStructures() {
@@ -951,6 +962,54 @@ function applyColumnWidth() {
 function applyWrapColumns() {
   boardEl.classList.toggle("wrap-columns", wrapColumns);
   toggleWrapColumnsBtn.textContent = `Wrap columns: ${wrapColumns ? "On" : "Off"}`;
+}
+
+function getAdaptiveNoteBodyCapPx() {
+  return Math.min(520, Math.floor(window.innerHeight * 0.7));
+}
+
+/** Pixel height for adaptive textarea when `customHeight` is unset: fit content up to cap; empty note keeps a small tap target. */
+function adaptiveNoteTextareaHeightPx(note, scrollHeight, cap) {
+  const hasText = String(note?.text ?? "").trim().length > 0;
+  const minEmpty = 56;
+  return Math.max(hasText ? 0 : minEmpty, Math.min(scrollHeight, cap));
+}
+
+/** Target height if this note used automatic sizing (no customHeight). Used to clear customHeight when user drags back to “natural”. */
+function getAdaptiveNoteBodyNaturalTargetPx(note, body) {
+  const cap = getAdaptiveNoteBodyCapPx();
+  if (body.matches("textarea")) {
+    return Math.round(adaptiveNoteTextareaHeightPx(note, body.scrollHeight, cap));
+  }
+  return Math.round(Math.min(body.scrollHeight, cap));
+}
+
+function fillNoteHeightModeModal() {
+  if (!noteHeightModeCurrentEl || !noteHeightModeSwitchBtn) return;
+  if (legacyFullHeightNoteCards) {
+    noteHeightModeCurrentEl.textContent =
+      "You're in full height mode: each note grows to show all of its text. While editing, drag the bottom-right corner of the textarea to resize the card.";
+    noteHeightModeSwitchBtn.textContent = "Switch to capped height (long notes scroll inside)";
+  } else {
+    noteHeightModeCurrentEl.textContent =
+      "You're in capped height mode: long notes stop at about the viewport height and scroll inside the card. Drag the resize grip in the bottom-right corner of a note to change that note's height.";
+    noteHeightModeSwitchBtn.textContent = "Switch to full height (notes grow with all text)";
+  }
+}
+
+function openNoteHeightModeModal() {
+  const el = document.getElementById("note-height-mode-modal-overlay");
+  if (!el) return;
+  fillNoteHeightModeModal();
+  el.classList.remove("hidden");
+  el.setAttribute("aria-hidden", "false");
+}
+
+function closeNoteHeightModeModal() {
+  const el = document.getElementById("note-height-mode-modal-overlay");
+  if (!el) return;
+  el.classList.add("hidden");
+  el.setAttribute("aria-hidden", "true");
 }
 
 function escapeHtml(text) {
@@ -1809,6 +1868,7 @@ function renderEditor() {
               archetypeById(note.archetype || "none"),
               noteTypeById(note.kind),
               note.id === editingId,
+              legacyFullHeightNoteCards,
             ),
           )
           .join("")}</div>
@@ -1838,8 +1898,17 @@ function autoResizeTextareas() {
     const noteId = Number(textarea.dataset.noteId);
     const note = board.notes.find((item) => item.id === noteId);
     if (!note || note.customHeight) return;
+    if (legacyFullHeightNoteCards || !textarea.classList.contains("note-text-body--adaptive")) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.max(textarea.scrollHeight, 74)}px`;
+      return;
+    }
+    const cap = getAdaptiveNoteBodyCapPx();
     textarea.style.height = "auto";
-    textarea.style.height = `${Math.max(textarea.scrollHeight, 74)}px`;
+    const sh = textarea.scrollHeight;
+    const h = adaptiveNoteTextareaHeightPx(note, sh, cap);
+    textarea.style.height = `${h}px`;
+    textarea.style.overflowY = sh > cap ? "auto" : "hidden";
   });
 }
 
@@ -2875,7 +2944,7 @@ function exportFullAppBackup() {
     appVersion: packageJson.version || "",
     data: {
       boards,
-      settings: { columnMinWidth, wrapColumns, showDemoBoards },
+      settings: { columnMinWidth, wrapColumns, showDemoBoards, legacyFullHeightNoteCards },
       customStructures,
       customStructureActivity,
       customArchetypes,
@@ -4950,6 +5019,35 @@ toggleWrapColumnsBtn.addEventListener("click", () => {
   saveSettings();
 });
 
+if (openNoteHeightModeMenuBtn) {
+  openNoteHeightModeMenuBtn.addEventListener("click", () => {
+    closeOptionsMenu();
+    openNoteHeightModeModal();
+  });
+}
+
+if (noteHeightModeSwitchBtn) {
+  noteHeightModeSwitchBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    legacyFullHeightNoteCards = !legacyFullHeightNoteCards;
+    saveSettings();
+    if (getCurrentBoard()) renderEditor();
+    closeNoteHeightModeModal();
+    requestAnimationFrame(() => {
+      closeNoteHeightModeModal();
+    });
+  });
+}
+
+if (closeNoteHeightModeModalBtn) {
+  closeNoteHeightModeModalBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeNoteHeightModeModal();
+  });
+}
+
 if (editorBoardActionsBtn) {
   editorBoardActionsBtn.addEventListener("click", () => {
     const board = getCurrentBoard();
@@ -5635,6 +5733,78 @@ columnWidthSlider.addEventListener("input", (event) => {
   saveSettings();
 });
 
+let noteTextResizeState = null;
+
+function finishNoteTextResize(event, persist) {
+  if (!noteTextResizeState || event.pointerId !== noteTextResizeState.pointerId) return;
+  const st = noteTextResizeState;
+  noteTextResizeState = null;
+  try {
+    st.grip.releasePointerCapture(event.pointerId);
+  } catch {
+    /* already released */
+  }
+  if (!persist) return;
+  const board = getCurrentBoard();
+  if (!board) return;
+  const note = board.notes.find((n) => n.id === st.noteId);
+  if (!note) return;
+  const finalH = Math.round(st.body.offsetHeight);
+  const natural = getAdaptiveNoteBodyNaturalTargetPx(note, st.body);
+  const tolerance = 12;
+  if (Math.abs(finalH - natural) <= tolerance) {
+    delete note.customHeight;
+    st.body.style.height = "";
+    st.body.style.maxHeight = "";
+    st.body.style.overflowY = "";
+    if (st.body.matches("textarea")) {
+      autoResizeTextareas();
+    }
+  } else {
+    note.customHeight = finalH;
+  }
+  note.updatedAt = Date.now();
+  touchBoard(board);
+}
+
+boardEl.addEventListener("pointerdown", (event) => {
+  if (legacyFullHeightNoteCards) return;
+  const grip = event.target.closest('[data-role="note-text-resize-grip"]');
+  if (!grip) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const body = grip.previousElementSibling;
+  if (!(body instanceof HTMLElement) || !body.classList.contains("note-text-body")) return;
+  const noteId = Number(grip.dataset.noteId);
+  const board = getCurrentBoard();
+  if (!board) return;
+  const note = board.notes.find((n) => n.id === noteId);
+  if (!note) return;
+  const startH = body.offsetHeight;
+  const startY = event.clientY;
+  noteTextResizeState = { noteId, body, grip, startH, startY, pointerId: event.pointerId };
+  grip.setPointerCapture(event.pointerId);
+});
+
+boardEl.addEventListener("pointermove", (event) => {
+  if (!noteTextResizeState || event.pointerId !== noteTextResizeState.pointerId) return;
+  const { body, startH, startY } = noteTextResizeState;
+  const minH = 28;
+  const dy = event.clientY - startY;
+  const next = Math.max(minH, startH + dy);
+  body.style.height = `${next}px`;
+  body.style.maxHeight = "none";
+  body.style.overflowY = "auto";
+});
+
+boardEl.addEventListener("pointerup", (event) => {
+  finishNoteTextResize(event, true);
+});
+
+boardEl.addEventListener("pointercancel", (event) => {
+  finishNoteTextResize(event, true);
+});
+
 boardEl.addEventListener("input", (event) => {
   const target = event.target;
   const noteEl = target.closest(".note");
@@ -5650,7 +5820,15 @@ boardEl.addEventListener("input", (event) => {
     note.updatedAt = Date.now();
     if (!note.customHeight) {
       target.style.height = "auto";
-      target.style.height = `${Math.max(target.scrollHeight, 74)}px`;
+      if (legacyFullHeightNoteCards || !target.classList.contains("note-text-body--adaptive")) {
+        target.style.height = `${Math.max(target.scrollHeight, 74)}px`;
+      } else {
+        const cap = getAdaptiveNoteBodyCapPx();
+        const sh = target.scrollHeight;
+        const h = adaptiveNoteTextareaHeightPx(note, sh, cap);
+        target.style.height = `${h}px`;
+        target.style.overflowY = sh > cap ? "auto" : "hidden";
+      }
     }
   } else if (target.dataset.role === "character-name") {
     note.characterName = target.value;
@@ -5700,7 +5878,11 @@ document.addEventListener("click", (event) => {
   if (!event.target.closest(".phase-head") && !event.target.closest("#add-note-modal-overlay")) {
     boardNoteActions.closeAllColumnMenus();
   }
-  if (!event.target.closest(".note") && !event.target.closest("#add-note-modal-overlay")) {
+  if (
+    !event.target.closest(".note") &&
+    !event.target.closest("#add-note-modal-overlay") &&
+    !event.target.closest("#note-height-mode-modal-overlay")
+  ) {
     if (editingNoteId !== null) {
       editingNoteId = null;
       renderEditor();
@@ -5717,6 +5899,16 @@ resizeModalOverlay.addEventListener("click", (event) => {
     closeResizeModal();
   }
 });
+
+(() => {
+  const noteHeightOverlay = document.getElementById("note-height-mode-modal-overlay");
+  if (!noteHeightOverlay) return;
+  noteHeightOverlay.addEventListener("click", (event) => {
+    if (event.target === noteHeightOverlay) {
+      closeNoteHeightModeModal();
+    }
+  });
+})();
 
 boardActionsModalOverlay.addEventListener("click", (event) => {
   if (event.target === boardActionsModalOverlay) {
