@@ -15,4 +15,4 @@ The **agent** must:
 
 **Dates:** use the real calendar day when writing bullets (`Today's date:` in user info or the user’s message).
 
-**Never** retroactively edit old `HISTORY.md` sections for past shipped versions.
+**Immutable past:** do **not** change, reword, merge, or delete bullets under **older** release headers in `HISTORY.md` (anything below the current top block). That file is a historical record—only **append** under the **current** version section. If something was wrong in the past, fix it in a **new** release note, not by editing history.
