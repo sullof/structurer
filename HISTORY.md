@@ -1,13 +1,11 @@
 # History
 
-**1.15.8** - 2026-04-05
-- **404:** Unknown routes no longer redirect silently to the landing page or dashboard. The app shows a **Page not found** screen and keeps the URL in the address bar. Paths that look like a story, phase, or series link (e.g. `/my_story`, `/group/…`, `/slug/phase/1`) get a second message explaining that data lives only in the sender’s browser and that recipients need **JSON export/import**; other bad URLs get a short generic message. **Go to dashboard**, **Back to home**, and (sharing variant) **Open Help** (`index.html`, `navigation.js`, `main.js`, `styles.css`).
-
 **1.15.7** - 2026-04-05
 - **Dashboard — import story:** a single entry under **⋯ Actions → Story**: **Import/merge a story** (removed the separate **Import/merge pasting JSON** action). The follow-up dialog title is **Import/merge a story**; buttons are **Import from a file** and **Paste story JSON**. Help FAQ and **Build AI import prompt** steps updated to match.
 - **Dashboard — import custom structures:** same pattern as stories — one **⋯ Actions → Structure** command **Import/merge custom structures**, then a chooser (**Import from a file** / **Paste custom structures JSON**). Removed the direct **Import/merge pasting JSON** action; paste modal title is **Paste custom structures JSON**. **`#import-custom-structures-input`** lives in the chooser modal (`main.js`, `index.html`).
 - **Import hygiene (story + custom structures):** pasted or file text is trimmed to the substring from the **first `{`** through the **last `}`** before `JSON.parse`, so common LLM wrappers (e.g. `json` + fenced blocks, intro/outro) do not break import (`stripLeadingTrailingOutsideJsonObject` in `main.js`).
 - **Help FAQ:** *I created a story or a custom structure. Can I share it just by sending a link?* — explains local-only storage, that URLs do not transfer data, and points to **story export/import** and **Export / Import custom structures** for templates (`index.html`).
+- **404:** Unknown routes no longer redirect silently to the landing page or dashboard. The app shows a **Page not found** screen and keeps the URL in the address bar. Paths that look like a story, phase, or series link (e.g. `/my_story`, `/group/…`, `/slug/phase/1`) get a second message explaining that data lives only in the sender’s browser and that recipients need **JSON export/import**; other bad URLs get a short generic message. **Go to dashboard**, **Back to home**, and (sharing variant) **Open Help**; no top Back/breadcrumb bar on that screen (`index.html`, `navigation.js`, `main.js`, `styles.css`).
 
 **1.15.6** - 2026-04-04
 - **Series demo:** **The Matrix Trilogy** is created again on load when the three Matrix demo boards exist; `ensureMatrixTrilogySeriesDemo` now matches the third film title **The Matrix Revolutions** (plural), same as `matrix-revolution-save-the-cat-demo.json`. Landing **Demo map** and **README** use the same spelling.
