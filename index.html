@@ -501,9 +501,14 @@
                 <strong>Paste story JSON</strong>).
               </p>
               <p>
-                To share a <strong>custom structure template</strong> (phases only, not note content), use dashboard
-                <strong>⋯ Actions → Structure → Export custom structures</strong> and send that JSON; the recipient uses
-                <strong>Import/merge custom structures</strong>.
+                To share a <strong>structure template</strong> (phases only, not note content), open it from
+                <strong>Available structures</strong> on the dashboard, then use <strong>Export</strong> in the preview and
+                send that JSON. The recipient uses <strong>⋯ Actions → Structure → Import/merge custom structures</strong>.
+                The file uses <code>exportType: "structurer.structure"</code> (legacy extension packs still use
+                <code>structurer.custom-structures</code>). Built-in templates keep their real <code>id</code> (e.g.
+                <code>hero_journey</code>). On import, any entry whose <code>id</code> is already a built-in framework in
+                the recipient’s app is <strong>skipped</strong> so you do not get a duplicate; if that id is not built-in
+                there, it is merged into custom structures like any other template.
               </p>
             </div>
           </details>
@@ -676,10 +681,11 @@
             <ol class="ai-prompt-json-followup-steps">
               <li>Copy the model’s answer as plain JSON (strip markdown code fences if it wrapped the payload).</li>
               <li>
-                The built-in prompt asks for root <code>"aiAnalysisImport": true</code>. Keep that field so Structurer tags
-                the board as <strong>AI analysis</strong>, shows an <strong>AI analysis</strong> badge, and includes it when
-                you use <strong>Hide demos and AI analyses</strong> on the dashboard. If the model omits it, the import is
-                treated like a normal story.
+                The built-in prompt asks for <code>"schemaVersion": 3</code>, a canonical <code>"structureId"</code> (app
+                framework id), a human-readable <code>"structure"</code> name, and root
+                <code>"aiAnalysisImport": true</code>. Keep those fields so Structurer loads the correct columns and tags
+                the board as <strong>AI analysis</strong> (badge + <strong>Hide demos and AI analyses</strong>). If the
+                model omits <code>aiAnalysisImport</code>, the import is treated like a normal story.
               </li>
               <li>
                 On the dashboard, open <strong>⋯ Actions → Story → Import/merge a story</strong>, then
@@ -1061,7 +1067,6 @@
               <summary class="dashboard-actions-section-summary">Structure</summary>
               <div class="dashboard-actions-section-body">
                 <button id="open-create-structure-action" class="ghost-button" type="button">Add a structure not listed</button>
-                <button id="dashboard-export-structures-action" class="ghost-button" type="button">Export custom structures</button>
                 <button id="dashboard-import-structures-action" class="ghost-button" type="button">
                   Import/merge custom structures
                 </button>
@@ -1181,6 +1186,15 @@
           <ol id="structure-preview-modal-phases" class="structure-preview-phases"></ol>
           <div class="modal-actions">
             <button id="close-structure-preview-modal" type="button" class="ghost-button">Close</button>
+            <button
+              id="structure-preview-modal-export"
+              type="button"
+              class="ghost-button"
+              hidden
+              aria-label="Export this structure as JSON"
+            >
+              Export
+            </button>
           </div>
         </div>
       </div>
@@ -1189,7 +1203,8 @@
         <div class="modal" role="dialog" aria-modal="true" aria-label="Import/merge custom structures">
           <h2>Import/merge custom structures</h2>
           <p class="subtitle">
-            Valid <code>structurer.custom-structures</code> JSON (dashboard export or approved extension pack).
+            Valid <code>structurer.structure</code> JSON (preview export) or legacy <code>structurer.custom-structures</code>
+            (extension packs).
           </p>
           <div class="import-actions">
             <button id="import-custom-structures-file-button" class="ghost-button" type="button">Import from a file</button>
@@ -1207,7 +1222,9 @@
       <div id="dashboard-import-structures-paste-modal-overlay" class="modal-overlay hidden">
         <div class="modal" role="dialog" aria-modal="true" aria-label="Paste custom structures JSON">
           <h2>Paste custom structures JSON</h2>
-          <p class="subtitle">Paste a valid <code>structurer.custom-structures</code> JSON payload.</p>
+          <p class="subtitle">
+            Paste a valid <code>structurer.structure</code> or <code>structurer.custom-structures</code> JSON payload.
+          </p>
           <form id="import-structures-paste-form">
             <textarea
               id="import-structures-paste-text"
@@ -1241,7 +1258,10 @@
       <div id="dashboard-import-story-paste-modal-overlay" class="modal-overlay hidden">
         <div class="modal" role="dialog" aria-modal="true" aria-label="Import/merge pasting JSON (story)">
           <h2>Import/merge pasting JSON</h2>
-          <p class="subtitle">Paste a story JSON payload (the same shape as <strong>Export story</strong> or the built-in demos).</p>
+          <p class="subtitle">
+            Paste a story JSON payload (same shape as <strong>Export story</strong>, built-in demos, or older exports using
+            only the <code>structure</code> name). New exports use <code>schemaVersion</code> 3 and <code>structureId</code>.
+          </p>
           <form id="import-story-paste-form">
             <textarea
               id="import-story-paste-text"

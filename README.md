@@ -18,7 +18,7 @@ The web version keeps your work private in your browser `localStorage`: no user 
 - Create and open multiple stories
 - Choose structure per story at creation time
 - Create custom structures (saved locally) with user-defined phase rows
-- Export custom structures to JSON and import/merge approved custom-structure packs (file or pasted JSON)
+- Export any catalog structure from the preview (**Export**) as **`structurer.structure`** JSON; import also accepts legacy **`structurer.custom-structures`** packs. Entries whose **id** is already a built-in in this app are skipped on import
 - Story routes by slug (example: `/gatti_come_spine`)
 - Home route at `/` (landing)
 - Dashboard route at `/dashboard`

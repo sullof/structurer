@@ -50,6 +50,12 @@ import { validateStructureAuthor, validateStructureDescription } from "./structu
 const loadedBoards = loadBoards();
 let boards = loadedBoards || [];
 const GROUPS_KEY = "structurer.groups.v1";
+/** Latest `schemaVersion` for `exportType: structurer.story` exports and AI prompt output. */
+const STORY_JSON_SCHEMA_LATEST = 3;
+/** Structure template JSON from the dashboard preview (built-in or user catalog). */
+const STRUCTURES_PACK_EXPORT_TYPE = "structurer.structure";
+/** Legacy packs and community extensions. */
+const STRUCTURES_PACK_EXPORT_TYPE_LEGACY = "structurer.custom-structures";
 const DEMO_BOARD_IDS_KEY = "structurer.demoBoardIds.v1";
 const CUSTOM_STRUCTURE_ACTIVITY_KEY = "structurer.customStructureActivity.v1";
 const issuedUids = new Set();
@@ -166,10 +172,12 @@ const structurePreviewModalTitleEl = document.querySelector("#structure-preview-
 const structurePreviewModalMetaEl = document.querySelector("#structure-preview-modal-meta");
 const structurePreviewModalPhasesEl = document.querySelector("#structure-preview-modal-phases");
 const closeStructurePreviewModalBtn = document.querySelector("#close-structure-preview-modal");
+const structurePreviewModalExportBtn = document.querySelector("#structure-preview-modal-export");
 const dashboardResetDemoActionBtn = document.querySelector("#dashboard-reset-demo-action");
 const dashboardFactoryResetActionBtn = document.querySelector("#dashboard-factory-reset-action");
 const dashboardExportBackupActionBtn = document.querySelector("#dashboard-export-backup-action");
-const dashboardExportStructuresActionBtn = document.querySelector("#dashboard-export-structures-action");
+/** Set while structure preview is open; used by Export (custom catalog structures only). */
+let structurePreviewExportTargetId = null;
 const dashboardImportStructuresActionBtn = document.querySelector("#dashboard-import-structures-action");
 const dashboardRemoveStructuresActionBtn = document.querySelector("#dashboard-remove-structures-action");
 const dashboardRemoveStructuresModalOverlay = document.querySelector("#dashboard-remove-structures-modal-overlay");
@@ -752,7 +760,11 @@ function normalizePhasesFromAlteredStoryImport(phases, pathLabel = "alteredStruc
       return normalizeImportedStructurePhase(phase, `${pathLabel}[${index}]`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      throw new Error(msg.replace(/^Invalid custom structures file/, "Invalid story JSON"));
+      throw new Error(
+        msg
+          .replace(/^Invalid custom structures file/, "Invalid story JSON")
+          .replace(/^Invalid structures file/, "Invalid story JSON"),
+      );
     }
   });
 }
@@ -2397,10 +2409,11 @@ function boardToExportPayload(board) {
   );
   const payload = {
     exportType: "structurer.story",
-    schemaVersion: 1,
+    schemaVersion: STORY_JSON_SCHEMA_LATEST,
     uid: board.uid,
     updatedAt: board.updatedAt,
     title: board.title,
+    structureId: structure.id,
     structure: structure.name,
     phaseOrder: getBoardPhaseOrder(board),
     phaseUids,
@@ -2469,6 +2482,16 @@ function downloadJsonFile(payload, filename) {
   URL.revokeObjectURL(url);
 }
 
+/** Local date/time for structure export filenames: YYMMDDTHHmm (e.g. 260405T1942). */
+function formatStructureExportFilenameTimestamp(d = new Date()) {
+  const yy = String(d.getFullYear() % 100).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${yy}${mm}${dd}T${hh}${mi}`;
+}
+
 function normalizeStructureFingerprint(name, phases) {
   const normalizedName = String(name || "")
     .trim()
@@ -2482,55 +2505,88 @@ function normalizeStructureFingerprint(name, phases) {
   return `${normalizedName}::${normalizedPhases}`;
 }
 
-function exportCustomStructures() {
+function customStructureToExportRow(structure) {
+  const row = {
+    id: structure.id,
+    uid: structure.uid,
+    name: structure.name,
+    phases: Array.isArray(structure.phases) ? structure.phases : [],
+    updatedAt: Number.isFinite(structure.updatedAt) ? structure.updatedAt : Date.now(),
+  };
+  if (typeof structure.description === "string" && structure.description.trim()) {
+    row.description = structure.description.trim();
+  }
+  if (typeof structure.author === "string" && structure.author.trim()) {
+    row.author = structure.author.trim();
+  }
+  return row;
+}
+
+/**
+ * Download one structure from the preview modal as `structurer.structure` JSON.
+ * Ids are unchanged: user-added rows keep stored id/uid; built-ins use canonical `structure.id` and `uid` when set, else
+ * `uid` equals `id`. Import accepts this type and legacy `structurer.custom-structures`; entries whose id is a local built-in
+ * are skipped (no duplicate custom row). Download filename: `{id}.json` (same idea as extension packs).
+ */
+function exportStructurePreviewTemplate(structureId) {
+  const structure = getAllStructures()[structureId];
+  if (!structure || isAlteredStructureEntry(structure)) return;
+
+  const isUserCatalogCustom = customStructures.some((s) => s.id === structureId && !isAlteredStructureEntry(s));
+  let row;
+  if (isUserCatalogCustom) {
+    row = customStructureToExportRow(structure);
+  } else {
+    const uid =
+      typeof structure.uid === "string" && structure.uid.trim() ? structure.uid.trim() : structure.id;
+    row = {
+      id: structure.id,
+      uid,
+      name: structure.name,
+      phases: clonePhasesDeepForAlteredFork(structure.phases),
+      updatedAt: Date.now(),
+    };
+    if (typeof structure.description === "string" && structure.description.trim()) {
+      row.description = structure.description.trim();
+    }
+    if (typeof structure.author === "string" && structure.author.trim()) {
+      row.author = structure.author.trim();
+    }
+  }
+
   const payload = {
-    exportType: "structurer.custom-structures",
+    exportType: STRUCTURES_PACK_EXPORT_TYPE,
     schemaVersion: 2,
     exportedAt: Date.now(),
     appVersion: packageJson.version || "",
-    structures: customStructures.filter((s) => !isAlteredStructureEntry(s)).map((structure) => {
-      const row = {
-        id: structure.id,
-        uid: structure.uid,
-        name: structure.name,
-        phases: Array.isArray(structure.phases) ? structure.phases : [],
-        updatedAt: Number.isFinite(structure.updatedAt) ? structure.updatedAt : Date.now(),
-      };
-      if (typeof structure.description === "string" && structure.description.trim()) {
-        row.description = structure.description.trim();
-      }
-      if (typeof structure.author === "string" && structure.author.trim()) {
-        row.author = structure.author.trim();
-      }
-      return row;
-    }),
+    structures: [row],
   };
-  const stamp = new Date().toISOString().replace(/[:]/g, "-").slice(0, 19);
-  downloadJsonFile(payload, `structurer-custom-structures-${stamp}.json`);
+  const filename = `${structure.id || "structure"}.json`;
+  downloadJsonFile(payload, filename);
 }
 
 function normalizeImportedStructurePhase(phase, pathLabel) {
   if (typeof phase === "string") {
     const title = String(phase || "").trim();
     if (!title) {
-      throw new Error(`Invalid custom structures file: ${pathLabel} must be a non-empty string or object with title.`);
+      throw new Error(`Invalid structures file: ${pathLabel} must be a non-empty string or object with title.`);
     }
     return title;
   }
   if (phase && typeof phase === "object" && !Array.isArray(phase)) {
     const title = String(phase.title ?? phase.name ?? "").trim();
     if (!title) {
-      throw new Error(`Invalid custom structures file: ${pathLabel} must include a non-empty title.`);
+      throw new Error(`Invalid structures file: ${pathLabel} must include a non-empty title.`);
     }
     const description = typeof phase.description === "string" ? phase.description.trim() : "";
     return description ? { title, description } : { title };
   }
-  throw new Error(`Invalid custom structures file: ${pathLabel} must be a string or { title, description? }.`);
+  throw new Error(`Invalid structures file: ${pathLabel} must be a string or { title, description? }.`);
 }
 
 /**
  * Remove LLM/chat noise (e.g. `json` + ``` fences, intro text) by keeping the span from the first `{` to the last `}`.
- * Structurer story and custom-structures exports are a single root JSON object.
+ * Structurer story and structure-template exports are a single root JSON object.
  */
 function stripLeadingTrailingOutsideJsonObject(rawText) {
   const s = String(rawText ?? "").trim();
@@ -2541,17 +2597,58 @@ function stripLeadingTrailingOutsideJsonObject(rawText) {
   return s.slice(open, close + 1);
 }
 
-function parseImportedCustomStructures(rawText) {
+function normalizeImportedStorySchemaVersion(parsed) {
+  const v = parsed.schemaVersion;
+  if (v == null) return 1;
+  if (v === 1 || v === 2 || v === 3) return v;
+  throw new Error(
+    "Invalid story JSON: unsupported schemaVersion (expected 1, 2, or 3; omit the field for legacy imports).",
+  );
+}
+
+/**
+ * Resolves catalog structure for import (not used when `alteredStructure` is present).
+ * Versions 1–2: match by root `structure` display name (legacy). Version 3: `structureId` only.
+ */
+function resolveStoryImportCatalogStructure(parsed, storySchemaVersion) {
+  if (storySchemaVersion === STORY_JSON_SCHEMA_LATEST) {
+    const sid = typeof parsed.structureId === "string" ? parsed.structureId.trim() : "";
+    if (!sid) {
+      throw new Error(
+        'Invalid story JSON: schemaVersion 3 requires a non-empty "structureId" matching a structure installed in this browser.',
+      );
+    }
+    const entry = getAllStructures()[sid];
+    if (!entry) {
+      throw new Error(
+        `No structure with id "${sid}" is installed in this browser. If you expected a built-in framework, use Reset demos on the dashboard to restore defaults, or import the matching custom structures file first.`,
+      );
+    }
+    return entry;
+  }
+  const structureEntry = getCatalogStructureList().find((item) => item.name === parsed.structure);
+  return structureEntry || BUILTIN_STRUCTURES.hero_journey;
+}
+
+function parseStructureTemplatesPack(rawText) {
   const parsed = JSON.parse(stripLeadingTrailingOutsideJsonObject(rawText));
-  if (!parsed || typeof parsed !== "object" || parsed.exportType !== "structurer.custom-structures") {
-    throw new Error("Invalid custom structures file.");
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Invalid structures file.");
+  }
+  const exportType = parsed.exportType;
+  const isLegacy = exportType === STRUCTURES_PACK_EXPORT_TYPE_LEGACY;
+  const isUnified = exportType === STRUCTURES_PACK_EXPORT_TYPE;
+  if (!isLegacy && !isUnified) {
+    throw new Error(
+      'Invalid structures file: unsupported exportType (expected "structurer.structure" or legacy "structurer.custom-structures").',
+    );
   }
   const schemaVersion = parsed.schemaVersion;
   if (schemaVersion != null && schemaVersion !== 1 && schemaVersion !== 2) {
-    throw new Error("Invalid custom structures file: unsupported schemaVersion (expected 1 or 2).");
+    throw new Error("Invalid structures file: unsupported schemaVersion (expected 1 or 2).");
   }
   if (!Array.isArray(parsed.structures) || parsed.structures.length === 0) {
-    throw new Error("Invalid custom structures file: structures must be a non-empty array.");
+    throw new Error("Invalid structures file: structures must be a non-empty array.");
   }
   const builtInIds = new Set(Object.keys(BUILTIN_STRUCTURES));
   const localByUid = new Map(customStructures.map((item) => [item.uid, item]));
@@ -2559,9 +2656,11 @@ function parseImportedCustomStructures(rawText) {
   const seenIds = new Set();
   const seenUids = new Set();
   const seenFingerprints = new Set();
+  const fileLabel = isLegacy ? "Invalid custom structures file" : "Invalid structures file";
+
   const normalized = parsed.structures.map((item, index) => {
     if (!item || typeof item !== "object") {
-      throw new Error(`Invalid custom structures file: entry #${index + 1} must be an object.`);
+      throw new Error(`${fileLabel}: entry #${index + 1} must be an object.`);
     }
     const id = typeof item.id === "string" ? item.id.trim() : "";
     const uid = typeof item.uid === "string" ? item.uid.trim() : "";
@@ -2574,29 +2673,35 @@ function parseImportedCustomStructures(rawText) {
     const updatedAt = Number.isFinite(item.updatedAt) ? item.updatedAt : Date.now();
 
     if (!id || !uid || !name || !phases) {
-      throw new Error(`Invalid custom structures file: entry #${index + 1} is missing required fields.`);
+      throw new Error(`${fileLabel}: entry #${index + 1} is missing required fields.`);
     }
-    if (!/^custom_[a-z0-9_]+$/.test(id)) {
-      throw new Error(`Invalid custom structures file: entry #${index + 1} has invalid id "${id}".`);
+    if (isLegacy) {
+      if (!/^custom_[a-z0-9_]+$/.test(id)) {
+        throw new Error(`${fileLabel}: entry #${index + 1} has invalid id "${id}".`);
+      }
+      if (builtInIds.has(id)) {
+        throw new Error(`${fileLabel}: id "${id}" conflicts with a built-in structure.`);
+      }
+    } else if (!/^[a-z][a-z0-9_]*$/.test(id)) {
+      throw new Error(
+        `${fileLabel}: entry #${index + 1} has invalid id "${id}" (use lowercase letters, digits, underscores only).`,
+      );
     }
     if (!/^[a-z0-9][a-z0-9_-]*$/i.test(uid)) {
-      throw new Error(`Invalid custom structures file: entry #${index + 1} has invalid uid "${uid}".`);
+      throw new Error(`${fileLabel}: entry #${index + 1} has invalid uid "${uid}".`);
     }
     if (phases.length < 2 || phases.some((phase) => !phase)) {
-      throw new Error(`Invalid custom structures file: entry #${index + 1} must include at least 2 non-empty phases.`);
-    }
-    if (builtInIds.has(id)) {
-      throw new Error(`Invalid custom structures file: id "${id}" conflicts with a built-in structure.`);
+      throw new Error(`${fileLabel}: entry #${index + 1} must include at least 2 non-empty phases.`);
     }
     if (seenIds.has(id)) {
-      throw new Error(`Invalid custom structures file: duplicate id "${id}".`);
+      throw new Error(`${fileLabel}: duplicate id "${id}".`);
     }
     if (seenUids.has(uid)) {
-      throw new Error(`Invalid custom structures file: duplicate uid "${uid}".`);
+      throw new Error(`${fileLabel}: duplicate uid "${uid}".`);
     }
     const fingerprint = normalizeStructureFingerprint(name, phases);
     if (seenFingerprints.has(fingerprint)) {
-      throw new Error(`Invalid custom structures file: duplicate structure content for "${name}".`);
+      throw new Error(`${fileLabel}: duplicate structure content for "${name}".`);
     }
     seenIds.add(id);
     seenUids.add(uid);
@@ -2604,45 +2709,42 @@ function parseImportedCustomStructures(rawText) {
 
     const localBySameId = localById.get(id);
     if (localBySameId && localBySameId.uid !== uid) {
-      throw new Error(`Invalid custom structures file: id "${id}" conflicts with another local structure.`);
+      throw new Error(`${fileLabel}: id "${id}" conflicts with another local structure.`);
     }
     const localBySameUid = localByUid.get(uid);
     if (localBySameUid && localBySameUid.id !== id) {
-      throw new Error(`Invalid custom structures file: uid "${uid}" conflicts with local id mapping.`);
+      throw new Error(`${fileLabel}: uid "${uid}" conflicts with local id mapping.`);
     }
     const entry = { id, uid, name, phases, updatedAt };
     if (Object.prototype.hasOwnProperty.call(item, "description")) {
       if (typeof item.description !== "string") {
-        throw new Error(
-          `Invalid custom structures file: entry #${index + 1} description must be a string when present.`,
-        );
+        throw new Error(`${fileLabel}: entry #${index + 1} description must be a string when present.`);
       }
       const descRes = validateStructureDescription(item.description);
       if (!descRes.ok) {
-        throw new Error(`Invalid custom structures file: entry #${index + 1}: ${descRes.error}`);
+        throw new Error(`${fileLabel}: entry #${index + 1}: ${descRes.error}`);
       }
       entry.description = descRes.value;
     }
     if (Object.prototype.hasOwnProperty.call(item, "author")) {
       if (typeof item.author !== "string") {
-        throw new Error(
-          `Invalid custom structures file: entry #${index + 1} author must be a string when present.`,
-        );
+        throw new Error(`${fileLabel}: entry #${index + 1} author must be a string when present.`);
       }
       const authRes = validateStructureAuthor(item.author);
       if (!authRes.ok) {
-        throw new Error(`Invalid custom structures file: entry #${index + 1}: ${authRes.error}`);
+        throw new Error(`${fileLabel}: entry #${index + 1}: ${authRes.error}`);
       }
       entry.author = authRes.value;
     }
     return entry;
   });
 
-  return normalized;
+  return { exportType, structures: normalized };
 }
 
 function importCustomStructuresFromText(rawText) {
-  const imported = parseImportedCustomStructures(rawText);
+  const { structures: imported } = parseStructureTemplatesPack(rawText);
+  const builtInIdSet = new Set(Object.keys(BUILTIN_STRUCTURES));
   const localByUid = new Map(customStructures.map((item) => [item.uid, item]));
   const localByFingerprint = new Map(
     customStructures.map((item) => [normalizeStructureFingerprint(item.name, item.phases), item]),
@@ -2651,9 +2753,15 @@ function importCustomStructuresFromText(rawText) {
   let createdCount = 0;
   let updatedCount = 0;
   let skippedCount = 0;
+  let skippedBuiltinCount = 0;
   const importTimestamp = Date.now();
 
   imported.forEach((incoming) => {
+    if (builtInIdSet.has(incoming.id)) {
+      skippedBuiltinCount += 1;
+      skippedCount += 1;
+      return;
+    }
     const localByUidMatch = localByUid.get(incoming.uid);
     if (localByUidMatch) {
       if ((incoming.updatedAt || 0) > (localByUidMatch.updatedAt || 0)) {
@@ -2719,16 +2827,31 @@ function importCustomStructuresFromText(rawText) {
     renderHome();
   }
 
-  return { createdCount, updatedCount, skippedCount, total: imported.length };
+  return {
+    createdCount,
+    updatedCount,
+    skippedCount,
+    skippedBuiltinCount,
+    total: imported.length,
+  };
 }
 
 function getCustomStructureImportSuccessMessage(result) {
   const changedCount = result.createdCount + result.updatedCount;
+  const skippedBuiltin = result.skippedBuiltinCount || 0;
   if (changedCount > 0 && result.skippedCount === 0) {
     return "Import completed. The structure is now available in the Active structures list.";
   }
   if (changedCount > 0 && result.skippedCount > 0) {
     return "Import completed. Some structures were added/updated, while others were already present and were skipped.";
+  }
+  if (
+    changedCount === 0 &&
+    result.skippedCount > 0 &&
+    skippedBuiltin > 0 &&
+    skippedBuiltin === result.total
+  ) {
+    return "Nothing was imported: every entry uses an id that is already a built-in framework in this app.";
   }
   return "Nothing changed. This structure is already present and up to date.";
 }
@@ -2738,7 +2861,7 @@ function getCustomStructureImportErrorMessage(error) {
   if (!message) {
     return "Import failed. The file appears to be invalid or corrupted.";
   }
-  if (message.startsWith("Invalid custom structures file")) {
+  if (message.startsWith("Invalid custom structures file") || message.startsWith("Invalid structures file")) {
     return "Import failed. The structure file format is invalid or corrupted.";
   }
   return `Import failed. ${message}`;
@@ -3008,6 +3131,8 @@ function importBoardFromJson(rawText) {
     throw new Error("Invalid story JSON format.");
   }
 
+  const storySchemaVersion = normalizeImportedStorySchemaVersion(parsed);
+
   const normalizeKey = (value) => String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
 
   const existingByUid =
@@ -3062,8 +3187,7 @@ function importBoardFromJson(rawText) {
     } else if (boardUsesOwnAlteredStructure(existingByUid)) {
       structure = getStructureConfig(existingByUid.structureId);
     } else {
-      const structureEntry = getCatalogStructureList().find((item) => item.name === parsed.structure);
-      structure = structureEntry || BUILTIN_STRUCTURES.hero_journey;
+      structure = resolveStoryImportCatalogStructure(parsed, storySchemaVersion);
     }
   } else if (
     parsed.alteredStructure &&
@@ -3072,8 +3196,7 @@ function importBoardFromJson(rawText) {
   ) {
     structure = createAlteredStructureForImportedStory(parsed.alteredStructure, resolvedBoardUid, parsed.structure);
   } else {
-    const structureEntry = getCatalogStructureList().find((item) => item.name === parsed.structure);
-    structure = structureEntry || BUILTIN_STRUCTURES.hero_journey;
+    structure = resolveStoryImportCatalogStructure(parsed, storySchemaVersion);
   }
 
   const noteTypeIdMap = new Map();
@@ -3675,6 +3798,7 @@ createStructureForm.addEventListener("submit", async (event) => {
   saveCustomStructures();
   saveCustomStructureActivity();
   renderStructureOptions(id);
+  renderHome();
   structureNameInput.value = "";
   if (structureDescriptionInput) structureDescriptionInput.value = "";
   if (structureAuthorInput) structureAuthorInput.value = "";
@@ -4483,6 +4607,13 @@ function initStructurePreviewModal() {
   if (closeStructurePreviewModalBtn) {
     closeStructurePreviewModalBtn.addEventListener("click", () => closeStructurePreviewModal());
   }
+  if (structurePreviewModalExportBtn) {
+    structurePreviewModalExportBtn.addEventListener("click", () => {
+      if (structurePreviewExportTargetId) {
+        exportStructurePreviewTemplate(structurePreviewExportTargetId);
+      }
+    });
+  }
   if (structurePreviewModalOverlay) {
     structurePreviewModalOverlay.addEventListener("click", (event) => {
       if (event.target === structurePreviewModalOverlay) closeStructurePreviewModal();
@@ -4502,6 +4633,10 @@ function closeDashboardCreateStructureModal() {
 
 function closeStructurePreviewModal() {
   if (!structurePreviewModalOverlay) return;
+  structurePreviewExportTargetId = null;
+  if (structurePreviewModalExportBtn) {
+    structurePreviewModalExportBtn.hidden = true;
+  }
   structurePreviewModalOverlay.classList.add("hidden");
 }
 
@@ -4543,6 +4678,11 @@ function openStructurePreviewModal(structureId) {
       return `<li><strong class="structure-preview-phase-title">${escapeHtml(title)}</strong>${descBlock}</li>`;
     })
     .join("");
+  if (structurePreviewModalExportBtn) {
+    const isAltered = isAlteredStructureEntry(structure);
+    structurePreviewExportTargetId = isAltered ? null : structureId;
+    structurePreviewModalExportBtn.hidden = isAltered;
+  }
   structurePreviewModalOverlay.classList.remove("hidden");
 }
 
@@ -4632,6 +4772,7 @@ function syncAiPromptOutputFromForm() {
   const noteKinds = BUILTIN_NOTE_TYPES.map((t) => ({ id: t.id, label: t.label }));
   const archetypes = BUILTIN_ARCHETYPES.map((a) => ({ id: a.id, label: a.label, icon: a.icon }));
   aiPromptOutputTextarea.value = buildLlmStoryAnalysisPrompt({
+    structureId: entry.id,
     structureName: entry.name,
     workTitle: workTitle || "(work title — fill in above)",
     medium,
@@ -5399,13 +5540,6 @@ if (dashboardExportBackupActionBtn) {
   dashboardExportBackupActionBtn.addEventListener("click", () => {
     closeDashboardActionsModal();
     exportFullAppBackup();
-  });
-}
-
-if (dashboardExportStructuresActionBtn) {
-  dashboardExportStructuresActionBtn.addEventListener("click", () => {
-    closeDashboardActionsModal();
-    exportCustomStructures();
   });
 }
 
