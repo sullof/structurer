@@ -1,0 +1,16 @@
+---
+description: Ask the user before assuming scale, deployment, or migration needs
+alwaysApply: true
+---
+
+# Ask before assuming product context
+
+Do **not** infer or assume:
+
+- How many users the app has, or whether “we must not break existing users” justifies extra complexity.
+- Whether a version is **deployed to production** vs only on GitHub / local—treat undecided until the user says so.
+- That a **data migration**, compatibility shim, or multi-step upgrade path is wanted—small projects often prefer the simplest behavior.
+
+**Before** adding migrations, backward-compat layers, feature flags for old behavior, or elaborate upgrade notes: **ask the user** whether they want that trade-off. Prefer the straightforward implementation unless they explicitly choose preservation of old localStorage / behavior.
+
+If unsure about impact (“has anyone used 1.x yet?”), **ask** instead of defaulting to the heavier option.

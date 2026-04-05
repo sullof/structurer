@@ -2,7 +2,7 @@
 
 **1.16.1** - 2026-04-04
 - Editor: scroll to new note and focus its textarea; viewport auto-scroll while dragging notes or phases.
-- Editor: default capped note height (long text scrolls inside); corner resize handle; **Options → Note height mode** dialog; classic full-height opt-in (`legacyFullHeightNoteCards`, in app backup settings).
+- Editor: default **full height** (classic): note text grows with content, no capped scroll. **Capped** height (scroll inside, ~32vh / 260px cap) and the resize grip **also when the note is not in edit mode** are **per story** via **Options → Note height mode** (open story only). Built-in demos use capped mode. Story JSON may include optional `adaptiveNoteHeights: true`; full app backup no longer stores a global note-height flag (`legacyFullHeightNoteCards` is ignored if still present in old settings).
 - Editor: short notes stay content-sized in capped mode; resize can reset to auto; character archetype chips in add-note modal work when clicking icon/label.
 - Editor: opening edit on a collapsed note expands it; collapsing a note exits edit mode.
 
