@@ -12,6 +12,7 @@ import {
   PHASE_HELP_STATE_KEY,
   EDITOR_QUICK_HELP_DISMISSED_KEY,
   STORAGE_KEY,
+  STRUCTURER_DEV_FLAG_KEY,
 } from "./app-config";
 import { DEMO_BOARD_DATA } from "./demo-boards";
 import {
@@ -81,8 +82,6 @@ const initialSettings = loadSettings();
 let columnMinWidth = initialSettings.columnMinWidth ?? DEFAULT_COLUMN_WIDTH;
 let wrapColumns = initialSettings.wrapColumns ?? true;
 let showDemoBoards = initialSettings.showDemoBoards ?? true;
-/** When true: full-height note bodies and native textarea resize while editing only (classic). */
-let legacyFullHeightNoteCards = initialSettings.legacyFullHeightNoteCards ?? false;
 
 const landingView = document.querySelector("#landing-view");
 const homeView = document.querySelector("#home-view");
@@ -394,7 +393,6 @@ function saveSettings() {
     columnMinWidth,
     wrapColumns,
     showDemoBoards,
-    legacyFullHeightNoteCards,
   });
 }
 
@@ -953,6 +951,14 @@ function applyDevFlags() {
   // Reset commands are now always available from the dashboard.
 }
 
+function isStructurerDevEnabled() {
+  try {
+    return localStorage.getItem(STRUCTURER_DEV_FLAG_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
 function applyColumnWidth() {
   document.documentElement.style.setProperty("--column-min-width", `${columnMinWidth}px`);
   columnWidthSlider.value = String(columnMinWidth);
@@ -965,7 +971,7 @@ function applyWrapColumns() {
 }
 
 function getAdaptiveNoteBodyCapPx() {
-  return Math.min(520, Math.floor(window.innerHeight * 0.7));
+  return Math.min(260, Math.floor(window.innerHeight * 0.32));
 }
 
 /** Pixel height for adaptive textarea when `customHeight` is unset: fit content up to cap; empty note keeps a small tap target. */
@@ -986,14 +992,23 @@ function getAdaptiveNoteBodyNaturalTargetPx(note, body) {
 
 function fillNoteHeightModeModal() {
   if (!noteHeightModeCurrentEl || !noteHeightModeSwitchBtn) return;
-  if (legacyFullHeightNoteCards) {
+  const board = getCurrentBoard();
+  if (!board) {
     noteHeightModeCurrentEl.textContent =
-      "You're in full height mode: each note grows to show all of its text. While editing, drag the bottom-right corner of the textarea to resize the card.";
-    noteHeightModeSwitchBtn.textContent = "Switch to capped height (long notes scroll inside)";
+      "Open a story in the editor first. Note height applies only to that story, not to every story on the dashboard.";
+    noteHeightModeSwitchBtn.disabled = true;
+    noteHeightModeSwitchBtn.textContent = "Switch mode";
+    return;
+  }
+  noteHeightModeSwitchBtn.disabled = false;
+  if (boardUsesClassicNoteHeight(board)) {
+    noteHeightModeCurrentEl.textContent =
+      "This story uses full height: each note grows to show all of its text. While editing, drag the bottom-right corner of the textarea to resize the card.";
+    noteHeightModeSwitchBtn.textContent = "Switch this story to capped height (long notes scroll inside)";
   } else {
     noteHeightModeCurrentEl.textContent =
-      "You're in capped height mode: long notes stop at about the viewport height and scroll inside the card. Drag the resize grip in the bottom-right corner of a note to change that note's height.";
-    noteHeightModeSwitchBtn.textContent = "Switch to full height (notes grow with all text)";
+      "This story uses capped height: long notes stop at about the viewport height and scroll inside the card. Drag the resize grip in the bottom-right corner of a note to change that note's height.";
+    noteHeightModeSwitchBtn.textContent = "Switch this story to full height (notes grow with all text)";
   }
 }
 
@@ -1273,6 +1288,11 @@ function ensureUniqueGroupSlug(baseSlug, excludedGroupId = null) {
 
 function getCurrentBoard() {
   return boards.find((board) => board.id === currentBoardId) || null;
+}
+
+/** Full-height note bodies (classic). Adaptive/capped mode when `board.adaptiveNoteHeights === true`. */
+function boardUsesClassicNoteHeight(board) {
+  return board == null || board.adaptiveNoteHeights !== true;
 }
 
 function ensureBoardPhaseUids(board) {
@@ -1868,7 +1888,7 @@ function renderEditor() {
               archetypeById(note.archetype || "none"),
               noteTypeById(note.kind),
               note.id === editingId,
-              legacyFullHeightNoteCards,
+              boardUsesClassicNoteHeight(board),
             ),
           )
           .join("")}</div>
@@ -1898,7 +1918,7 @@ function autoResizeTextareas() {
     const noteId = Number(textarea.dataset.noteId);
     const note = board.notes.find((item) => item.id === noteId);
     if (!note || note.customHeight) return;
-    if (legacyFullHeightNoteCards || !textarea.classList.contains("note-text-body--adaptive")) {
+    if (boardUsesClassicNoteHeight(board) || !textarea.classList.contains("note-text-body--adaptive")) {
       textarea.style.height = "auto";
       textarea.style.height = `${Math.max(textarea.scrollHeight, 74)}px`;
       return;
@@ -2252,6 +2272,7 @@ function createDemoBoardFromJson(demoData) {
     phaseComments: {},
     phaseCommentsVersion: 2,
     isDemo: true,
+    adaptiveNoteHeights: demoData.adaptiveNoteHeights === false ? false : true,
     updatedAt: Number.isFinite(demoData.updatedAt) ? demoData.updatedAt : Date.now(),
   };
 }
@@ -2507,6 +2528,9 @@ function boardToExportPayload(board) {
   };
   if (board.aiAnalysisImport === true) {
     payload.aiAnalysisImport = true;
+  }
+  if (board.adaptiveNoteHeights === true) {
+    payload.adaptiveNoteHeights = true;
   }
   if (boardUsesOwnAlteredStructure(board)) {
     const st = getStructureConfig(board.structureId);
@@ -2944,7 +2968,7 @@ function exportFullAppBackup() {
     appVersion: packageJson.version || "",
     data: {
       boards,
-      settings: { columnMinWidth, wrapColumns, showDemoBoards, legacyFullHeightNoteCards },
+      settings: { columnMinWidth, wrapColumns, showDemoBoards },
       customStructures,
       customStructureActivity,
       customArchetypes,
@@ -3564,6 +3588,13 @@ function importBoardFromJson(rawText) {
         delete existingByUid.aiAnalysisImport;
       }
     }
+    if (Object.prototype.hasOwnProperty.call(parsed, "adaptiveNoteHeights")) {
+      if (parsed.adaptiveNoteHeights === true) {
+        existingByUid.adaptiveNoteHeights = true;
+      } else {
+        delete existingByUid.adaptiveNoteHeights;
+      }
+    }
     normalizeOrders(existingByUid.notes, existingByUid.structureId);
     existingByUid.nextNoteId =
       existingByUid.notes.reduce((max, note) => Math.max(max, Number(note.id) || 0), 0) + 1;
@@ -3604,6 +3635,9 @@ function importBoardFromJson(rawText) {
   };
   if (parsed.aiAnalysisImport === true) {
     newBoard.aiAnalysisImport = true;
+  }
+  if (parsed.adaptiveNoteHeights === true) {
+    newBoard.adaptiveNoteHeights = true;
   }
   normalizeOrders(newBoard.notes, newBoard.structureId);
   boards.push(newBoard);
@@ -5030,9 +5064,16 @@ if (noteHeightModeSwitchBtn) {
   noteHeightModeSwitchBtn.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    legacyFullHeightNoteCards = !legacyFullHeightNoteCards;
-    saveSettings();
-    if (getCurrentBoard()) renderEditor();
+    const board = getCurrentBoard();
+    if (!board) return;
+    if (board.adaptiveNoteHeights === true) {
+      delete board.adaptiveNoteHeights;
+    } else {
+      board.adaptiveNoteHeights = true;
+    }
+    touchBoard(board);
+    renderEditor();
+    fillNoteHeightModeModal();
     closeNoteHeightModeModal();
     requestAnimationFrame(() => {
       closeNoteHeightModeModal();
@@ -5768,7 +5809,7 @@ function finishNoteTextResize(event, persist) {
 }
 
 boardEl.addEventListener("pointerdown", (event) => {
-  if (legacyFullHeightNoteCards) return;
+  if (boardUsesClassicNoteHeight(getCurrentBoard())) return;
   const grip = event.target.closest('[data-role="note-text-resize-grip"]');
   if (!grip) return;
   event.preventDefault();
@@ -5820,7 +5861,7 @@ boardEl.addEventListener("input", (event) => {
     note.updatedAt = Date.now();
     if (!note.customHeight) {
       target.style.height = "auto";
-      if (legacyFullHeightNoteCards || !target.classList.contains("note-text-body--adaptive")) {
+      if (boardUsesClassicNoteHeight(board) || !target.classList.contains("note-text-body--adaptive")) {
         target.style.height = `${Math.max(target.scrollHeight, 74)}px`;
       } else {
         const cap = getAdaptiveNoteBodyCapPx();
@@ -5971,4 +6012,32 @@ syncRouteToState(true);
 const appVersionEl = document.querySelector("#app-version");
 if (appVersionEl && packageJson.version) {
   appVersionEl.textContent = packageJson.version;
+}
+
+if (isStructurerDevEnabled()) {
+  window.structurerDev = {
+    /** Removes `customHeight` from every note on the board currently open in the editor. No-op if not on a story. */
+    clearCustomNoteHeightsForOpenStory() {
+      const board = getCurrentBoard();
+      if (!board) {
+        console.warn("structurerDev.clearCustomNoteHeightsForOpenStory: no open story (open the editor for a board first).");
+        return { ok: false, reason: "no_board" };
+      }
+      let cleared = 0;
+      for (const note of board.notes) {
+        if (note.customHeight != null) {
+          delete note.customHeight;
+          cleared += 1;
+        }
+      }
+      if (cleared === 0) {
+        console.info("structurerDev.clearCustomNoteHeightsForOpenStory: no notes had customHeight.");
+        return { ok: true, cleared: 0 };
+      }
+      touchBoard(board);
+      renderEditor();
+      console.info(`structurerDev.clearCustomNoteHeightsForOpenStory: cleared ${cleared} note(s).`);
+      return { ok: true, cleared };
+    },
+  };
 }

@@ -1,5 +1,7 @@
 export const STORAGE_KEY = "structurer.boards.v1";
 export const SETTINGS_KEY = "structurer.settings.v1";
+/** Set to `"true"` in localStorage to expose undocumented `window.structurerDev` helpers (see `main.js`). */
+export const STRUCTURER_DEV_FLAG_KEY = "structurer.dev";
 /** Per-board list of column indices with phase description panel open (editor UI). */
 export const PHASE_HELP_STATE_KEY = "structurer.phaseHelpOpen.v1";
 /** One-time editor tip: click note to edit, + to add (dismissed with "Got it"). */

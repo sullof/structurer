@@ -2301,7 +2301,7 @@ a:hover {
   box-sizing: border-box;
   width: 100%;
   min-height: 74px;
-  max-height: min(70vh, 520px);
+  max-height: min(32vh, 260px);
   overflow-x: hidden;
   overflow-y: auto;
   padding-right: 12px;
