@@ -279,6 +279,7 @@ const columnWidthValue = document.querySelector("#column-width-value");
 const editNoteTypesModalOverlay = document.querySelector("#edit-note-types-modal-overlay");
 const editNoteTypesListEl = document.querySelector("#edit-note-types-list");
 const cancelEditNoteTypesBtn = document.querySelector("#cancel-edit-note-types");
+const resetBuiltinNoteTypeColorsBtn = document.querySelector("#reset-builtin-note-type-colors");
 const saveEditNoteTypesBtn = document.querySelector("#save-edit-note-types");
 const goDashboardBtn = document.querySelector("#go-dashboard");
 const goBoardFromPhaseBtn = document.querySelector("#go-board-from-phase");
@@ -1232,6 +1233,23 @@ function closeEditNoteTypesModal() {
   editNoteTypesModalOverlay.classList.add("hidden");
 }
 
+async function resetBuiltinNoteTypeColorsFromModal() {
+  const confirmed = await appAlert("Reset all built-in note type colors to factory defaults?", { confirm: true });
+  if (!confirmed) return;
+  BUILTIN_NOTE_TYPES.forEach((builtin) => {
+    delete noteTypeOverrides[builtin.id];
+  });
+  saveNoteTypeOverrides();
+  fillEditNoteTypesModal();
+  if (currentBoardId) renderEditor();
+  if (currentGroupId) renderGroup();
+  if (phaseView && !phaseView.classList.contains("hidden")) {
+    renderPhaseDetailView();
+  }
+  await appAlert("Built-in note type colors restored.");
+  closeEditNoteTypesModal();
+}
+
 async function saveEditNoteTypesFromModal() {
   if (!editNoteTypesListEl) return;
   const rows = editNoteTypesListEl.querySelectorAll(".edit-note-type-row");
@@ -1849,6 +1867,7 @@ function renderEditor() {
   const editingId = editingNoteId;
   const isModifiedOrder = isPhaseOrderModified(board);
   const allowPhaseReorder = boardUsesOwnAlteredStructure(board);
+  const showModifiedTag = isModifiedOrder && !allowPhaseReorder;
 
   const editorTitleMarkup =
     board.id === inlineTitleEdit.getEditingStoryBoardId()
@@ -1856,13 +1875,13 @@ function renderEditor() {
       : `<span class="editor-title-text" data-role="board-title-dblclick">${escapeHtml(board.title)}</span>`;
   editorTitle.innerHTML = `<div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}${isAiAnalysisImportBoard(board) ? '<span class="analysis-label">AI analysis</span> ' : ""}${editorTitleMarkup}</span></div>`;
   const structDisplayBase = structure.name;
-  const structDisplay = isModifiedOrder ? `${structDisplayBase} (modified)` : structDisplayBase;
+  const structDisplay = showModifiedTag ? `${structDisplayBase} (modified)` : structDisplayBase;
   const canEditStructureName = boardUsesOwnAlteredStructure(board);
   const alteredSuffixHtml = ' <span class="structure-name-altered-suffix">(altered)</span>';
   const structureSubtitleMarkup = canEditStructureName
     ? board.id === inlineTitleEdit.getEditingStructureBoardId()
       ? `<span class="structure-name-inline-edit-row"><input class="inline-structure-name-input structure-name-input" type="text" maxlength="80" value="${escapeHtml(structure.name)}" data-role="inline-structure-name-input" data-board-id="${board.id}" aria-label="Structure template name" />${alteredSuffixHtml}</span>`
-      : `<span class="structure-name-editable" data-role="structure-name-dblclick" data-board-id="${board.id}" title="Double-click to rename">${escapeHtml(structure.name)}${isModifiedOrder ? " (modified)" : ""}${alteredSuffixHtml}</span>`
+      : `<span class="structure-name-editable" data-role="structure-name-dblclick" data-board-id="${board.id}" title="Double-click to rename">${escapeHtml(structure.name)}${showModifiedTag ? " (modified)" : ""}${alteredSuffixHtml}</span>`
     : escapeHtml(structDisplay);
   structureNameEl.innerHTML = structureSubtitleMarkup;
   boardEl.innerHTML = phases
@@ -4758,6 +4777,9 @@ if (cancelEditNoteTypesBtn) {
 }
 if (saveEditNoteTypesBtn) {
   saveEditNoteTypesBtn.addEventListener("click", () => void saveEditNoteTypesFromModal());
+}
+if (resetBuiltinNoteTypeColorsBtn) {
+  resetBuiltinNoteTypeColorsBtn.addEventListener("click", () => void resetBuiltinNoteTypeColorsFromModal());
 }
 if (editNoteTypesModalOverlay) {
   editNoteTypesModalOverlay.addEventListener("click", (event) => {

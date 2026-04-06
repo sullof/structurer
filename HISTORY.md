@@ -5,6 +5,7 @@
 - **Unstructured flow starts with 1+ phase:** the start-from-scratch dialog allows creating a story with a single initial phase (and optional phase descriptions), then extending phases later while editing the story (`main.js`).
 - **Built-in note types expanded for generic documents:** added **Time**, **Topic**, **Question**, and **Reference** to the default note kinds so Structurer works better beyond narrative-only use cases (`app-config.js`).
 - **Minor UX polish:** added spacing between the phase list and **Add row** actions in structure-style forms/modals (`styles.css`).
+- **Edit note types reset action:** added **Reset built-in colors** in the note-type editor modal to restore factory colors for built-in kinds without affecting custom note types (`index.html`, `main.js`).
 
 **1.17.1** - 2026-04-06
 - **Shared story navigation polish:** breadcrumb now includes **Dashboard** (`Home > Dashboard > Shared story`) for consistency with other app views.
