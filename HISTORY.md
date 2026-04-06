@@ -1,5 +1,10 @@
 # History
 
+**1.17.1** - 2026-04-06
+- **Shared story navigation polish:** breadcrumb now includes **Dashboard** (`Home > Dashboard > Shared story`) for consistency with other app views.
+- **Shared story actions cleanup:** removed the extra **Back to home** button from shared preview commands; the view now focuses on **Open source JSON** and **Import into my workspace**.
+- **Landing cards visual tweaks:** removed forced minimum height so cards size to content, and gave **AI-assisted analysis flow** a dedicated post-it color not reused by other landing cards.
+
 **1.17.0** - 2026-04-06
 - **Privacy-first routing:** switched app navigation from pathname routes to hash routes (`#/...`), so story/group slugs are kept in the URL fragment instead of request paths (`navigation.js`, `main.js`).
 - **Client navigation events:** route sync now follows `hashchange` (instead of `popstate`) and internal navigation writes `window.location.hash`, preserving existing view logic for landing/dashboard/help/editor/series/phase/404 screens (`main.js`, `navigation.js`).
@@ -7,6 +12,7 @@
 - **Shared remote story preview (read-only):** added `/#/shared?src=<https-url>` route that fetches a public Structurer story JSON (e.g. raw GitHub/S3), validates/parses it client-side, and renders a non-editable board preview with **Import into my workspace** and **Open source JSON** actions. Invalid URLs, fetch failures, and oversized payloads show clear status messages (`index.html`, `main.js`, `navigation.js`).
 - **Dashboard action for shared-story links:** under **⋯ Actions → Story**, new **View shared story from URL** command opens a small input dialog; after pasting a public JSON URL and confirming, Structurer navigates to the correctly encoded `/#/shared?src=...` route automatically (no manual URL formatting required) (`index.html`, `main.js`).
 - **Edit note types safety:** built-in note type labels are now fixed (read-only in the modal) and only their colors can be changed. Save logic now persists color-only overrides for built-ins, and legacy label overrides are ignored, preventing confusing cases like id `plot` shown with a different built-in label (`main.js`).
+- **Landing page refresh:** expanded home/landing copy so recent capabilities are visible at first glance: hash-route privacy note (`/#/...`), dashboard flow for shared JSON URL previews, and a short AI-assisted analysis prompt callout (`index.html`).
 
 **1.16.1** - 2026-04-04
 - Editor: scroll to new note and focus its textarea; viewport auto-scroll while dragging notes or phases.

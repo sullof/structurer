@@ -22,6 +22,10 @@
             Structurer helps writers build stories with visual planning maps, color-coded notes, characters, and narrative
             phases across built-in and custom structures.
           </p>
+          <p>
+            Routes now use hash-based navigation (<code>/#/...</code>) so story and series slugs stay in the URL fragment,
+            not in server request paths.
+          </p>
           <div class="landing-hero-actions">
             <button id="go-dashboard" class="landing-primary-button" type="button">Open dashboard</button>
           </div>
@@ -44,9 +48,22 @@
                 across instances of Structurer.
               </p>
               <p>
+                You can also share a public JSON URL in read-only mode: on the dashboard open
+                <strong>⋯ Actions → Story → View shared story from URL</strong>, paste the source URL, then share the
+                generated Structurer link.
+              </p>
+              <p>
                 You can also import community extension packs (custom structures) from the dashboard
                 <strong>⋯ Actions → Structure → Import/merge custom structures</strong>, then pick
                 <strong>Import from a file</strong> or <strong>Paste custom structures JSON</strong>.
+              </p>
+            </article>
+            <article class="landing-card card-ai-analysis">
+              <h3>AI-assisted analysis flow</h3>
+              <p>
+                Need a story map for a work that is not in demos? Use
+                <strong>Build AI import prompt</strong> to generate a strict JSON prompt in English while selecting the
+                language you want for the analysis text in notes.
               </p>
             </article>
             <article class="landing-card card-about-demos">
@@ -876,6 +893,10 @@
                 </li>
                 <li class="app-breadcrumb-sep" aria-hidden="true">&gt;</li>
                 <li class="app-breadcrumb-item">
+                  <button type="button" class="link-button app-breadcrumb-link app-breadcrumb-dashboard">Dashboard</button>
+                </li>
+                <li class="app-breadcrumb-sep" aria-hidden="true">&gt;</li>
+                <li class="app-breadcrumb-item">
                   <span class="app-breadcrumb-current" aria-current="page">Shared story</span>
                 </li>
               </ol>
@@ -900,7 +921,6 @@
               >Open source JSON</a
             >
             <button id="shared-story-import-btn" type="button" class="landing-primary-button hidden">Import into my workspace</button>
-            <button id="shared-story-home-btn" type="button" class="ghost-button">Back to home</button>
           </div>
         </section>
 

@@ -237,7 +237,6 @@ const goHomeFromSharedBtn = document.querySelector("#go-home-from-shared");
 const sharedStoryStatusEl = document.querySelector("#shared-story-status");
 const sharedStorySourceLink = document.querySelector("#shared-story-source-link");
 const sharedStoryImportBtn = document.querySelector("#shared-story-import-btn");
-const sharedStoryHomeBtn = document.querySelector("#shared-story-home-btn");
 const sharedStoryPreviewHostEl = document.querySelector("#shared-story-preview-host");
 const goDashboardFromBoardBtn = document.querySelector("#go-dashboard-from-board");
 const goDashboardFromGroupBtn = document.querySelector("#go-dashboard-from-group");
@@ -4306,12 +4305,6 @@ if (notFoundSharingLandingBtn) {
 
 if (goHomeFromSharedBtn) {
   goHomeFromSharedBtn.addEventListener("click", () => {
-    openLanding();
-  });
-}
-
-if (sharedStoryHomeBtn) {
-  sharedStoryHomeBtn.addEventListener("click", () => {
     openLanding();
   });
 }

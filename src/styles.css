@@ -394,7 +394,6 @@ a:hover {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 16px;
-  min-height: 146px;
 }
 
 .landing-card h3 {
@@ -435,6 +434,10 @@ a:hover {
 
 .landing-card.card-about-demos {
   background:  #bbf7d0;
+}
+
+.landing-card.card-ai-analysis {
+  background: #ffcc80;
 }
 
 .landing-card.card-portable {
