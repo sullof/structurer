@@ -4061,7 +4061,7 @@ function importBoardFromJson(rawText) {
     existingByUid.nextCommentId = Math.max(existingByUid.nextCommentId || 1, maxCommentId + 1);
     saveBoards();
     renderHome();
-    return;
+    return { boardId: existingByUid.id, merged: true };
   }
 
   const newPhaseComments = {};
@@ -4099,16 +4099,21 @@ function importBoardFromJson(rawText) {
   boards.push(newBoard);
   saveBoards();
   renderHome();
+  return { boardId: newBoard.id, merged: false };
 }
 
-async function tryImportBoardFromJsonWithFeedback(rawText) {
+async function tryImportBoardFromJsonWithFeedback(rawText, options = {}) {
+  const { onSuccess } = options;
   try {
-    importBoardFromJson(rawText);
+    const result = importBoardFromJson(rawText);
     closeDashboardImportModal();
     closeDashboardImportStructuresModal();
     closeDashboardActionsModal();
     closeDashboardImportStoryPasteModal();
     await appAlert("Story imported successfully.");
+    if (typeof onSuccess === "function") {
+      onSuccess(result);
+    }
   } catch (error) {
     if (error instanceof Error && error.code === "PHASE_ORDER_CONFLICT" && error.phaseOrderConflict) {
       openPhaseOrderConflictModal(error.phaseOrderConflict);
@@ -4520,7 +4525,15 @@ if (goHomeFromSharedBtn) {
 if (sharedStoryImportBtn) {
   sharedStoryImportBtn.addEventListener("click", async () => {
     if (!latestSharedStoryRawText) return;
-    await tryImportBoardFromJsonWithFeedback(latestSharedStoryRawText);
+    await tryImportBoardFromJsonWithFeedback(latestSharedStoryRawText, {
+      onSuccess: (result) => {
+        if (result?.boardId) {
+          openBoard(result.boardId);
+          return;
+        }
+        openHome();
+      },
+    });
   });
 }
 
