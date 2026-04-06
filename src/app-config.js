@@ -526,6 +526,7 @@ export const BUILTIN_NOTE_TYPES = [
   { id: "theme", label: "Theme", color: "#bbf7d0" },
   { id: "subplot", label: "Subplot", color: "#d9f99d" },
   { id: "detail", label: "Detail", color: "#a5f3fc" },
+  { id: "flashback", label: "Flashback", color: "#fecdd3" },
   { id: "time", label: "Time", color: "#d7e2fe" },
   { id: "topic", label: "Topic", color: "#e9d5ff" },
   { id: "question", label: "Question", color: "#fbcfc8" },
