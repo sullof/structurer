@@ -1,9 +1,9 @@
 source .env
 
-docker stop structurer 2>/dev/null || true
-docker rm structurer 2>/dev/null || true
+docker stop $STRUCTURER_APP_NAME 2>/dev/null || true
+docker rm $STRUCTURER_APP_NAME 2>/dev/null || true
 
-docker run --name structurer \
+docker run --name $STRUCTURER_APP_NAME \
   -p 8055 \
   --restart unless-stopped \
   -e VIRTUAL_HOST=$VIRTUAL_HOST  \
