@@ -1,5 +1,8 @@
 # History
 
+**1.18.1** - 2026-04-06
+- **Shared import navigation:** after importing from `/#/shared?src=...` via **Import into my workspace**, Structurer now opens the imported/merged story directly (fallback: dashboard) instead of leaving users on the shared preview page (`main.js`).
+
 **1.18.0** - 2026-04-06
 - **Create story without a predefined structure:** in **Create a new story**, the structure select now includes **No structure (start from scratch)**. Choosing it opens a follow-up dialog to define a private altered structure for that story (`main.js`).
 - **Unstructured flow starts with 1+ phase:** the start-from-scratch dialog allows creating a story with a single initial phase (and optional phase descriptions), then extending phases later while editing the story (`main.js`).
