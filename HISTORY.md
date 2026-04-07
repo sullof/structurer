@@ -1,5 +1,8 @@
 # History
 
+**1.18.4** - 2026-04-07
+- **First phase-comment privacy notice:** when focusing the phase-comment textarea for the first time on a device/browser, Structurer now shows a one-time notice that comments are local-only unless the story JSON is explicitly exported and shared (`main.js`).
+
 **1.18.3** - 2026-04-07
 - **Share preview metadata + favicon:** added app favicon plus Open Graph/Twitter metadata in `index.html` (including homepage screenshot) so shared links have richer unfurl/preview cards across platforms.
 - **Stable preview asset URLs:** moved favicon and social preview screenshot to `public/` and updated meta/icon paths to fixed URLs (`/favicon.png`, `/home-screenshot.png`) so Vite builds no longer produce rotating hashed paths for these share-critical assets.

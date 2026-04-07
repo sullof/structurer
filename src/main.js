@@ -58,6 +58,7 @@ const STORY_JSON_SCHEMA_LATEST = 3;
 const STRUCTURES_PACK_EXPORT_TYPE = "structurer.structure";
 /** Legacy packs and community extensions. */
 const STRUCTURES_PACK_EXPORT_TYPE_LEGACY = "structurer.custom-structures";
+const PHASE_COMMENTS_LOCAL_NOTICE_SHOWN_KEY = "structurer.phaseCommentsLocalNoticeShown.v1";
 const DEMO_BOARD_IDS_KEY = "structurer.demoBoardIds.v1";
 const CUSTOM_STRUCTURE_ACTIVITY_KEY = "structurer.customStructureActivity.v1";
 const issuedUids = new Set();
@@ -4785,10 +4786,18 @@ if (phaseCommentInput) {
       phaseCommentCharCountEl.textContent = `${n} character${n === 1 ? "" : "s"}`;
     }
   });
+  phaseCommentInput.addEventListener("focus", async () => {
+    const alreadyShown = loadJsonItem(PHASE_COMMENTS_LOCAL_NOTICE_SHOWN_KEY, false) === true;
+    if (alreadyShown) return;
+    saveJsonItem(PHASE_COMMENTS_LOCAL_NOTICE_SHOWN_KEY, true);
+    await appAlert(
+      "Phase comments are local to this browser/computer only. They are not sent to other users unless you explicitly export and share the story JSON.",
+    );
+  });
 }
 
 if (phaseCommentForm) {
-  phaseCommentForm.addEventListener("submit", (event) => {
+  phaseCommentForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const board = getCurrentBoard();
     if (!board || !Number.isInteger(activePhaseCommentsColumn) || !phaseCommentInput) return;
