@@ -2236,6 +2236,11 @@ function getSharedPreviewDataFromStoryJson(rawText) {
   } else {
     structure = resolveStoryImportCatalogStructure(parsed, storySchemaVersion);
   }
+  const phaseCount = structure.phases.length;
+  const importedPhaseOrder = isValidPhaseOrder(parsed.phaseOrder, phaseCount)
+    ? [...parsed.phaseOrder]
+    : identityPhaseOrder(phaseCount);
+  const previewPhases = importedPhaseOrder.map((phaseIndex) => structure.phases[phaseIndex]);
   const noteTypes = [...BUILTIN_NOTE_TYPES];
   if (Array.isArray(parsed.noteTypes)) {
     parsed.noteTypes.forEach((noteType) => {
@@ -2260,7 +2265,6 @@ function getSharedPreviewDataFromStoryJson(rawText) {
       });
     });
   }
-  const phaseCount = structure.phases.length;
   const notes = parsed.notes.map((note, index) => {
     const column = Number.isInteger(note.column) ? note.column : 0;
     return {
@@ -2278,7 +2282,7 @@ function getSharedPreviewDataFromStoryJson(rawText) {
     uid: typeof parsed.uid === "string" && parsed.uid ? parsed.uid : "",
     title: typeof parsed.title === "string" && parsed.title.trim() ? parsed.title.trim() : "Shared story",
     structureName: structure.name,
-    phases: structure.phases,
+    phases: previewPhases,
     notes,
     noteTypes,
     archetypes,
