@@ -1,5 +1,11 @@
 # History
 
+**1.18.6** - 2026-04-08
+- **Stable story links after rename:** story title inline rename no longer updates `slug`, so the hash route stays stable and shared URLs keep working after title edits (`inline-title-edit.js`, `main.js`).
+- **Story actions URL management:** in story actions, section **Story & export** is now **Story** and includes **Change story URL** to update slug explicitly; when changed on the open story, the route updates immediately and export filename follows the story slug (`index.html`, `main.js`).
+- **Export flow polish:** export now skips the extra options dialog when there are no phase comments, improving reliability of direct JSON download for stories without comments (`main.js`).
+- **Change URL dialog clarity:** added allowed-characters help (`a-z`, `0-9`, `_`), live URL preview above the input with stronger emphasis, and preserved free typing in the input (no cursor jump while typing) (`main.js`).
+
 **1.18.5** - 2026-04-07
 - **Shared JSON validation errors:** shared-story preview now distinguishes clearer failures for empty/non-JSON files, malformed/corrupted JSON, and JSON payloads that are valid but not Structurer story exports (`main.js`).
 - **Dashboard-first validation for shared URLs:** **View shared story from URL** now validates fetch + JSON shape before navigation. If invalid, Structurer stays on the dashboard and shows an alert; it opens the shared read-only page only when the story JSON is valid (`main.js`).

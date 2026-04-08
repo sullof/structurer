@@ -12,8 +12,6 @@ export function createInlineTitleEditController(options) {
     getGroups,
     getCurrentBoardId,
     getCurrentGroupId,
-    slugifyTitle,
-    ensureUniqueSlug,
     touchBoard,
     clearBoardCardPendingOpenTimer,
     commitGroupTitleRenameFromModal,
@@ -80,7 +78,6 @@ export function createInlineTitleEditController(options) {
       return;
     }
     board.title = trimmed;
-    board.slug = ensureUniqueSlug(slugifyTitle(trimmed), board.id);
     touchBoard(board);
     renderAfterStoryTitleChange(boardId);
   }
