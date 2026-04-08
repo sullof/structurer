@@ -1,6 +1,6 @@
 {
   "name": "structurer",
-  "version": "1.18.5",
+  "version": "1.18.7",
   "description": "A simple tool to build stories",
   "scripts": {
     "dev": "vite",

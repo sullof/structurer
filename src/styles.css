@@ -922,6 +922,41 @@ a:hover {
   word-break: break-word;
 }
 
+.shared-phase-comments {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.shared-phase-comments-title {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.shared-phase-comments-list {
+  display: grid;
+  gap: 8px;
+}
+
+.shared-phase-comment-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fff;
+}
+
+.shared-phase-comment-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .reorder-list {
   margin-top: 10px;
   display: grid;
@@ -1682,6 +1717,20 @@ a:hover {
 
 .board-card:hover strong {
   color: crimson;
+}
+
+/* Shared bookmarks are read-only cards: no inline-rename affordance on title hover. */
+.board-card-shared .board-card-title-text {
+  cursor: inherit;
+  text-decoration: none;
+}
+
+.board-card-shared .board-card-title-text:hover {
+  text-decoration: none;
+}
+
+.board-card-shared:hover strong {
+  color: inherit;
 }
 
 /* Non-demo story cards: stronger border so they read clearly next to [Demo] labels */

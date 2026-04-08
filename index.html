@@ -70,7 +70,8 @@
               <p>
                 You can also share a public JSON URL in read-only mode: on the dashboard open
                 <strong>⋯ Actions → Story → View shared story from URL</strong>, paste the source URL, then share the
-                generated Structurer link.
+                generated Structurer link. Recipients can save it as a dashboard <strong>Shared bookmark</strong> to
+                reopen the latest version anytime.
               </p>
               <p>
                 You can also import community extension packs (custom structures) from the dashboard
@@ -160,6 +161,10 @@
         <section class="dashboard-section">
           <h2 id="dashboard-boards-heading" class="dashboard-section-title">Stories</h2>
           <section id="boards-list" class="boards-list"></section>
+        </section>
+        <section class="dashboard-section">
+          <h2 id="dashboard-shared-heading" class="dashboard-section-title hidden">Shared bookmarks</h2>
+          <section id="shared-bookmarks-list" class="boards-list"></section>
         </section>
         <section class="dashboard-section">
           <h2 id="dashboard-groups-heading" class="dashboard-section-title">Series</h2>
@@ -536,6 +541,12 @@
                 the JSON file or text. The recipient imports it from the dashboard
                 <strong>⋯ Actions → Story → Import/merge a story</strong> (<strong>Import from a file</strong> or
                 <strong>Paste story JSON</strong>).
+              </p>
+              <p>
+                If your story JSON is hosted at a public URL, you can also share a <strong>read-only Structurer
+                link</strong>: open <strong>⋯ Actions → Story → View shared story from URL</strong>, paste the JSON URL,
+                and share the generated <code>/#/shared?src=...</code> link. On that page, users can open the original
+                JSON and save it as a <strong>Shared bookmark</strong> in their dashboard to check updates later.
               </p>
               <p>
                 To share a <strong>structure template</strong> (phases only, not note content), open it from
@@ -924,14 +935,10 @@
             <button id="go-home-from-shared" class="ghost-button back-arrow-button" type="button" aria-label="Back to home">←</button>
           </div>
           <div class="dashboard-topbar-center">
-            <h1>Shared story (read-only)</h1>
+            <h1 id="shared-story-page-title">Shared story (read-only)</h1>
+            <p id="shared-story-page-subtitle" class="subtitle hidden"></p>
           </div>
-          <div class="dashboard-topbar-right"></div>
-        </header>
-
-        <section class="help-card">
-          <p id="shared-story-status" class="subtitle">Provide a valid shared story link.</p>
-          <div class="not-found-actions">
+          <div class="dashboard-topbar-right">
             <a
               id="shared-story-source-link"
               href="#"
@@ -940,13 +947,11 @@
               class="ghost-button hidden"
               >Open original JSON</a
             >
-            <button id="shared-story-import-btn" type="button" class="landing-primary-button hidden">Import into my workspace</button>
-            <span id="shared-story-imported-note" class="subtitle hidden">
-              Already imported in your workspace.
-              <button id="shared-story-open-imported-btn" type="button" class="link-button">Open it</button>
-            </span>
+            <button id="shared-story-save-bookmark-btn" type="button" class="ghost-button hidden">Save bookmark</button>
           </div>
-        </section>
+        </header>
+
+        <p id="shared-story-status" class="subtitle hidden"></p>
 
         <section id="shared-story-preview-host"></section>
       </section>

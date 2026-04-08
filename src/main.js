@@ -58,6 +58,7 @@ const STORY_JSON_SCHEMA_LATEST = 3;
 const STRUCTURES_PACK_EXPORT_TYPE = "structurer.structure";
 /** Legacy packs and community extensions. */
 const STRUCTURES_PACK_EXPORT_TYPE_LEGACY = "structurer.custom-structures";
+const SHARED_BOOKMARKS_KEY = "structurer.sharedBookmarks.v1";
 const PHASE_COMMENTS_LOCAL_NOTICE_SHOWN_KEY = "structurer.phaseCommentsLocalNoticeShown.v1";
 const DEMO_BOARD_IDS_KEY = "structurer.demoBoardIds.v1";
 const CUSTOM_STRUCTURE_ACTIVITY_KEY = "structurer.customStructureActivity.v1";
@@ -98,9 +99,11 @@ const phaseView = document.querySelector("#phase-view");
 const notFoundView = document.querySelector("#not-found-view");
 const groupsList = document.querySelector("#groups-list");
 const boardsList = document.querySelector("#boards-list");
+const sharedBookmarksList = document.querySelector("#shared-bookmarks-list");
 const dashboardStructuresList = document.querySelector("#dashboard-structures-list");
 const dashboardGroupsHeading = document.querySelector("#dashboard-groups-heading");
 const dashboardBoardsHeading = document.querySelector("#dashboard-boards-heading");
+const dashboardSharedHeading = document.querySelector("#dashboard-shared-heading");
 const emptyState = document.querySelector("#empty-state");
 const createBoardForm = document.querySelector("#create-board-form");
 const boardTitleInput = document.querySelector("#board-title");
@@ -237,11 +240,11 @@ const notFoundSharingDashboardBtn = document.querySelector("#not-found-sharing-d
 const notFoundSharingHelpBtn = document.querySelector("#not-found-sharing-help");
 const notFoundSharingLandingBtn = document.querySelector("#not-found-sharing-landing");
 const goHomeFromSharedBtn = document.querySelector("#go-home-from-shared");
+const sharedStoryPageTitleEl = document.querySelector("#shared-story-page-title");
+const sharedStoryPageSubtitleEl = document.querySelector("#shared-story-page-subtitle");
 const sharedStoryStatusEl = document.querySelector("#shared-story-status");
 const sharedStorySourceLink = document.querySelector("#shared-story-source-link");
-const sharedStoryImportBtn = document.querySelector("#shared-story-import-btn");
-const sharedStoryImportedNoteEl = document.querySelector("#shared-story-imported-note");
-const sharedStoryOpenImportedBtn = document.querySelector("#shared-story-open-imported-btn");
+const sharedStorySaveBookmarkBtn = document.querySelector("#shared-story-save-bookmark-btn");
 const sharedStoryPreviewHostEl = document.querySelector("#shared-story-preview-host");
 const goDashboardFromBoardBtn = document.querySelector("#go-dashboard-from-board");
 const goDashboardFromGroupBtn = document.querySelector("#go-dashboard-from-group");
@@ -333,9 +336,8 @@ document.addEventListener("click", (event) => {
 });
 let addBoardToGroupTargetBoardId = null;
 let pendingRestoreBackupText = null;
-let latestSharedStoryRawText = "";
-let latestSharedImportedBoardId = null;
 let sharedStoryRenderRequestId = 0;
+let sharedStoryBookmarks = loadSharedBookmarks();
 
 function loadBoards() {
   return loadBoardsFromStorage(STORAGE_KEY);
@@ -356,6 +358,29 @@ function loadGroups() {
       typeof item.slug === "string" &&
       Array.isArray(item.boardIds),
   );
+}
+
+function loadSharedBookmarks() {
+  const parsed = loadJsonItem(SHARED_BOOKMARKS_KEY, []);
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .filter(
+      (item) =>
+        item &&
+        typeof item.id === "string" &&
+        typeof item.url === "string" &&
+        typeof item.title === "string",
+    )
+    .map((item) => ({
+      id: item.id,
+      url: item.url,
+      title: item.title,
+      updatedAt: Number.isFinite(item.updatedAt) ? item.updatedAt : Date.now(),
+    }));
+}
+
+function saveSharedBookmarks() {
+  saveJsonItem(SHARED_BOOKMARKS_KEY, sharedStoryBookmarks);
 }
 
 function saveGroups() {
@@ -1761,6 +1786,56 @@ function applyPhaseOrder(board, newOrder) {
   board.phaseOrder = newOrder;
 }
 
+function sharedBookmarkCardTemplate(bookmark) {
+  const safeTitle = escapeHtml(bookmark.title || "Shared story");
+  let hostLabel = bookmark.url;
+  try {
+    hostLabel = new URL(bookmark.url).host || bookmark.url;
+  } catch {
+    // Keep original URL for malformed legacy rows.
+  }
+  const updatedAtText = formatDate(bookmark.updatedAt);
+  return `
+    <article class="board-card board-card-shared" data-role="shared-bookmark-card" data-shared-bookmark-id="${bookmark.id}" role="button" tabindex="0" aria-label="Open shared bookmark ${safeTitle}">
+      <div>
+        <strong><span class="analysis-label">Shared</span> <span class="board-card-title-text">${safeTitle}</span></strong>
+        <div class="board-meta">
+          <div class="board-meta-line">${escapeHtml(hostLabel)}</div>
+          <div class="board-meta-line">Updated ${updatedAtText}</div>
+        </div>
+      </div>
+      <div class="board-actions">
+        <button type="button" class="action-button danger-menu-item" data-role="remove-shared-bookmark" aria-label="Remove shared bookmark">
+          <span class="action-icon" aria-hidden="true">✕</span>
+        </button>
+      </div>
+    </article>
+  `;
+}
+
+function upsertSharedBookmark(url, title) {
+  const safeUrl = ensureSafeSharedSourceUrl(url);
+  if (!safeUrl) return { ok: false, error: "invalid-url" };
+  const trimmedTitle = String(title || "").trim() || "Shared story";
+  const existing = sharedStoryBookmarks.find((item) => item.url === safeUrl);
+  const now = Date.now();
+  if (existing) {
+    existing.title = trimmedTitle;
+    existing.updatedAt = now;
+    saveSharedBookmarks();
+    return { ok: true, created: false, bookmark: existing };
+  }
+  const next = {
+    id: crypto.randomUUID(),
+    url: safeUrl,
+    title: trimmedTitle,
+    updatedAt: now,
+  };
+  sharedStoryBookmarks.push(next);
+  saveSharedBookmarks();
+  return { ok: true, created: true, bookmark: next };
+}
+
 function renderHome() {
   const validBoardIds = new Set(boards.map((board) => board.id));
   demoBoardIds = demoBoardIds.filter((id) => validBoardIds.has(id));
@@ -1809,6 +1884,11 @@ function renderHome() {
         );
       })
       .join("") + dashboardAiPromptCtaCardTemplate();
+  const sortedSharedBookmarks = [...sharedStoryBookmarks].sort((a, b) => b.updatedAt - a.updatedAt);
+  if (sharedBookmarksList) {
+    sharedBookmarksList.innerHTML = sortedSharedBookmarks.map(sharedBookmarkCardTemplate).join("");
+    sharedBookmarksList.style.display = sortedSharedBookmarks.length > 0 ? "grid" : "none";
+  }
   if (homeListControlsEl) {
     groupsList.insertAdjacentElement("afterend", homeListControlsEl);
   }
@@ -1841,6 +1921,9 @@ function renderHome() {
   }
   if (dashboardBoardsHeading) {
     dashboardBoardsHeading.classList.remove("hidden");
+  }
+  if (dashboardSharedHeading) {
+    dashboardSharedHeading.classList.toggle("hidden", sortedSharedBookmarks.length === 0);
   }
   const hasAtLeastOneNonDemoStory = boards.some((board) => !isDemoOrAiAnalysisBoard(board));
   emptyState.style.display = hasAtLeastOneNonDemoStory ? "none" : "block";
@@ -2264,6 +2347,11 @@ function getSharedPreviewDataFromStoryJson(rawText) {
   const importedPhaseOrder = isValidPhaseOrder(parsed.phaseOrder, phaseCount)
     ? [...parsed.phaseOrder]
     : identityPhaseOrder(phaseCount);
+  const importedPhaseUids = Array.isArray(parsed.phaseUids) ? parsed.phaseUids : [];
+  const normalizedPreviewPhaseUids = identityPhaseOrder(phaseCount).map((phaseId) => {
+    const candidate = importedPhaseUids[phaseId];
+    return typeof candidate === "string" && candidate ? candidate : generateUniqueUid();
+  });
   const previewPhases = importedPhaseOrder.map((phaseIndex) => structure.phases[phaseIndex]);
   const noteTypes = [...BUILTIN_NOTE_TYPES];
   if (Array.isArray(parsed.noteTypes)) {
@@ -2302,12 +2390,50 @@ function getSharedPreviewDataFromStoryJson(rawText) {
       collapsed: Boolean(note.collapsed),
     };
   });
+  const phaseCommentsByColumn = identityPhaseOrder(phaseCount).map(() => []);
+  if (parsed.phaseComments && typeof parsed.phaseComments === "object" && !Array.isArray(parsed.phaseComments)) {
+    const phaseUidToPhaseId = new Map();
+    normalizedPreviewPhaseUids.forEach((uid, phaseId) => {
+      phaseUidToPhaseId.set(uid, phaseId);
+    });
+    const phaseIdToColumn = new Map();
+    importedPhaseOrder.forEach((phaseId, columnIndex) => {
+      phaseIdToColumn.set(phaseId, columnIndex);
+    });
+    Object.entries(parsed.phaseComments).forEach(([phaseKey, comments]) => {
+      if (!Array.isArray(comments)) return;
+      let targetColumn = null;
+      if (phaseUidToPhaseId.has(phaseKey)) {
+        const phaseId = phaseUidToPhaseId.get(phaseKey);
+        targetColumn = phaseIdToColumn.get(phaseId);
+      } else {
+        const legacyColumn = Number(phaseKey);
+        if (Number.isInteger(legacyColumn) && legacyColumn >= 0 && legacyColumn < phaseCount) {
+          targetColumn = legacyColumn;
+        }
+      }
+      if (!Number.isInteger(targetColumn) || targetColumn < 0 || targetColumn >= phaseCount) return;
+      const normalizedComments = comments
+        .filter((comment) => comment && typeof comment === "object")
+        .map((comment, index) => ({
+          id: Number.isInteger(comment.id) ? comment.id : index + 1,
+          createdAt: Number.isFinite(comment.createdAt) ? comment.createdAt : Date.now(),
+          text: typeof comment.text === "string" ? comment.text.trim() : "",
+        }))
+        .filter((comment) => comment.text.length > 0)
+        .sort((a, b) => a.createdAt - b.createdAt || a.id - b.id)
+        .map((comment) => comment.text);
+      if (normalizedComments.length === 0) return;
+      phaseCommentsByColumn[targetColumn].push(...normalizedComments);
+    });
+  }
   return {
     uid: typeof parsed.uid === "string" && parsed.uid ? parsed.uid : "",
     title: typeof parsed.title === "string" && parsed.title.trim() ? parsed.title.trim() : "Shared story",
     structureName: structure.name,
     phases: previewPhases,
     notes,
+    phaseCommentsByColumn,
     noteTypes,
     archetypes,
   };
@@ -2331,16 +2457,13 @@ function renderSharedStoryPreview(preview) {
     };
   sharedStoryPreviewHostEl.innerHTML = `
     <section class="group-board-card">
-      <header class="group-board-head">
-        <div>
-          <h2>${escapeHtml(preview.title)}</h2>
-          <p class="subtitle">${escapeHtml(preview.structureName)}</p>
-        </div>
-      </header>
       <section class="board wrap-columns group-board-preview">
         ${preview.phases
           .map((phase, columnIndex) => {
             const noteItems = getColumnNotes(preview.notes, columnIndex);
+            const phaseComments = Array.isArray(preview.phaseCommentsByColumn?.[columnIndex])
+              ? preview.phaseCommentsByColumn[columnIndex]
+              : [];
             const emptyClass = noteItems.length === 0 ? " column-empty" : "";
             const phaseTitleText = escapeHtml(formatPhaseTitle(phase));
             return `
@@ -2381,6 +2504,21 @@ function renderSharedStoryPreview(preview) {
                     })
                     .join("")}
                 </div>
+                ${
+                  phaseComments.length > 0
+                    ? `<section class="shared-phase-comments" aria-label="Phase comments">
+                        <h3 class="shared-phase-comments-title">COMMENTS (${phaseComments.length})</h3>
+                        <div class="shared-phase-comments-list">
+                          ${phaseComments
+                            .map(
+                              (commentText) =>
+                                `<article class="shared-phase-comment-item"><p class="shared-phase-comment-text">${escapeHtml(commentText)}</p></article>`,
+                            )
+                            .join("")}
+                        </div>
+                      </section>`
+                    : ""
+                }
               </section>
             `;
           })
@@ -2392,7 +2530,6 @@ function renderSharedStoryPreview(preview) {
 
 async function renderSharedStory(sourceUrl) {
   const requestId = ++sharedStoryRenderRequestId;
-  latestSharedStoryRawText = "";
   if (sharedStoryPreviewHostEl) {
     sharedStoryPreviewHostEl.innerHTML = "";
   }
@@ -2400,16 +2537,18 @@ async function renderSharedStory(sourceUrl) {
     sharedStorySourceLink.classList.add("hidden");
     sharedStorySourceLink.href = "#";
   }
-  if (sharedStoryImportBtn) {
-    sharedStoryImportBtn.classList.add("hidden");
-    sharedStoryImportBtn.disabled = true;
+  if (sharedStoryPageTitleEl) {
+    sharedStoryPageTitleEl.textContent = "Shared story (read-only)";
   }
-  if (sharedStoryImportedNoteEl) {
-    sharedStoryImportedNoteEl.classList.add("hidden");
+  if (sharedStoryPageSubtitleEl) {
+    sharedStoryPageSubtitleEl.textContent = "";
+    sharedStoryPageSubtitleEl.classList.add("hidden");
   }
-  latestSharedImportedBoardId = null;
-  if (sharedStoryOpenImportedBtn) {
-    sharedStoryOpenImportedBtn.disabled = true;
+  if (sharedStorySaveBookmarkBtn) {
+    sharedStorySaveBookmarkBtn.classList.add("hidden");
+    sharedStorySaveBookmarkBtn.disabled = true;
+    delete sharedStorySaveBookmarkBtn.dataset.sourceUrl;
+    delete sharedStorySaveBookmarkBtn.dataset.title;
   }
   const safeUrl = ensureSafeSharedSourceUrl(sourceUrl);
   if (!safeUrl) {
@@ -2431,38 +2570,28 @@ async function renderSharedStory(sourceUrl) {
   try {
     const loaded = await loadSharedStoryFromUrlForPreview(safeUrl);
     if (requestId !== sharedStoryRenderRequestId) return;
-    const rawText = loaded.rawText;
     const preview = loaded.preview;
-    latestSharedStoryRawText = rawText;
+    if (sharedStoryPageTitleEl) {
+      sharedStoryPageTitleEl.innerHTML = `<span class="analysis-label">Shared</span> ${escapeHtml(preview.title)}`;
+    }
+    if (sharedStoryPageSubtitleEl) {
+      sharedStoryPageSubtitleEl.textContent = preview.structureName || "";
+      sharedStoryPageSubtitleEl.classList.toggle("hidden", !preview.structureName);
+    }
     renderSharedStoryPreview(preview);
-    const importedBoard = preview.uid ? boards.find((board) => board.uid === preview.uid) : null;
-    const alreadyImported = Boolean(importedBoard);
-    if (alreadyImported) {
-      latestSharedImportedBoardId = importedBoard.id;
-      if (sharedStoryImportedNoteEl) {
-        sharedStoryImportedNoteEl.classList.remove("hidden");
-      }
-      if (sharedStoryOpenImportedBtn) {
-        sharedStoryOpenImportedBtn.disabled = false;
-      }
-      if (sharedStoryImportBtn) {
-        sharedStoryImportBtn.classList.add("hidden");
-        sharedStoryImportBtn.disabled = true;
-      }
-    } else if (sharedStoryImportBtn) {
-      sharedStoryImportBtn.classList.remove("hidden");
-      sharedStoryImportBtn.disabled = false;
+    if (sharedStorySaveBookmarkBtn) {
+      sharedStorySaveBookmarkBtn.dataset.sourceUrl = safeUrl;
+      sharedStorySaveBookmarkBtn.dataset.title = preview.title || "Shared story";
+      const alreadyBookmarked = sharedStoryBookmarks.some((item) => item.url === safeUrl);
+      sharedStorySaveBookmarkBtn.textContent = "Save bookmark";
+      sharedStorySaveBookmarkBtn.classList.toggle("hidden", alreadyBookmarked);
+      sharedStorySaveBookmarkBtn.disabled = alreadyBookmarked;
     }
     if (sharedStoryStatusEl) {
       sharedStoryStatusEl.textContent = "";
       sharedStoryStatusEl.classList.add("hidden");
     }
   } catch (error) {
-    latestSharedStoryRawText = "";
-    latestSharedImportedBoardId = null;
-    if (sharedStoryOpenImportedBtn) {
-      sharedStoryOpenImportedBtn.disabled = true;
-    }
     if (sharedStoryStatusEl) {
       sharedStoryStatusEl.classList.remove("hidden");
       sharedStoryStatusEl.textContent =
@@ -3655,6 +3784,7 @@ function exportFullAppBackup() {
       noteTypeOverrides,
       groups,
       demoBoardIds,
+      sharedStoryBookmarks,
     },
   };
   const stamp = new Date().toISOString().replace(/[:]/g, "-").slice(0, 19);
@@ -3685,6 +3815,7 @@ function restoreFullAppBackupFromText(rawText) {
     data.noteTypeOverrides && typeof data.noteTypeOverrides === "object" ? data.noteTypeOverrides : {};
   const nextGroups = Array.isArray(data.groups) ? data.groups : [];
   const nextDemoBoardIds = Array.isArray(data.demoBoardIds) ? data.demoBoardIds : [];
+  const nextSharedStoryBookmarks = Array.isArray(data.sharedStoryBookmarks) ? data.sharedStoryBookmarks : [];
 
   clearKeys([
     STORAGE_KEY,
@@ -3696,6 +3827,7 @@ function restoreFullAppBackupFromText(rawText) {
     NOTE_TYPE_OVERRIDES_KEY,
     GROUPS_KEY,
     DEMO_BOARD_IDS_KEY,
+    SHARED_BOOKMARKS_KEY,
     PHASE_HELP_STATE_KEY,
     EDITOR_QUICK_HELP_DISMISSED_KEY,
   ]);
@@ -3708,6 +3840,7 @@ function restoreFullAppBackupFromText(rawText) {
   saveJsonItem(NOTE_TYPE_OVERRIDES_KEY, nextNoteTypeOverrides);
   saveJsonItem(GROUPS_KEY, nextGroups);
   saveJsonItem(DEMO_BOARD_IDS_KEY, nextDemoBoardIds);
+  saveJsonItem(SHARED_BOOKMARKS_KEY, nextSharedStoryBookmarks);
 
   window.location.assign(`#${HOME_ROUTE}`);
   return parsed;
@@ -4655,6 +4788,40 @@ boardsList.addEventListener("keydown", (event) => {
   }
 });
 
+if (sharedBookmarksList) {
+  sharedBookmarksList.addEventListener("click", async (event) => {
+    const card = event.target.closest('[data-role="shared-bookmark-card"]');
+    if (!card) return;
+    const bookmarkId = card.dataset.sharedBookmarkId;
+    if (!bookmarkId) return;
+    const bookmark = sharedStoryBookmarks.find((item) => item.id === bookmarkId);
+    if (!bookmark) return;
+    const removeBtn = event.target.closest('[data-role="remove-shared-bookmark"]');
+    if (removeBtn) {
+      const confirmed = await appAlert(`Remove shared bookmark "${bookmark.title}"?`, { confirm: true });
+      if (!confirmed) return;
+      sharedStoryBookmarks = sharedStoryBookmarks.filter((item) => item.id !== bookmarkId);
+      saveSharedBookmarks();
+      renderHome();
+      return;
+    }
+    openSharedStoryRouteFromSourceUrl(bookmark.url);
+  });
+
+  sharedBookmarksList.addEventListener("keydown", (event) => {
+    if (event.target.closest("button")) return;
+    const card = event.target.closest('[data-role="shared-bookmark-card"]');
+    if (!card) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      const bookmarkId = card.dataset.sharedBookmarkId;
+      const bookmark = sharedStoryBookmarks.find((item) => item.id === bookmarkId);
+      if (!bookmark) return;
+      openSharedStoryRouteFromSourceUrl(bookmark.url);
+    }
+  });
+}
+
 groupsList.addEventListener("click", (event) => {
   const groupCard = event.target.closest("[data-group-id]");
   if (!groupCard) return;
@@ -4745,25 +4912,18 @@ if (goHomeFromSharedBtn) {
   });
 }
 
-if (sharedStoryImportBtn) {
-  sharedStoryImportBtn.addEventListener("click", async () => {
-    if (!latestSharedStoryRawText) return;
-    await tryImportBoardFromJsonWithFeedback(latestSharedStoryRawText, {
-      onSuccess: (result) => {
-        if (result?.boardId) {
-          openBoard(result.boardId);
-          return;
-        }
-        openHome();
-      },
-    });
-  });
-}
-
-if (sharedStoryOpenImportedBtn) {
-  sharedStoryOpenImportedBtn.addEventListener("click", () => {
-    if (!latestSharedImportedBoardId) return;
-    openBoard(latestSharedImportedBoardId);
+if (sharedStorySaveBookmarkBtn) {
+  sharedStorySaveBookmarkBtn.addEventListener("click", async () => {
+    const sourceUrl = ensureSafeSharedSourceUrl(sharedStorySaveBookmarkBtn.dataset.sourceUrl || "");
+    const title = String(sharedStorySaveBookmarkBtn.dataset.title || "Shared story");
+    if (!sourceUrl) return;
+    const result = upsertSharedBookmark(sourceUrl, title);
+    if (!result.ok) {
+      await appAlert("Could not save this bookmark.");
+      return;
+    }
+    renderHome();
+    await appAlert(result.created ? "Shared bookmark saved." : "Shared bookmark updated.");
   });
 }
 
@@ -6314,6 +6474,7 @@ if (confirmFactoryResetBtn) {
       NOTE_TYPE_OVERRIDES_KEY,
       GROUPS_KEY,
       DEMO_BOARD_IDS_KEY,
+      SHARED_BOOKMARKS_KEY,
       PHASE_HELP_STATE_KEY,
       EDITOR_QUICK_HELP_DISMISSED_KEY,
     ]);

@@ -1,5 +1,9 @@
 # History
 
+**1.18.7** - 2026-04-08
+- **Shared story comments in read-only preview:** `/#/shared?src=...` now renders phase comments under each phase (simple readonly block), including comments keyed by modern `phaseUids` and legacy numeric keys. The comment section label is now **COMMENTS (N)** and comment text is slightly smaller than note text for visual hierarchy (`main.js`, `styles.css`).
+- **Shared URL bookmarks instead of direct import from preview:** removed **Import into my workspace** from the shared-story page and added **Save in bookmarks**. Saved shared URLs now appear on the dashboard under **Shared bookmarks** (labelled **Shared**), where they can be reopened anytime to check updates; bookmarks can also be removed from that list (`index.html`, `main.js`).
+
 **1.18.6** - 2026-04-08
 - **Stable story links after rename:** story title inline rename no longer updates `slug`, so the hash route stays stable and shared URLs keep working after title edits (`inline-title-edit.js`, `main.js`).
 - **Story actions URL management:** in story actions, section **Story & export** is now **Story** and includes **Change story URL** to update slug explicitly; when changed on the open story, the route updates immediately and export filename follows the story slug (`index.html`, `main.js`).
