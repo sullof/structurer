@@ -124,6 +124,7 @@ const createGroupNameInput = document.querySelector("#create-group-name");
 const createGroupBoardsListEl = document.querySelector("#create-group-boards-list");
 const createGroupBoardsEmptyEl = document.querySelector("#create-group-boards-empty");
 const modalExportBoardBtn = document.querySelector("#modal-export-board");
+const modalChangeBoardSlugBtn = document.querySelector("#modal-change-board-slug");
 const modalResetDemoBoardBtn = document.querySelector("#modal-reset-demo-board");
 const modalDeleteBoardBtn = document.querySelector("#modal-delete-board");
 const deleteStoryModalOverlay = document.querySelector("#delete-story-modal-overlay");
@@ -2564,8 +2565,6 @@ const inlineTitleEdit = createInlineTitleEditController({
   getGroups: () => groups,
   getCurrentBoardId: () => currentBoardId,
   getCurrentGroupId: () => currentGroupId,
-  slugifyTitle,
-  ensureUniqueSlug,
   touchBoard,
   clearBoardCardPendingOpenTimer: () => {
     clearTimeout(boardCardPendingOpenTimer);
@@ -3141,13 +3140,15 @@ function boardHasAnyPhaseComments(board) {
 
 async function promptStoryExportOptions(board) {
   const hasPhaseComments = boardHasAnyPhaseComments(board);
+  if (!hasPhaseComments) {
+    return { includePhaseComments: true };
+  }
   const result = await appDialog({
     title: "Export the story",
     message: "",
     confirmLabel: "Export",
     render(root, api) {
-      root.innerHTML = hasPhaseComments
-        ? `
+      root.innerHTML = `
         <p class="subtitle" style="margin-top:0;line-height:1.45;">
           Choose what to include in the exported story JSON.
         </p>
@@ -3155,16 +3156,11 @@ async function promptStoryExportOptions(board) {
           <input type="checkbox" id="story-export-include-comments" checked />
           <span>Export phase comments too</span>
         </label>
-      `
-        : `
-        <p class="subtitle" style="margin-top:0;line-height:1.45;">
-          This story has no phase comments to export.
-        </p>
       `;
-      const checkbox = hasPhaseComments ? root.querySelector("#story-export-include-comments") : null;
+      const checkbox = root.querySelector("#story-export-include-comments");
       api.setConfirmEnabled(true);
       return () => ({
-        includePhaseComments: hasPhaseComments ? (checkbox ? Boolean(checkbox.checked) : true) : true,
+        includePhaseComments: checkbox ? Boolean(checkbox.checked) : true,
       });
     },
   });
@@ -3174,11 +3170,69 @@ async function promptStoryExportOptions(board) {
   };
 }
 
+async function promptStorySlugOptions(board) {
+  const currentSlug =
+    typeof board.slug === "string" && board.slug.trim() ? board.slug.trim() : slugifyTitle(board.title || "story");
+  const result = await appDialog({
+    title: "Change story URL",
+    message: "",
+    confirmLabel: "Save",
+    render(root, api) {
+      root.innerHTML = `
+        <p class="subtitle" style="margin-top:0;line-height:1.45;">
+          Set the URL slug for this story. Exported filename follows this slug too.
+        </p>
+        <p class="subtitle" style="margin-top:8px;line-height:1.45;">
+          Allowed characters: letters (<code>a-z</code>), numbers (<code>0-9</code>) and underscore (<code>_</code>).
+          Other characters are ignored. Spaces and separators become <code>_</code>.
+        </p>
+        <p id="story-slug-preview" style="margin:10px 0 8px 0;line-height:1.35;color:#111827;font-weight:600;"></p>
+        <label class="app-dialog-field-label" for="story-slug-input">Story URL slug</label>
+        <input
+          id="story-slug-input"
+          class="app-dialog-input"
+          type="text"
+          maxlength="200"
+          value="${escapeHtml(currentSlug)}"
+          style="width:100%;box-sizing:border-box;font:inherit;padding:10px 12px;"
+        />
+      `;
+      const input = root.querySelector("#story-slug-input");
+      const preview = root.querySelector("#story-slug-preview");
+      const normalizeLiveSlug = (value) => slugifyTitle(String(value || ""));
+      const sync = () => {
+        const raw = String(input?.value || "");
+        const normalized = normalizeLiveSlug(raw);
+        api.setConfirmEnabled(normalized.length > 0);
+        if (preview) preview.textContent = `URL preview: /${normalized}`;
+      };
+      if (input) {
+        input.addEventListener("input", sync);
+        requestAnimationFrame(() => {
+          input.focus();
+          input.select();
+        });
+      }
+      sync();
+      return () => {
+        const normalized = normalizeLiveSlug(input?.value || "");
+        if (!normalized) return null;
+        return { baseSlug: normalized };
+      };
+    },
+  });
+  if (!result || typeof result !== "object") return null;
+  const baseSlug = String(result.baseSlug || "").trim();
+  if (!baseSlug) return null;
+  return { baseSlug };
+}
+
 function downloadBoard(board, options = {}) {
   const payload = boardToExportPayloadWithOptions(board, options);
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
-  const filename = `${slugifyTitle(board.title || "story")}.json`;
+  const stableSlug = typeof board.slug === "string" && board.slug.trim() ? board.slug.trim() : "";
+  const filename = `${stableSlug || slugifyTitle(board.title || "story")}.json`;
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
@@ -5023,6 +5077,35 @@ if (modalExportBoardBtn) {
     if (!exportOptions) return;
     downloadBoard(board, exportOptions);
     closeBoardActionsModal();
+  });
+}
+
+if (modalChangeBoardSlugBtn) {
+  modalChangeBoardSlugBtn.addEventListener("click", async () => {
+    const board = boards.find((item) => item.id === boardActionsModalBoardId);
+    if (!board) return;
+    const result = await promptStorySlugOptions(board);
+    if (!result) return;
+    const nextSlug = ensureUniqueSlug(result.baseSlug, board.id);
+    const currentSlug = typeof board.slug === "string" ? board.slug.trim() : "";
+    if (nextSlug === currentSlug) {
+      closeBoardActionsModal();
+      return;
+    }
+    board.slug = nextSlug;
+    touchBoard(board);
+    closeBoardActionsModal();
+    if (nextSlug !== result.baseSlug) {
+      await appAlert(`That URL was already used. Saved as "${nextSlug}" instead.`);
+    }
+    if (currentBoardId === board.id) {
+      openBoard(board.id, true, boardBackGroupId);
+      return;
+    }
+    renderHome();
+    if (currentGroupId && groups.some((g) => g.id === currentGroupId && g.boardIds.includes(board.id))) {
+      renderGroup();
+    }
   });
 }
 
