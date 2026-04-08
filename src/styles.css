@@ -3267,7 +3267,11 @@ a:hover {
 }
 
 .app-footer-links {
-  margin: 0 0 6px;
+  margin: 0 0 12px;
+}
+
+.app-footer > p + p {
+  margin-top: 6px;
 }
 
 .app-footer a {
@@ -3279,16 +3283,18 @@ a:hover {
   color: #4b5563;
 }
 
-.app-footer-version {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.app-footer-version:empty {
-  display: none;
+@media (max-width: 900px) {
+  .app-footer-contribute {
+    display: none;
+  }
 }
 
 @media (max-width: 900px) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   .app-history-back-btn {
     display: none !important;
   }
