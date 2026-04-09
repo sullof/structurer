@@ -1,3 +1,5 @@
+import { titleLineTemplate } from "../components/title-line";
+
 function escapeHtml(text) {
   return String(text ?? "")
     .replace(/&/g, "&amp;")
@@ -116,7 +118,7 @@ export function structureAlteredEditPhaseRowTemplate(
   `;
 }
 
-/** @param structureLineHtml — escaped name plus optional UI markers (e.g. altered suffix span); not double-escaped */
+/** @param structureLineHtml - escaped name plus optional UI markers (e.g. altered suffix span); not double-escaped */
 export function boardCardTemplate(
   board,
   structureLineHtml,
@@ -131,11 +133,17 @@ export function boardCardTemplate(
     board.id === editingStoryTitleBoardId
       ? `<input class="inline-story-title-input board-card-title-input" type="text" maxlength="80" value="${escapeHtml(board.title)}" data-role="inline-story-title-input" data-board-id="${board.id}" aria-label="Story name" />`
       : `<span class="board-card-title-text" data-role="board-title-dblclick" data-board-id="${board.id}">${safeTitle}</span>`;
+  const titleLine = titleLineTemplate({
+    titleHtml: titleMarkup,
+    labelText: isDemo ? "Demo" : isAiAnalysisImport ? "AI analysis" : "",
+    labelVariant: isDemo ? "demo" : isAiAnalysisImport ? "analysis" : "",
+    labelPosition: "right",
+  });
   const userCardClass = !isDemo && !isAiAnalysisImport ? " board-card-user" : "";
   return `
     <article class="board-card${userCardClass}" data-board-id="${board.id}" role="button" tabindex="0" aria-label="Open ${safeTitle}">
       <div>
-        <strong><div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${isDemo ? '<span class="demo-label">Demo</span> ' : ""}${isAiAnalysisImport ? '<span class="analysis-label">AI analysis</span> ' : ""}${titleMarkup}</span></div></strong>
+        <strong><div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${titleLine}</span></div></strong>
         <div class="board-meta">
           <div class="board-meta-line">${structureLineHtml} • ${noteCount} notes</div>
           <div class="board-meta-line">Updated ${updatedAtText}</div>
@@ -166,7 +174,7 @@ export function dashboardAiPromptCtaCardTemplate() {
   `;
 }
 
-/** Trash icon for delete-note — ✕ reads as “close” on mobile and caused mistaken deletions. */
+/** Trash icon for delete-note - ✕ reads as "close" on mobile and caused mistaken deletions. */
 const NOTE_DELETE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
 
 /** Corner lines similar to the native textarea resize grip (adaptive note height). */
@@ -275,7 +283,7 @@ export function noteTemplate(
   `;
 }
 
-/** Body markup for the centered “add note” modal (not embedded in column — avoids overflow clipping). */
+/** Body markup for the centered "add note" modal (not embedded in column - avoids overflow clipping). */
 export function addNoteModalBodyTemplate(columnIndex, archetypes, noteTypes) {
   const nonCharacterTypes = noteTypes.filter((type) => type.id !== "character");
   const hasCharacter = noteTypes.some((type) => type.id === "character");

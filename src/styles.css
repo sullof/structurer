@@ -156,6 +156,58 @@ body {
   gap: 8px;
 }
 
+#shared-view #shared-story-actions-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#shared-view #shared-story-save-bookmark-btn,
+#shared-view #shared-story-open-json-btn {
+  white-space: nowrap;
+}
+
+@media (min-width: 901px) {
+  #editor-view .dashboard-topbar-center h1,
+  #group-view .dashboard-topbar-center h1,
+  #shared-view .dashboard-topbar-center h1 {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  #editor-view .dashboard-topbar-center h1 .inline-story-title-host,
+  #group-view .dashboard-topbar-center h1 .inline-story-title-host {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  #editor-view .dashboard-topbar-center h1 .inline-story-title-host .editor-title-text,
+  #editor-view .dashboard-topbar-center h1 .inline-story-title-host .inline-story-title-input,
+  #group-view .dashboard-topbar-center h1 .inline-story-title-host .group-title-text,
+  #group-view .dashboard-topbar-center h1 .inline-story-title-host .inline-group-title-input,
+  #shared-view .dashboard-topbar-center h1 .shared-title-text {
+    order: 1;
+  }
+
+  #editor-view .dashboard-topbar-center h1 .inline-story-title-host .demo-label,
+  #editor-view .dashboard-topbar-center h1 .inline-story-title-host .analysis-label,
+  #group-view .dashboard-topbar-center h1 .inline-story-title-host .demo-label,
+  #group-view .dashboard-topbar-center h1 .inline-story-title-host .analysis-label,
+  #shared-view .dashboard-topbar-center h1 .shared-title-badge {
+    order: 2;
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  #shared-view .dashboard-topbar-center .subtitle {
+    width: 100%;
+    text-align: right;
+  }
+}
+
 .editor-topbar {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -831,7 +883,8 @@ a:hover {
 }
 
 #groups-list,
-#boards-list {
+#boards-list,
+#shared-bookmarks-list {
   grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
   align-items: start;
 }
@@ -1854,10 +1907,6 @@ a:hover {
   outline: 2px solid #93c5fd;
   outline-offset: 2px;
   border-radius: 8px;
-}
-
-.dashboard-actions-section[open] summary.dashboard-actions-section-summary {
-  border-bottom: 1px solid var(--line);
 }
 
 .dashboard-actions-section summary.dashboard-actions-section-summary::-webkit-details-marker {
@@ -3256,6 +3305,52 @@ a:hover {
   justify-content: flex-end;
 }
 
+.edit-archetype-label-field label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.edit-archetype-label-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.edit-archetype-row--builtin {
+  background: #f8fafc;
+}
+
+.edit-archetype-builtin-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px 10px;
+}
+
+.edit-archetype-builtin-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: #eef2ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+}
+
+.edit-archetype-builtin-label {
+  font-weight: 600;
+  color: #1f2937;
+}
+
 .color-grid.color-grid--edit-row .color-swatch {
   aspect-ratio: 1 / 1;
 }
@@ -3330,7 +3425,6 @@ a:hover {
   }
 
   #shared-view #go-home-from-shared,
-  #shared-view #shared-story-actions-btn,
   #shared-view #shared-story-options-btn {
     width: 40px;
     min-width: 40px;
@@ -3548,7 +3642,8 @@ a:hover {
   }
 
   #groups-list,
-  #boards-list {
+  #boards-list,
+  #shared-bookmarks-list {
     grid-template-columns: 1fr;
   }
 

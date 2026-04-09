@@ -940,14 +940,8 @@
           </div>
           <div class="dashboard-topbar-right">
             <div id="shared-story-actions-wrap" class="options-wrap hidden">
-              <button id="shared-story-actions-btn" class="ghost-button board-actions-trigger" type="button" aria-label="Shared actions">
-                <span class="action-icon" aria-hidden="true">…</span>
-                <span class="board-actions-trigger-label">Actions</span>
-              </button>
-              <div id="shared-story-actions-menu" class="options-menu hidden">
-                <button id="shared-story-open-json-btn" class="menu-item" type="button">Open original JSON</button>
-                <button id="shared-story-save-bookmark-btn" class="menu-item" type="button">Save bookmark</button>
-              </div>
+              <button id="shared-story-save-bookmark-btn" class="landing-primary-button" type="button">Save bookmark</button>
+              <button id="shared-story-open-json-btn" class="ghost-button" type="button">View source</button>
             </div>
             <div id="shared-story-options-wrap" class="options-wrap hidden">
               <button id="shared-story-options-btn" class="ghost-button options-button" type="button" aria-label="Shared options">
@@ -1153,8 +1147,21 @@
           <div id="edit-note-types-list" class="edit-note-types-list"></div>
           <div class="modal-actions">
             <button id="cancel-edit-note-types" class="ghost-button" type="button">Cancel</button>
+            <button id="add-custom-note-type-from-edit" class="ghost-button" type="button">Add custom note type</button>
             <button id="reset-builtin-note-type-colors" class="ghost-button" type="button">Reset built-in colors</button>
             <button id="save-edit-note-types" class="ghost-button" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+      <div id="edit-archetypes-modal-overlay" class="modal-overlay hidden">
+        <div class="modal modal-edit-note-types" role="dialog" aria-modal="true" aria-labelledby="edit-archetypes-title">
+          <h2 id="edit-archetypes-title">Edit archetypes</h2>
+          <p class="subtitle">Rename custom archetypes. Delete is available only when an archetype is not used by any character note.</p>
+          <div id="edit-archetypes-list" class="edit-note-types-list"></div>
+          <div class="modal-actions">
+            <button id="cancel-edit-archetypes" class="ghost-button" type="button">Cancel</button>
+            <button id="add-custom-archetype-from-edit" class="ghost-button" type="button">Add custom archetype</button>
+            <button id="save-edit-archetypes" class="ghost-button" type="button">Save</button>
           </div>
         </div>
       </div>
@@ -1424,11 +1431,16 @@
           <p class="subtitle dashboard-actions-modal-intro">Open a category to see commands.</p>
           <div id="board-actions-modal-sections" class="board-actions-modal-list dashboard-actions-modal-sections">
             <details class="dashboard-actions-section">
-              <summary class="dashboard-actions-section-summary">Note types &amp; archetypes</summary>
+              <summary class="dashboard-actions-section-summary">Story</summary>
               <div class="dashboard-actions-section-body">
-                <button id="modal-edit-note-types" class="ghost-button" type="button">Edit note types</button>
-                <button id="modal-define-custom-note-type" class="ghost-button" type="button">Add custom note type</button>
-                <button id="modal-define-custom-archetype" class="ghost-button" type="button">Add custom archetype</button>
+                <button id="modal-change-board-slug" class="ghost-button" type="button">Change story URL</button>
+                <button id="modal-export-board" class="ghost-button" type="button">Export the story</button>
+              </div>
+            </details>
+            <details class="dashboard-actions-section">
+              <summary class="dashboard-actions-section-summary">Series</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="modal-add-board-to-group" class="ghost-button" type="button">Add story to series</button>
               </div>
             </details>
             <details class="dashboard-actions-section">
@@ -1438,18 +1450,17 @@
                 <button id="modal-edit-story-structure" class="ghost-button" type="button">Edit the structure</button>
               </div>
             </details>
+            <details class="dashboard-actions-section">
+              <summary class="dashboard-actions-section-summary">Notes &amp; archetypes</summary>
+              <div class="dashboard-actions-section-body">
+                <button id="modal-edit-note-types" class="ghost-button" type="button">Edit note types</button>
+                <button id="modal-edit-archetypes" class="ghost-button" type="button">Edit archetypes</button>
+              </div>
+            </details>
             <details class="dashboard-actions-section" id="board-actions-demo-section" hidden>
               <summary class="dashboard-actions-section-summary">Demo</summary>
               <div class="dashboard-actions-section-body">
                 <button id="modal-reset-demo-board" class="ghost-button" type="button">Reset this demo story</button>
-              </div>
-            </details>
-            <details class="dashboard-actions-section">
-              <summary class="dashboard-actions-section-summary">Story</summary>
-              <div class="dashboard-actions-section-body">
-                <button id="modal-add-board-to-group" class="ghost-button" type="button">Add story to series</button>
-                <button id="modal-change-board-slug" class="ghost-button" type="button">Change story URL</button>
-                <button id="modal-export-board" class="ghost-button" type="button">Export the story</button>
               </div>
             </details>
             <details class="dashboard-actions-section">

@@ -1,9 +1,9 @@
 /**
  * In-app dialogs replacing window.alert / window.confirm, plus generic `appDialog` for custom body content.
  *
- * - `await appAlert("Message")` → Promise<void>
- * - `await appAlert("Message", { confirm: true })` → Promise<boolean>
- * - `await appDialog({ title, message, render, ... })` → Promise<T | null> (null = cancel / dismiss)
+ * - `await appAlert("Message")` -> Promise<void>
+ * - `await appAlert("Message", { confirm: true })` -> Promise<boolean>
+ * - `await appDialog({ title, message, render, ... })` -> Promise<T | null> (null = cancel / dismiss)
  */
 
 const queue = [];
@@ -35,7 +35,7 @@ function clearCustomRoot() {
 }
 
 /**
- * @param {unknown} [result] — confirm: boolean; custom: payload or null when cancelling
+ * @param {unknown} [result] - confirm: boolean; custom: payload or null when cancelling
  */
 function completeDialog(result) {
   const { overlay } = getElements();

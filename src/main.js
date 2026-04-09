@@ -13,7 +13,7 @@ import {
   EDITOR_QUICK_HELP_DISMISSED_KEY,
   STORAGE_KEY,
   STRUCTURER_DEV_FLAG_KEY,
-} from "./app-config";
+} from "./core/app-config";
 import { DEMO_BOARD_DATA } from "./demo-boards";
 import {
   clearKeys,
@@ -27,7 +27,7 @@ import {
   saveCustomArchetypes as saveCustomArchetypesToStorage,
   saveCustomStructures as saveCustomStructuresToStorage,
   saveSettings as saveSettingsToStorage,
-} from "./storage";
+} from "./core/storage";
 import {
   addNoteModalBodyTemplate,
   boardCardTemplate,
@@ -36,17 +36,27 @@ import {
   renderStructureOptionsHtml,
   structureAlteredEditPhaseRowTemplate,
   structurePhaseRowTemplate,
-} from "./ui-render";
-import { createGroupModalController } from "./group-modals";
-import { createNavigationController } from "./navigation";
-import { buildLlmStoryAnalysisPrompt } from "./ai-story-analysis-prompt.js";
-import { createBoardInteractionsController } from "./board-interactions";
-import { createBoardNoteActionsController } from "./board-note-actions";
-import { createInlineTitleEditController } from "./inline-title-edit.js";
-import { appAlert, appDialog, closeAppAlertIfOpen, dismissAllAppAlerts } from "./app-alert.js";
-import { initModalScrollLock } from "./modal-scroll-lock.js";
+} from "./ui/ui-render";
+import { titleLineTemplate } from "./components/title-line";
+import { createGroupModalController } from "./controllers/group-modals";
+import { createNavigationController } from "./core/navigation";
+import { buildLlmStoryAnalysisPrompt } from "./features/ai-story-analysis-prompt.js";
+import { createBoardInteractionsController } from "./controllers/board-interactions";
+import { createBoardNoteActionsController } from "./controllers/board-note-actions";
+import { createInlineTitleEditController } from "./controllers/inline-title-edit.js";
+import { appAlert, appDialog, closeAppAlertIfOpen, dismissAllAppAlerts } from "./ui/app-alert.js";
+import { initModalScrollLock } from "./ui/modal-scroll-lock.js";
+import { createSharedViewActionsController } from "./controllers/shared-view-actions.js";
+import {
+  promptStoryExportOptions as promptStoryExportOptionsModal,
+  promptStorySlugOptions as promptStorySlugOptionsModal,
+} from "./modals/story-action-modals.js";
+import { createDashboardActionsModalController } from "./modals/dashboard-actions-modal.js";
+import { createEditArchetypesModalController } from "./modals/edit-archetypes-modal.js";
+import { createEditNoteTypesModalController } from "./modals/edit-note-types-modal.js";
+import { createDashboardFlowModalsController } from "./modals/dashboard-flow-modals.js";
 import packageJson from "../package.json";
-import { validateStructureAuthor, validateStructureDescription } from "./structure-metadata.js";
+import { validateStructureAuthor, validateStructureDescription } from "./features/structure-metadata.js";
 
 const loadedBoards = loadBoards();
 let boards = loadedBoards || [];
@@ -164,9 +174,6 @@ const cancelRestoreBackupBtn = document.querySelector("#cancel-restore-backup");
 const confirmRestoreBackupBtn = document.querySelector("#confirm-restore-backup");
 const restoreBackupConfirmCheckbox = document.querySelector("#restore-backup-confirm-checkbox");
 const dashboardActionsBtn = document.querySelector("#dashboard-actions-btn");
-const dashboardActionsModalOverlay = document.querySelector("#dashboard-actions-modal-overlay");
-const dashboardActionsSectionsEl = document.querySelector(".dashboard-actions-modal-sections");
-const closeDashboardActionsModalBtn = document.querySelector("#close-dashboard-actions-modal");
 const openCreateStoryActionBtn = document.querySelector("#open-create-story-action");
 const dashboardCreateStoryModalOverlay = document.querySelector("#dashboard-create-story-modal-overlay");
 const closeDashboardCreateStoryModalBtn = document.querySelector("#close-dashboard-create-story-modal");
@@ -243,16 +250,6 @@ const goHomeFromSharedBtn = document.querySelector("#go-home-from-shared");
 const sharedStoryPageTitleEl = document.querySelector("#shared-story-page-title");
 const sharedStoryPageSubtitleEl = document.querySelector("#shared-story-page-subtitle");
 const sharedStoryStatusEl = document.querySelector("#shared-story-status");
-const sharedStoryActionsWrap = document.querySelector("#shared-story-actions-wrap");
-const sharedStoryActionsBtn = document.querySelector("#shared-story-actions-btn");
-const sharedStoryActionsMenu = document.querySelector("#shared-story-actions-menu");
-const sharedStoryOpenJsonBtn = document.querySelector("#shared-story-open-json-btn");
-const sharedStorySaveBookmarkBtn = document.querySelector("#shared-story-save-bookmark-btn");
-const sharedStoryOptionsWrap = document.querySelector("#shared-story-options-wrap");
-const sharedStoryOptionsBtn = document.querySelector("#shared-story-options-btn");
-const sharedStoryOptionsMenu = document.querySelector("#shared-story-options-menu");
-const sharedOpenResizeModalBtn = document.querySelector("#shared-open-resize-modal");
-const sharedToggleWrapColumnsBtn = document.querySelector("#shared-toggle-wrap-columns");
 const sharedStoryPreviewHostEl = document.querySelector("#shared-story-preview-host");
 const goDashboardFromBoardBtn = document.querySelector("#go-dashboard-from-board");
 const goDashboardFromGroupBtn = document.querySelector("#go-dashboard-from-group");
@@ -270,7 +267,6 @@ const toggleWrapColumnsBtn = document.querySelector("#toggle-wrap-columns");
 const openNoteHeightModeMenuBtn = document.querySelector("#open-note-height-mode-modal");
 const editorBoardActionsBtn = document.querySelector("#editor-board-actions-btn");
 const groupViewActionsBtn = document.querySelector("#group-view-actions-btn");
-const modalEditNoteTypesBtn = document.querySelector("#modal-edit-note-types");
 const modalDefineCustomNoteTypeBtn = document.querySelector("#modal-define-custom-note-type");
 const modalDefineCustomArchetypeBtn = document.querySelector("#modal-define-custom-archetype");
 const boardActionsSectionsEl = document.querySelector("#board-actions-modal-sections");
@@ -291,11 +287,6 @@ const noteHeightModeSwitchBtn = document.querySelector("#note-height-mode-switch
 const closeNoteHeightModeModalBtn = document.querySelector("#close-note-height-mode-modal");
 const columnWidthSlider = document.querySelector("#column-width-slider");
 const columnWidthValue = document.querySelector("#column-width-value");
-const editNoteTypesModalOverlay = document.querySelector("#edit-note-types-modal-overlay");
-const editNoteTypesListEl = document.querySelector("#edit-note-types-list");
-const cancelEditNoteTypesBtn = document.querySelector("#cancel-edit-note-types");
-const resetBuiltinNoteTypeColorsBtn = document.querySelector("#reset-builtin-note-type-colors");
-const saveEditNoteTypesBtn = document.querySelector("#save-edit-note-types");
 const goDashboardBtn = document.querySelector("#go-dashboard");
 const goBoardFromPhaseBtn = document.querySelector("#go-board-from-phase");
 const editorBreadcrumbCurrentEl = document.querySelector("#editor-breadcrumb-current");
@@ -346,6 +337,98 @@ let addBoardToGroupTargetBoardId = null;
 let pendingRestoreBackupText = null;
 let sharedStoryRenderRequestId = 0;
 let sharedStoryBookmarks = loadSharedBookmarks();
+const sharedViewActions = createSharedViewActionsController({
+  ensureSafeSharedSourceUrl: (rawValue) => ensureSafeSharedSourceUrl(rawValue),
+  onOpenJson: (sourceUrl) => {
+    window.open(sourceUrl, "_blank", "noopener");
+  },
+  onSaveBookmark: async ({ sourceUrl, title }) => {
+    const result = upsertSharedBookmark(sourceUrl, title);
+    if (!result.ok) {
+      await appAlert("Could not save this bookmark.");
+      return false;
+    }
+    renderHome();
+    await appAlert("Shared bookmark saved.");
+    return true;
+  },
+  onOpenResizeModal: () => {
+    openResizeModal();
+  },
+  onToggleWrapColumns: () => {
+    wrapColumns = !wrapColumns;
+    applyWrapColumns();
+    saveSettings();
+  },
+});
+sharedViewActions.init();
+const dashboardActionsModal = createDashboardActionsModalController();
+dashboardActionsModal.init();
+const editArchetypesModal = createEditArchetypesModalController({
+  getAllArchetypes,
+  getBuiltinArchetypes: () => BUILTIN_ARCHETYPES,
+  getCustomArchetypes: () => customArchetypes,
+  setCustomArchetypes: (next) => {
+    customArchetypes = next;
+  },
+  saveCustomArchetypes,
+  isArchetypeInUse: (archetypeId) =>
+    boards.some((board) => board.notes.some((note) => note.kind === "character" && (note.archetype || "none") === archetypeId)),
+  getArchetypeById: archetypeById,
+  escapeHtml,
+  appAlert,
+  onAfterChange: () => {
+    renderEditor();
+    if (currentGroupId) renderGroup();
+    renderHome();
+  },
+  promptCustomArchetypeName,
+  createCustomArchetype,
+  closeBoardActionsModal,
+});
+editArchetypesModal.init();
+const editNoteTypesModal = createEditNoteTypesModalController({
+  getAllNoteTypes,
+  getBuiltinNoteTypes: () => BUILTIN_NOTE_TYPES,
+  getCustomNoteTypes: () => customNoteTypes,
+  setCustomNoteTypes: (next) => {
+    customNoteTypes = next;
+  },
+  saveCustomNoteTypes,
+  getNoteTypeById: noteTypeById,
+  getNoteTypeColorPalette,
+  parseHexColorInput,
+  normalizeHexColor,
+  isValidHexColor,
+  isNoteTypeInUse,
+  getNoteTypeOverrides: () => noteTypeOverrides,
+  saveNoteTypeOverrides,
+  appAlert,
+  onAfterChange: () => {
+    renderEditor();
+    if (currentGroupId) renderGroup();
+    if (phaseView && !phaseView.classList.contains("hidden")) {
+      renderPhaseDetailView();
+    }
+    renderHome();
+  },
+  promptCustomNoteType,
+  createCustomNoteType,
+  closeBoardActionsModal,
+  escapeHtml,
+});
+editNoteTypesModal.init();
+const dashboardFlowModals = createDashboardFlowModalsController({
+  dismissAllAppAlerts,
+  closeOptionsMenu,
+  closeDashboardActionsModal: () => closeDashboardActionsModal(),
+  closeDashboardRemoveStructuresModal: () => closeDashboardRemoveStructuresModal(),
+  closeDeleteStoryModal: () => closeDeleteStoryModal(),
+  boardTitleInput,
+  structureNameInput,
+  importStoryPasteText,
+  importStructuresPasteText,
+});
 
 function loadBoards() {
   return loadBoardsFromStorage(STORAGE_KEY);
@@ -1018,9 +1101,7 @@ function applyColumnWidth() {
 function applyWrapColumns() {
   boardEl.classList.toggle("wrap-columns", wrapColumns);
   toggleWrapColumnsBtn.textContent = `Wrap columns: ${wrapColumns ? "On" : "Off"}`;
-  if (sharedToggleWrapColumnsBtn) {
-    sharedToggleWrapColumnsBtn.textContent = `Wrap columns: ${wrapColumns ? "On" : "Off"}`;
-  }
+  sharedViewActions.setWrapColumnsEnabled(wrapColumns);
 }
 
 function getAdaptiveNoteBodyCapPx() {
@@ -1193,140 +1274,10 @@ function promptCustomNoteType() {
   });
 }
 
-function syncEditNoteTypeRowSwatches(row) {
-  const hexInput = row.querySelector(".edit-note-type-hex-input");
-  const preview = row.querySelector(".edit-note-type-swatch-preview");
-  if (!hexInput || !preview) return;
-  const parsed = parseHexColorInput(hexInput.value);
-  if (parsed) {
-    preview.style.backgroundColor = parsed;
-    hexInput.value = parsed;
-  }
-  row.querySelectorAll(".color-swatch").forEach((btn) => {
-    const c = btn.dataset.color;
-    btn.classList.toggle("selected", Boolean(parsed && normalizeHexColor(c) === parsed));
-  });
-}
-
 function isNoteTypeInUse(typeId) {
   return boards.some((board) => board.notes.some((note) => note.kind === typeId));
 }
 
-function fillEditNoteTypesModal() {
-  if (!editNoteTypesListEl) return;
-  const types = getAllNoteTypes();
-  const palette = getNoteTypeColorPalette();
-  const paletteHtml = palette
-    .map(
-      (color) =>
-        `<button type="button" class="color-swatch" data-role="edit-note-type-swatch" data-color="${color}" aria-label="Pick ${color}" title="${color}" style="background:${color};"></button>`,
-    )
-    .join("");
-  editNoteTypesListEl.innerHTML = types
-    .map((t) => {
-      const isBuiltin = BUILTIN_NOTE_TYPES.some((b) => b.id === t.id);
-      const canDeleteCustom = !isBuiltin && !isNoteTypeInUse(t.id);
-      const idLabel = isBuiltin ? `Built-in · ${t.id}` : `Custom · ${t.id}`;
-      const baseColor = isValidHexColor(t.color) ? t.color : "#f3f4f6";
-      const currentColor = normalizeHexColor(baseColor);
-      const safeId = escapeHtml(t.id);
-      return `
-      <div class="edit-note-type-row" data-note-type-id="${safeId}" data-is-builtin="${isBuiltin}">
-        <p class="edit-note-type-row-title">${escapeHtml(idLabel)}</p>
-        <div class="edit-note-type-fields">
-          <div class="edit-note-type-label-field">
-            <label for="ntl-${safeId}">Label</label>
-            <input id="ntl-${safeId}" class="edit-note-type-label-input" type="text" maxlength="80" value="${escapeHtml(t.label)}" ${
-              isBuiltin ? "readonly aria-readonly=\"true\" title=\"Built-in labels are fixed; only color can be changed.\"" : ""
-            } />
-          </div>
-          <div class="edit-note-type-hex-field">
-            <label for="ntc-${safeId}">Color (hex)</label>
-            <div class="edit-note-type-hex-row">
-              <input id="ntc-${safeId}" class="edit-note-type-hex-input" type="text" value="${escapeHtml(currentColor)}" placeholder="#RRGGBB or #RGB" autocomplete="off" />
-              <span class="edit-note-type-swatch-preview" style="background-color:${escapeHtml(currentColor)}"></span>
-            </div>
-          </div>
-          <div class="color-grid color-grid--edit-row">${paletteHtml}</div>
-          ${
-            canDeleteCustom
-              ? `<div class="edit-note-type-row-delete"><button type="button" class="ghost-button danger-menu-item" data-role="delete-custom-note-type" data-note-type-id="${safeId}">Delete this type</button></div>`
-              : ""
-          }
-        </div>
-      </div>`;
-    })
-    .join("");
-
-  editNoteTypesListEl.querySelectorAll(".edit-note-type-row").forEach((row) => {
-    syncEditNoteTypeRowSwatches(row);
-  });
-}
-
-function openEditNoteTypesModal() {
-  if (!editNoteTypesModalOverlay) return;
-  fillEditNoteTypesModal();
-  editNoteTypesModalOverlay.classList.remove("hidden");
-}
-
-function closeEditNoteTypesModal() {
-  if (!editNoteTypesModalOverlay) return;
-  editNoteTypesModalOverlay.classList.add("hidden");
-}
-
-async function resetBuiltinNoteTypeColorsFromModal() {
-  const confirmed = await appAlert("Reset all built-in note type colors to factory defaults?", { confirm: true });
-  if (!confirmed) return;
-  BUILTIN_NOTE_TYPES.forEach((builtin) => {
-    delete noteTypeOverrides[builtin.id];
-  });
-  saveNoteTypeOverrides();
-  fillEditNoteTypesModal();
-  if (currentBoardId) renderEditor();
-  if (currentGroupId) renderGroup();
-  if (phaseView && !phaseView.classList.contains("hidden")) {
-    renderPhaseDetailView();
-  }
-  await appAlert("Built-in note type colors restored.");
-  closeEditNoteTypesModal();
-}
-
-async function saveEditNoteTypesFromModal() {
-  if (!editNoteTypesListEl) return;
-  const rows = editNoteTypesListEl.querySelectorAll(".edit-note-type-row");
-  for (const row of rows) {
-    const id = row.dataset.noteTypeId;
-    const labelInput = row.querySelector(".edit-note-type-label-input");
-    const hexInput = row.querySelector(".edit-note-type-hex-input");
-    const label = labelInput.value.trim();
-    const color = parseHexColorInput(hexInput.value);
-    if (!label) {
-      await appAlert(`Please enter a label for note type "${id}".`);
-      labelInput.focus();
-      return;
-    }
-    if (!color) {
-      await appAlert(`Please enter a valid hex color for "${label}" (e.g. #fef08a or #rgb).`);
-      hexInput.focus();
-      return;
-    }
-    const isBuiltin = row.dataset.isBuiltin === "true";
-    if (isBuiltin) {
-      noteTypeOverrides[id] = { color };
-    } else {
-      const ct = customNoteTypes.find((item) => item.id === id);
-      if (ct) {
-        ct.label = label;
-        ct.color = color;
-        ct.updatedAt = Date.now();
-      }
-    }
-  }
-  saveNoteTypeOverrides();
-  saveCustomNoteTypes();
-  closeEditNoteTypesModal();
-  renderEditor();
-}
 
 function slugifyTitle(title) {
   const normalized = title
@@ -1717,7 +1668,12 @@ function groupCardTemplate(group) {
   return `
     <article class="board-card${userSeriesClass}" data-group-id="${group.id}" role="button" tabindex="0" aria-label="Open series ${group.title}">
       <div>
-        <strong>${isDemoSeries ? '<span class="demo-label">Demo</span> ' : ""}${group.title}</strong>
+        <strong>${titleLineTemplate({
+          titleHtml: escapeHtml(group.title),
+          labelText: isDemoSeries ? "Demo" : "",
+          labelVariant: isDemoSeries ? "demo" : "",
+          labelPosition: "right",
+        })}</strong>
         <div class="board-meta">
           <div class="board-meta-line">Series • ${group.boardIds.length} stories</div>
           ${boardListHtml}
@@ -1809,7 +1765,12 @@ function sharedBookmarkCardTemplate(bookmark) {
   return `
     <article class="board-card board-card-shared" data-role="shared-bookmark-card" data-shared-bookmark-id="${bookmark.id}" role="button" tabindex="0" aria-label="Open shared bookmark ${safeTitle}">
       <div>
-        <strong><span class="analysis-label">Shared</span> <span class="board-card-title-text">${safeTitle}</span></strong>
+        <strong>${titleLineTemplate({
+          titleHtml: `<span class="board-card-title-text">${safeTitle}</span>`,
+          labelText: "Shared",
+          labelVariant: "shared",
+          labelPosition: "right",
+        })}</strong>
         <div class="board-meta">
           <div class="board-meta-line">${escapeHtml(hostLabel)}</div>
           <div class="board-meta-line">Updated ${updatedAtText}</div>
@@ -1972,7 +1933,13 @@ function renderEditor() {
     board.id === inlineTitleEdit.getEditingStoryBoardId()
       ? `<input class="inline-story-title-input editor-title-input" type="text" maxlength="80" value="${escapeHtml(board.title)}" data-role="inline-story-title-input" data-board-id="${board.id}" aria-label="Story name" />`
       : `<span class="editor-title-text" data-role="board-title-dblclick">${escapeHtml(board.title)}</span>`;
-  editorTitle.innerHTML = `<div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}${isAiAnalysisImportBoard(board) ? '<span class="analysis-label">AI analysis</span> ' : ""}${editorTitleMarkup}</span></div>`;
+  const editorLine = titleLineTemplate({
+    titleHtml: editorTitleMarkup,
+    labelText: isDemoBoard(board) ? "Demo" : isAiAnalysisImportBoard(board) ? "AI analysis" : "",
+    labelVariant: isDemoBoard(board) ? "demo" : isAiAnalysisImportBoard(board) ? "analysis" : "",
+    labelPosition: "right",
+  });
+  editorTitle.innerHTML = `<div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${editorLine}</span></div>`;
   const structDisplayBase = structure.name;
   const structDisplay = showModifiedTag ? `${structDisplayBase} (modified)` : structDisplayBase;
   const canEditStructureName = boardUsesOwnAlteredStructure(board);
@@ -2158,7 +2125,13 @@ function renderGroup() {
     inlineTitleEdit.getEditingGroupId() === group.id
       ? `<input class="inline-group-title-input" type="text" maxlength="120" value="${escapeHtml(group.title)}" data-role="inline-group-title-input" data-group-id="${group.id}" aria-label="Series name" />`
       : `<span class="group-title-text" data-role="group-title-dblclick">${escapeHtml(group.title)}</span>`;
-  groupTitleEl.innerHTML = `<span class="inline-story-title-host" data-role="inline-story-title-host">${isDemoSeries ? '<span class="demo-label">Demo</span> ' : ""}${groupTitleMarkup}</span>`;
+  const groupLine = titleLineTemplate({
+    titleHtml: groupTitleMarkup,
+    labelText: isDemoSeries ? "Demo" : "",
+    labelVariant: isDemoSeries ? "demo" : "",
+    labelPosition: "right",
+  });
+  groupTitleEl.innerHTML = `<span class="inline-story-title-host" data-role="inline-story-title-host">${groupLine}</span>`;
   groupSubtitleEl.textContent = `${groupBoards.length} stories`;
   if (groupBreadcrumbCurrentEl) {
     groupBreadcrumbCurrentEl.textContent = (group.title || "").trim() || "Series";
@@ -2171,7 +2144,12 @@ function renderGroup() {
       <section class="group-board-card">
         <header class="group-board-head">
           <div>
-            <h2><div class="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host">${isDemoBoard(board) ? '<span class="demo-label">Demo</span> ' : ""}${isAiAnalysisImportBoard(board) ? '<span class="analysis-label">AI analysis</span> ' : ""}<span class="group-board-title-text">${escapeHtml(board.title)}</span></span></div></h2>
+            <h2><div class="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host">${titleLineTemplate({
+              titleHtml: `<span class="group-board-title-text">${escapeHtml(board.title)}</span>`,
+              labelText: isDemoBoard(board) ? "Demo" : isAiAnalysisImportBoard(board) ? "AI analysis" : "",
+              labelVariant: isDemoBoard(board) ? "demo" : isAiAnalysisImportBoard(board) ? "analysis" : "",
+              labelPosition: "right",
+            })}</span></div></h2>
             <p class="subtitle">${boardStructureDisplayLineHtml(board)}</p>
           </div>
           <div class="group-board-head-actions">
@@ -2544,15 +2522,7 @@ async function renderSharedStory(sourceUrl) {
   if (sharedStoryPreviewHostEl) {
     sharedStoryPreviewHostEl.innerHTML = "";
   }
-  if (sharedStoryActionsWrap) {
-    sharedStoryActionsWrap.classList.add("hidden");
-    delete sharedStoryActionsWrap.dataset.sourceUrl;
-    closeSharedStoryActionsMenu();
-  }
-  if (sharedStoryOptionsWrap) {
-    sharedStoryOptionsWrap.classList.add("hidden");
-    closeSharedStoryOptionsMenu();
-  }
+  sharedViewActions.setControlsVisible(false);
   if (sharedStoryPageTitleEl) {
     sharedStoryPageTitleEl.textContent = "Shared story (read-only)";
   }
@@ -2560,7 +2530,7 @@ async function renderSharedStory(sourceUrl) {
     sharedStoryPageSubtitleEl.textContent = "";
     sharedStoryPageSubtitleEl.classList.add("hidden");
   }
-  if (sharedStorySaveBookmarkBtn) sharedStorySaveBookmarkBtn.classList.add("hidden");
+  sharedViewActions.setBookmarkState({ title: "Shared story", hidden: true });
   const safeUrl = ensureSafeSharedSourceUrl(sourceUrl);
   if (!safeUrl) {
     if (sharedStoryStatusEl) {
@@ -2574,32 +2544,28 @@ async function renderSharedStory(sourceUrl) {
     sharedStoryStatusEl.classList.remove("hidden");
     sharedStoryStatusEl.textContent = "Loading shared story...";
   }
-  if (sharedStoryActionsWrap) {
-    sharedStoryActionsWrap.classList.remove("hidden");
-    sharedStoryActionsWrap.dataset.sourceUrl = safeUrl;
-  }
-  if (sharedStoryOptionsWrap) {
-    sharedStoryOptionsWrap.classList.remove("hidden");
-  }
+  sharedViewActions.setControlsVisible(true, safeUrl);
   try {
     const loaded = await loadSharedStoryFromUrlForPreview(safeUrl);
     if (requestId !== sharedStoryRenderRequestId) return;
     const preview = loaded.preview;
     if (sharedStoryPageTitleEl) {
-      sharedStoryPageTitleEl.innerHTML = `<span class="analysis-label shared-title-badge">Shared</span><span class="shared-title-text">${escapeHtml(
-        preview.title,
-      )}</span>`;
+      sharedStoryPageTitleEl.innerHTML = titleLineTemplate({
+        titleHtml: escapeHtml(preview.title),
+        titleClass: "shared-title-text",
+        labelText: "Shared",
+        labelVariant: "shared",
+        labelExtraClass: "shared-title-badge",
+        labelPosition: "right",
+      });
     }
     if (sharedStoryPageSubtitleEl) {
       sharedStoryPageSubtitleEl.textContent = preview.structureName || "";
       sharedStoryPageSubtitleEl.classList.toggle("hidden", !preview.structureName);
     }
     renderSharedStoryPreview(preview);
-    if (sharedStorySaveBookmarkBtn) {
-      sharedStorySaveBookmarkBtn.dataset.title = preview.title || "Shared story";
-      const alreadyBookmarked = sharedStoryBookmarks.some((item) => item.url === safeUrl);
-      sharedStorySaveBookmarkBtn.classList.toggle("hidden", alreadyBookmarked);
-    }
+    const alreadyBookmarked = sharedStoryBookmarks.some((item) => item.url === safeUrl);
+    sharedViewActions.setBookmarkState({ title: preview.title || "Shared story", hidden: alreadyBookmarked });
     if (sharedStoryStatusEl) {
       sharedStoryStatusEl.textContent = "";
       sharedStoryStatusEl.classList.add("hidden");
@@ -3278,95 +3244,6 @@ function boardHasAnyPhaseComments(board) {
     const list = board.phaseComments[phaseUid];
     return Array.isArray(list) && list.length > 0;
   });
-}
-
-async function promptStoryExportOptions(board) {
-  const hasPhaseComments = boardHasAnyPhaseComments(board);
-  if (!hasPhaseComments) {
-    return { includePhaseComments: true };
-  }
-  const result = await appDialog({
-    title: "Export the story",
-    message: "",
-    confirmLabel: "Export",
-    render(root, api) {
-      root.innerHTML = `
-        <p class="subtitle" style="margin-top:0;line-height:1.45;">
-          Choose what to include in the exported story JSON.
-        </p>
-        <label class="factory-reset-confirm-checkbox" style="margin-top:14px;">
-          <input type="checkbox" id="story-export-include-comments" checked />
-          <span>Export phase comments too</span>
-        </label>
-      `;
-      const checkbox = root.querySelector("#story-export-include-comments");
-      api.setConfirmEnabled(true);
-      return () => ({
-        includePhaseComments: checkbox ? Boolean(checkbox.checked) : true,
-      });
-    },
-  });
-  if (!result || typeof result !== "object") return null;
-  return {
-    includePhaseComments: result.includePhaseComments !== false,
-  };
-}
-
-async function promptStorySlugOptions(board) {
-  const currentSlug =
-    typeof board.slug === "string" && board.slug.trim() ? board.slug.trim() : slugifyTitle(board.title || "story");
-  const result = await appDialog({
-    title: "Change story URL",
-    message: "",
-    confirmLabel: "Save",
-    render(root, api) {
-      root.innerHTML = `
-        <p class="subtitle" style="margin-top:0;line-height:1.45;">
-          Set the URL slug for this story. Exported filename follows this slug too.
-        </p>
-        <p class="subtitle" style="margin-top:8px;line-height:1.45;">
-          Allowed characters: letters (<code>a-z</code>), numbers (<code>0-9</code>) and underscore (<code>_</code>).
-          Other characters are ignored. Spaces and separators become <code>_</code>.
-        </p>
-        <p id="story-slug-preview" style="margin:10px 0 8px 0;line-height:1.35;color:#111827;font-weight:600;"></p>
-        <label class="app-dialog-field-label" for="story-slug-input">Story URL slug</label>
-        <input
-          id="story-slug-input"
-          class="app-dialog-input"
-          type="text"
-          maxlength="200"
-          value="${escapeHtml(currentSlug)}"
-          style="width:100%;box-sizing:border-box;font:inherit;padding:10px 12px;"
-        />
-      `;
-      const input = root.querySelector("#story-slug-input");
-      const preview = root.querySelector("#story-slug-preview");
-      const normalizeLiveSlug = (value) => slugifyTitle(String(value || ""));
-      const sync = () => {
-        const raw = String(input?.value || "");
-        const normalized = normalizeLiveSlug(raw);
-        api.setConfirmEnabled(normalized.length > 0);
-        if (preview) preview.textContent = `URL preview: /${normalized}`;
-      };
-      if (input) {
-        input.addEventListener("input", sync);
-        requestAnimationFrame(() => {
-          input.focus();
-          input.select();
-        });
-      }
-      sync();
-      return () => {
-        const normalized = normalizeLiveSlug(input?.value || "");
-        if (!normalized) return null;
-        return { baseSlug: normalized };
-      };
-    },
-  });
-  if (!result || typeof result !== "object") return null;
-  const baseSlug = String(result.baseSlug || "").trim();
-  if (!baseSlug) return null;
-  return { baseSlug };
 }
 
 function downloadBoard(board, options = {}) {
@@ -4925,63 +4802,6 @@ if (goHomeFromSharedBtn) {
   });
 }
 
-if (sharedStoryActionsBtn && sharedStoryActionsMenu) {
-  sharedStoryActionsBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
-    sharedStoryActionsMenu.classList.toggle("hidden");
-    closeSharedStoryOptionsMenu();
-  });
-}
-
-if (sharedStoryOptionsBtn && sharedStoryOptionsMenu) {
-  sharedStoryOptionsBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
-    sharedStoryOptionsMenu.classList.toggle("hidden");
-    closeSharedStoryActionsMenu();
-  });
-}
-
-if (sharedStoryOpenJsonBtn) {
-  sharedStoryOpenJsonBtn.addEventListener("click", () => {
-    const sourceUrl = ensureSafeSharedSourceUrl(sharedStoryActionsWrap?.dataset.sourceUrl || "");
-    if (!sourceUrl) return;
-    closeSharedStoryActionsMenu();
-    window.open(sourceUrl, "_blank", "noopener");
-  });
-}
-
-if (sharedStorySaveBookmarkBtn) {
-  sharedStorySaveBookmarkBtn.addEventListener("click", async () => {
-    const sourceUrl = ensureSafeSharedSourceUrl(sharedStoryActionsWrap?.dataset.sourceUrl || "");
-    const title = String(sharedStorySaveBookmarkBtn.dataset.title || "Shared story");
-    if (!sourceUrl) return;
-    const result = upsertSharedBookmark(sourceUrl, title);
-    if (!result.ok) {
-      await appAlert("Could not save this bookmark.");
-      return;
-    }
-    closeSharedStoryActionsMenu();
-    sharedStorySaveBookmarkBtn.classList.add("hidden");
-    renderHome();
-    await appAlert("Shared bookmark saved.");
-  });
-}
-
-if (sharedOpenResizeModalBtn) {
-  sharedOpenResizeModalBtn.addEventListener("click", () => {
-    closeSharedStoryOptionsMenu();
-    openResizeModal();
-  });
-}
-
-if (sharedToggleWrapColumnsBtn) {
-  sharedToggleWrapColumnsBtn.addEventListener("click", () => {
-    wrapColumns = !wrapColumns;
-    applyWrapColumns();
-    saveSettings();
-  });
-}
-
 if (goPrivacyFromFooterBtn) {
   goPrivacyFromFooterBtn.addEventListener("click", () => {
     openPrivacy();
@@ -5197,62 +5017,6 @@ if (phaseCommentsListEl) {
   });
 }
 
-if (editNoteTypesListEl) {
-  editNoteTypesListEl.addEventListener("click", async (event) => {
-    const delBtn = event.target.closest('[data-role="delete-custom-note-type"]');
-    if (delBtn) {
-      const id = delBtn.dataset.noteTypeId;
-      if (!id || BUILTIN_NOTE_TYPES.some((b) => b.id === id) || isNoteTypeInUse(id)) return;
-      const typeLabel = noteTypeById(id).label;
-      const confirmed = await appAlert(`Delete note type "${typeLabel}"? This cannot be undone.`, {
-        confirm: true,
-      });
-      if (!confirmed) return;
-      customNoteTypes = customNoteTypes.filter((item) => item.id !== id);
-      delete noteTypeOverrides[id];
-      saveCustomNoteTypes();
-      saveNoteTypeOverrides();
-      fillEditNoteTypesModal();
-      renderEditor();
-      return;
-    }
-    const sw = event.target.closest('[data-role="edit-note-type-swatch"]');
-    if (!sw) return;
-    const row = sw.closest(".edit-note-type-row");
-    if (!row || !editNoteTypesListEl.contains(row)) return;
-    const hexInput = row.querySelector(".edit-note-type-hex-input");
-    hexInput.value = normalizeHexColor(sw.dataset.color);
-    syncEditNoteTypeRowSwatches(row);
-  });
-  editNoteTypesListEl.addEventListener("input", (event) => {
-    if (!event.target.classList.contains("edit-note-type-hex-input")) return;
-    const row = event.target.closest(".edit-note-type-row");
-    if (row) syncEditNoteTypeRowSwatches(row);
-  });
-  editNoteTypesListEl.addEventListener("focusout", (event) => {
-    if (!event.target.classList.contains("edit-note-type-hex-input")) return;
-    const parsed = parseHexColorInput(event.target.value);
-    if (parsed) event.target.value = parsed;
-    const row = event.target.closest(".edit-note-type-row");
-    if (row) syncEditNoteTypeRowSwatches(row);
-  });
-}
-
-if (cancelEditNoteTypesBtn) {
-  cancelEditNoteTypesBtn.addEventListener("click", () => closeEditNoteTypesModal());
-}
-if (saveEditNoteTypesBtn) {
-  saveEditNoteTypesBtn.addEventListener("click", () => void saveEditNoteTypesFromModal());
-}
-if (resetBuiltinNoteTypeColorsBtn) {
-  resetBuiltinNoteTypeColorsBtn.addEventListener("click", () => void resetBuiltinNoteTypeColorsFromModal());
-}
-if (editNoteTypesModalOverlay) {
-  editNoteTypesModalOverlay.addEventListener("click", (event) => {
-    if (event.target === editNoteTypesModalOverlay) closeEditNoteTypesModal();
-  });
-}
-
 if (homeCollapsiblePanels.length > 0) {
   homeCollapsiblePanels.forEach((panel) => {
     panel.addEventListener("toggle", () => {
@@ -5288,7 +5052,11 @@ if (modalExportBoardBtn) {
   modalExportBoardBtn.addEventListener("click", async () => {
     const board = boards.find((item) => item.id === boardActionsModalBoardId);
     if (!board) return;
-    const exportOptions = await promptStoryExportOptions(board);
+    const exportOptions = await promptStoryExportOptionsModal({
+      board,
+      boardHasAnyPhaseComments,
+      appDialog,
+    });
     if (!exportOptions) return;
     downloadBoard(board, exportOptions);
     closeBoardActionsModal();
@@ -5299,7 +5067,12 @@ if (modalChangeBoardSlugBtn) {
   modalChangeBoardSlugBtn.addEventListener("click", async () => {
     const board = boards.find((item) => item.id === boardActionsModalBoardId);
     if (!board) return;
-    const result = await promptStorySlugOptions(board);
+    const result = await promptStorySlugOptionsModal({
+      board,
+      appDialog,
+      slugifyTitle,
+      escapeHtml,
+    });
     if (!result) return;
     const nextSlug = ensureUniqueSlug(result.baseSlug, board.id);
     const currentSlug = typeof board.slug === "string" ? board.slug.trim() : "";
@@ -5362,13 +5135,6 @@ if (groupView) {
     if (!titleEl || !currentGroupId) return;
     event.preventDefault();
     inlineTitleEdit.beginGroup(currentGroupId);
-  });
-}
-
-if (modalEditNoteTypesBtn) {
-  modalEditNoteTypesBtn.addEventListener("click", () => {
-    closeBoardActionsModal();
-    openEditNoteTypesModal();
   });
 }
 
@@ -5645,44 +5411,20 @@ function closeOptionsMenu() {
   optionsMenu.classList.add("hidden");
 }
 
-function closeSharedStoryActionsMenu() {
-  if (!sharedStoryActionsMenu) return;
-  sharedStoryActionsMenu.classList.add("hidden");
-}
-
-function closeSharedStoryOptionsMenu() {
-  if (!sharedStoryOptionsMenu) return;
-  sharedStoryOptionsMenu.classList.add("hidden");
-}
-
 function closeDashboardActionsModal() {
-  if (!dashboardActionsModalOverlay) return;
-  dashboardActionsModalOverlay.classList.add("hidden");
-  if (dashboardActionsSectionsEl) {
-    dashboardActionsSectionsEl.querySelectorAll("details.dashboard-actions-section").forEach((details) => {
-      details.open = false;
-    });
-  }
-}
-
-function initExclusiveAccordionForActionsModal(sectionsRoot) {
-  if (!sectionsRoot) return;
-  sectionsRoot.addEventListener("toggle", (event) => {
-    const details = event.target;
-    if (!(details instanceof HTMLDetailsElement) || !details.matches(".dashboard-actions-section")) return;
-    if (!details.open) return;
-    sectionsRoot.querySelectorAll("details.dashboard-actions-section").forEach((other) => {
-      if (other !== details) other.open = false;
-    });
-  });
-}
-
-function initDashboardActionsExclusiveAccordion() {
-  initExclusiveAccordionForActionsModal(dashboardActionsSectionsEl);
+  dashboardActionsModal.close();
 }
 
 function initBoardActionsExclusiveAccordion() {
-  initExclusiveAccordionForActionsModal(boardActionsSectionsEl);
+  if (!boardActionsSectionsEl) return;
+  boardActionsSectionsEl.addEventListener("toggle", (event) => {
+    const details = event.target;
+    if (!(details instanceof HTMLDetailsElement) || !details.matches(".dashboard-actions-section")) return;
+    if (!details.open) return;
+    boardActionsSectionsEl.querySelectorAll("details.dashboard-actions-section").forEach((other) => {
+      if (other !== details) other.open = false;
+    });
+  });
 }
 
 function initStructurePreviewModal() {
@@ -5712,13 +5454,11 @@ function initStructurePreviewModal() {
 }
 
 function closeDashboardCreateStoryModal() {
-  if (!dashboardCreateStoryModalOverlay) return;
-  dashboardCreateStoryModalOverlay.classList.add("hidden");
+  dashboardFlowModals.closeCreateStory();
 }
 
 function closeDashboardCreateStructureModal() {
-  if (!dashboardCreateStructureModalOverlay) return;
-  dashboardCreateStructureModalOverlay.classList.add("hidden");
+  dashboardFlowModals.closeCreateStructure();
 }
 
 function closeStructurePreviewModal() {
@@ -5777,42 +5517,23 @@ function openStructurePreviewModal(structureId) {
 }
 
 function closeDashboardImportModal() {
-  if (!dashboardImportModalOverlay) return;
-  dashboardImportModalOverlay.classList.add("hidden");
+  dashboardFlowModals.closeImport();
 }
 
 function closeDashboardImportStructuresModal() {
-  if (!dashboardImportStructuresModalOverlay) return;
-  dashboardImportStructuresModalOverlay.classList.add("hidden");
+  dashboardFlowModals.closeImportStructures();
 }
 
 function openDashboardImportStructuresModal() {
-  if (!dashboardImportStructuresModalOverlay) return;
-  closeDashboardActionsModal();
-  closeDashboardRemoveStructuresModal();
-  closeDashboardImportStructuresPasteModal();
-  closeDashboardImportStoryPasteModal();
-  closeDashboardImportModal();
-  dashboardImportStructuresModalOverlay.classList.remove("hidden");
+  dashboardFlowModals.openImportStructures();
 }
 
 function closeDashboardImportStoryPasteModal() {
-  if (!dashboardImportStoryPasteModalOverlay) return;
-  dashboardImportStoryPasteModalOverlay.classList.add("hidden");
-  if (importStoryPasteText) importStoryPasteText.value = "";
+  dashboardFlowModals.closeImportStoryPaste();
 }
 
 function openDashboardImportStoryPasteModal() {
-  if (!dashboardImportStoryPasteModalOverlay) return;
-  dismissAllAppAlerts();
-  closeOptionsMenu();
-  closeDashboardActionsModal();
-  closeDashboardRemoveStructuresModal();
-  closeDashboardImportModal();
-  closeDashboardImportStructuresModal();
-  closeDashboardImportStructuresPasteModal();
-  dashboardImportStoryPasteModalOverlay.classList.remove("hidden");
-  if (importStoryPasteText) importStoryPasteText.focus();
+  dashboardFlowModals.openImportStoryPaste();
 }
 
 function syncAiPromptAnalysisLanguageCustomVisibility() {
@@ -5874,14 +5595,11 @@ function syncAiPromptOutputFromForm() {
 }
 
 function closeDashboardCreateSeriesModal() {
-  if (!dashboardCreateSeriesModalOverlay) return;
-  dashboardCreateSeriesModalOverlay.classList.add("hidden");
+  dashboardFlowModals.closeCreateSeries();
 }
 
 function closeDashboardImportStructuresPasteModal() {
-  if (!dashboardImportStructuresPasteModalOverlay) return;
-  dashboardImportStructuresPasteModalOverlay.classList.add("hidden");
-  if (importStructuresPasteText) importStructuresPasteText.value = "";
+  dashboardFlowModals.closeImportStructuresPaste();
 }
 
 function updateDashboardRemoveStructuresActionState() {
@@ -5953,7 +5671,6 @@ function openDashboardRemoveStructuresModal() {
 }
 
 function openDashboardActionsModal() {
-  if (!dashboardActionsModalOverlay) return;
   dismissAllAppAlerts();
   closeOptionsMenu();
   closeDashboardCreateStoryModal();
@@ -5965,55 +5682,27 @@ function openDashboardActionsModal() {
   closeDashboardCreateSeriesModal();
   closeDeleteStoryModal();
   closeDashboardRemoveStructuresModal();
-  dashboardActionsModalOverlay.classList.remove("hidden");
+  dashboardActionsModal.open();
 }
 
 function openDashboardCreateStoryModal() {
-  if (!dashboardCreateStoryModalOverlay) return;
-  closeDashboardActionsModal();
-  closeDashboardRemoveStructuresModal();
-  closeDashboardImportStructuresModal();
-  dashboardCreateStoryModalOverlay.classList.remove("hidden");
-  // Focus for faster input.
-  if (boardTitleInput) boardTitleInput.focus();
+  dashboardFlowModals.openCreateStory();
 }
 
 function openDashboardCreateStructureModal() {
-  if (!dashboardCreateStructureModalOverlay) return;
-  closeDashboardActionsModal();
-  closeDashboardRemoveStructuresModal();
-  closeDashboardImportStructuresModal();
-  dashboardCreateStructureModalOverlay.classList.remove("hidden");
-  // Focus for faster input.
-  if (structureNameInput) structureNameInput.focus();
+  dashboardFlowModals.openCreateStructure();
 }
 
 function openDashboardImportModal() {
-  if (!dashboardImportModalOverlay) return;
-  closeDashboardActionsModal();
-  closeDashboardRemoveStructuresModal();
-  closeDashboardImportStructuresModal();
-  closeDashboardImportStoryPasteModal();
-  dashboardImportModalOverlay.classList.remove("hidden");
+  dashboardFlowModals.openImport();
 }
 
 function openDashboardCreateSeriesModal() {
-  if (!dashboardCreateSeriesModalOverlay) return;
-  closeDashboardActionsModal();
-  closeDashboardRemoveStructuresModal();
-  closeDashboardImportStructuresModal();
-  dashboardCreateSeriesModalOverlay.classList.remove("hidden");
+  dashboardFlowModals.openCreateSeries();
 }
 
 function openDashboardImportStructuresPasteModal() {
-  if (!dashboardImportStructuresPasteModalOverlay) return;
-  closeDashboardActionsModal();
-  closeDashboardRemoveStructuresModal();
-  closeDashboardImportStoryPasteModal();
-  closeDashboardImportModal();
-  closeDashboardImportStructuresModal();
-  dashboardImportStructuresPasteModalOverlay.classList.remove("hidden");
-  if (importStructuresPasteText) importStructuresPasteText.focus();
+  dashboardFlowModals.openImportStructuresPaste();
 }
 
 function openResizeModal() {
@@ -6095,12 +5784,6 @@ if (groupViewActionsBtn) {
 if (dashboardActionsBtn) {
   dashboardActionsBtn.addEventListener("click", () => {
     openDashboardActionsModal();
-  });
-}
-
-if (closeDashboardActionsModalBtn) {
-  closeDashboardActionsModalBtn.addEventListener("click", () => {
-    closeDashboardActionsModal();
   });
 }
 
@@ -6298,12 +5981,6 @@ if (closeDashboardCreateSeriesModalBtn) {
 if (closeDashboardImportStructuresPasteModalBtn) {
   closeDashboardImportStructuresPasteModalBtn.addEventListener("click", () => {
     closeDashboardImportStructuresPasteModal();
-  });
-}
-
-if (dashboardActionsModalOverlay) {
-  dashboardActionsModalOverlay.addEventListener("click", (event) => {
-    if (event.target === dashboardActionsModalOverlay) closeDashboardActionsModal();
   });
 }
 
@@ -6605,24 +6282,48 @@ if (confirmRestoreBackupBtn) {
 // Close with Escape when the modal is open.
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+  const consumeEscape = () => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
   if (closeAppAlertIfOpen()) return;
   if (factoryResetModalOverlay && !factoryResetModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
     closeFactoryResetModal();
     return;
   }
   if (resetDemosModalOverlay && !resetDemosModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
     closeResetDemosModal();
     return;
   }
   if (restoreBackupModalOverlay && !restoreBackupModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
     closeRestoreBackupModal();
     return;
   }
   if (deleteStoryModalOverlay && !deleteStoryModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
     closeDeleteStoryModal();
     return;
   }
+  if (boardActionsModalOverlay && !boardActionsModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
+    closeBoardActionsModal();
+    return;
+  }
+  if (groupActionsModalOverlay && !groupActionsModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
+    groupModalController.closeGroupActionsModal();
+    return;
+  }
+  if (groupReorderModalOverlay && !groupReorderModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
+    void groupModalController.closeGroupReorderModal();
+    return;
+  }
   if (dashboardCreateStoryModalOverlay && !dashboardCreateStoryModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
     closeDashboardCreateStoryModal();
     return;
   }
@@ -6630,10 +6331,12 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   if (dashboardCreateStructureModalOverlay && !dashboardCreateStructureModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
     closeDashboardCreateStructureModal();
     return;
   }
   if (dashboardImportModalOverlay && !dashboardImportModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
     closeDashboardImportModal();
     return;
   }
@@ -6641,6 +6344,7 @@ document.addEventListener("keydown", (event) => {
     dashboardImportStructuresModalOverlay &&
     !dashboardImportStructuresModalOverlay.classList.contains("hidden")
   ) {
+    consumeEscape();
     closeDashboardImportStructuresModal();
     return;
   }
@@ -6648,17 +6352,30 @@ document.addEventListener("keydown", (event) => {
     dashboardImportStoryPasteModalOverlay &&
     !dashboardImportStoryPasteModalOverlay.classList.contains("hidden")
   ) {
+    consumeEscape();
     closeDashboardImportStoryPasteModal();
     return;
   }
   if (dashboardCreateSeriesModalOverlay && !dashboardCreateSeriesModalOverlay.classList.contains("hidden")) {
+    consumeEscape();
     closeDashboardCreateSeriesModal();
+    return;
+  }
+  if (editNoteTypesModal.isOpen()) {
+    consumeEscape();
+    editNoteTypesModal.close();
+    return;
+  }
+  if (editArchetypesModal.isOpen()) {
+    consumeEscape();
+    editArchetypesModal.close();
     return;
   }
   if (
     dashboardImportStructuresPasteModalOverlay &&
     !dashboardImportStructuresPasteModalOverlay.classList.contains("hidden")
   ) {
+    consumeEscape();
     closeDashboardImportStructuresPasteModal();
     return;
   }
@@ -6666,19 +6383,23 @@ document.addEventListener("keydown", (event) => {
     dashboardRemoveStructuresModalOverlay &&
     !dashboardRemoveStructuresModalOverlay.classList.contains("hidden")
   ) {
+    consumeEscape();
     closeDashboardRemoveStructuresModal();
     return;
   }
-  if (dashboardActionsModalOverlay && !dashboardActionsModalOverlay.classList.contains("hidden")) {
+  if (dashboardActionsModal.isOpen()) {
+    consumeEscape();
     closeDashboardActionsModal();
     return;
   }
-  if (sharedStoryActionsMenu && !sharedStoryActionsMenu.classList.contains("hidden")) {
-    closeSharedStoryActionsMenu();
+  if (sharedViewActions.isActionsMenuOpen()) {
+    consumeEscape();
+    sharedViewActions.closeActionsMenu();
     return;
   }
-  if (sharedStoryOptionsMenu && !sharedStoryOptionsMenu.classList.contains("hidden")) {
-    closeSharedStoryOptionsMenu();
+  if (sharedViewActions.isOptionsMenuOpen()) {
+    consumeEscape();
+    sharedViewActions.closeOptionsMenu();
   }
 });
 
@@ -6959,8 +6680,7 @@ document.addEventListener("click", (event) => {
 
   if (!event.target.closest(".options-wrap")) {
     closeOptionsMenu();
-    closeSharedStoryActionsMenu();
-    closeSharedStoryOptionsMenu();
+    sharedViewActions.closeMenus();
   }
   if (!event.target.closest(".phase-head") && !event.target.closest("#add-note-modal-overlay")) {
     boardNoteActions.closeAllColumnMenus();
@@ -7048,7 +6768,6 @@ applyColumnWidth();
 applyWrapColumns();
 applyDevFlags();
 applyDemoVisibilityControl();
-initDashboardActionsExclusiveAccordion();
 initBoardActionsExclusiveAccordion();
 initStructurePreviewModal();
 initModalScrollLock();

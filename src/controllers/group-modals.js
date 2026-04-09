@@ -1,4 +1,4 @@
-import { appAlert } from "./app-alert.js";
+import { appAlert } from "../ui/app-alert.js";
 
 function escapeHtml(text) {
   return String(text ?? "")
@@ -68,7 +68,7 @@ export function createGroupModalController({
     groupReorderAddSelectEl.innerHTML = "";
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = eligible.length === 0 ? "No other stories to add" : "Add a story…";
+    placeholder.textContent = eligible.length === 0 ? "No other stories to add" : "Add a story...";
     groupReorderAddSelectEl.appendChild(placeholder);
     eligible.forEach((board) => {
       const opt = document.createElement("option");
