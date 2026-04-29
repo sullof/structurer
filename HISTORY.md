@@ -1,5 +1,12 @@
 # History
 
+
+**1.19.2** - 2026-04-29
+- **Local URL watchdog script:** added a laptop-friendly monitor command that checks one or more URLs on a timer, tracks consecutive failures, and triggers an audible alert only when a target transitions to DOWN (plus recovery logging) to simplify remote Docker outage detection (`scripts/url-monitor.js`, `package.json`, `README.md`).
+- **Watchdog defaults for rare incidents + sleep-resume detection:** raised default URL monitor interval to one hour and added idle-gap detection so, after laptop wake/sleep gaps, the script logs resume and runs checks immediately instead of waiting for a full additional interval (`scripts/url-monitor.js`, `README.md`).
+- **Internet pre-check before endpoint checks:** each monitor cycle now validates internet connectivity first (configurable probe URLs). When offline, the script raises a dedicated internet alert once, skips endpoint checks to avoid false endpoint failures, and resumes normal URL checks automatically after connectivity recovery (`scripts/url-monitor.js`, `README.md`).
+- **URL list from `.env`:** monitor targets can now be defined in `.env` via `DEFAULT_URLS` (space-separated), so installers can configure their own endpoints without editing source code. `MONITOR_URLS` remains available as a runtime override (`scripts/url-monitor.js`, `README.md`).
+
 **1.19.1** - 2026-04-08
 - **Reusable title-line component baseline:** extracted a shared `titleLineTemplate` (badge + title) and wired it into editor/group/shared title rendering to reduce duplicated markup and prepare the next refactor steps (`ui-render.js`, `main.js`).
 - **Actions/modals refactor baseline:** moved shared-story actions/options menu behavior into a dedicated controller and extracted story export/slug dialogs into a modal module, reducing UI/event complexity in `main.js` while preserving behavior (`shared-view-actions.js`, `modals/story-action-modals.js`, `main.js`).
@@ -14,10 +21,6 @@
 - **Escape handling for actions modals:** fixed global `Esc` behavior so story/group/dashboard actions-related overlays close reliably (matching outside-click behavior) and consume handled `Escape` events to avoid focus-only side effects (`main.js`).
 - **Shared URL actions made explicit again:** replaced the shared-view `... Actions` dropdown with always-visible topbar buttons (**Save bookmark** and **View source**) to improve discoverability for first-time users arriving from external links, while keeping existing bookmark/open-source behavior unchanged (`index.html`, `styles.css`, `controllers/shared-view-actions.js`).
 - **Shared bookmarks card width parity on dashboard:** fixed `#shared-bookmarks-list` grid columns to match stories/series card sizing, so a single shared bookmark card no longer expands full-width (`styles.css`).
-- **Local URL watchdog script:** added a laptop-friendly monitor command that checks one or more URLs on a timer, tracks consecutive failures, and triggers an audible alert only when a target transitions to DOWN (plus recovery logging) to simplify remote Docker outage detection (`scripts/url-monitor.js`, `package.json`, `README.md`).
-- **Watchdog defaults for rare incidents + sleep-resume detection:** raised default URL monitor interval to one hour and added idle-gap detection so, after laptop wake/sleep gaps, the script logs resume and runs checks immediately instead of waiting for a full additional interval (`scripts/url-monitor.js`, `README.md`).
-- **Internet pre-check before endpoint checks:** each monitor cycle now validates internet connectivity first (configurable probe URLs). When offline, the script raises a dedicated internet alert once, skips endpoint checks to avoid false endpoint failures, and resumes normal URL checks automatically after connectivity recovery (`scripts/url-monitor.js`, `README.md`).
-- **URL list from `.env`:** monitor targets can now be defined in `.env` via `DEFAULT_URLS` (space-separated), so installers can configure their own endpoints without editing source code. `MONITOR_URLS` remains available as a runtime override (`scripts/url-monitor.js`, `README.md`).
 
 **1.18.8** - 2026-04-08
 - **Shared view actions/menu refinement:** on shared-story pages, actions now live in a unified **… Actions** menu on desktop and **…** on mobile, with **Open original JSON** and **Save bookmark** as menu items. After saving, **Save bookmark** hides immediately (no refresh needed) (`index.html`, `main.js`).
