@@ -147,7 +147,7 @@ Optional environment variables:
 Example `.env`:
 
 ```dotenv
-DEFAULT_URLS="https://structurer.sullo.co/ https://sullo.co/ https://kanievsky.com/"
+DEFAULT_URLS="https://structurer.sullo.co/ https://sullo.co/"
 MONITOR_POLL_MS=3600000
 MONITOR_TIMEOUT_MS=8000
 MONITOR_FAILURE_THRESHOLD=2
