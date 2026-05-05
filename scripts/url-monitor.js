@@ -5,9 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const FALLBACK_DEFAULT_URLS = [
-  "https://structurer.sullo.co/",
-  "https://sullo.co/",
-  "https://kanievsky.com/",
+  "https://structurer.sullo.co/"
 ];
 const DEFAULT_CONNECTIVITY_URLS = [
   "https://www.google.com/generate_204",
