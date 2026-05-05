@@ -10,6 +10,7 @@ import findingNemoStoryCircleDemo from "./data/finding-nemo-story-circle-demo.js
 import theHungerGamesSevenPointDemo from "./data/the-hunger-games-seven-point-demo.json";
 import prideAndPrejudiceRomancingDemo from "./data/pride-and-prejudice-romancing-the-beat-demo.json";
 import inceptionMiceDemo from "./data/inception-mice-quotient-demo.json";
+import murderOnTheOrientExpressMysteryDemo from "./data/murder-on-the-orient-express-12-step-mystery-demo.json";
 
 export const DEMO_BOARD_DATA = [
   matrixDemo,
@@ -24,4 +25,5 @@ export const DEMO_BOARD_DATA = [
   theHungerGamesSevenPointDemo,
   prideAndPrejudiceRomancingDemo,
   inceptionMiceDemo,
+  murderOnTheOrientExpressMysteryDemo,
 ];

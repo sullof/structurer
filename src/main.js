@@ -563,6 +563,9 @@ function saveCustomArchetypes() {
 function getAllStructures() {
   const map = { ...BUILTIN_STRUCTURES };
   for (const structure of customStructures) {
+    // Never allow local custom entries to shadow built-in structure IDs.
+    // This keeps dashboard structure catalog aligned with shipped defaults after updates/resets.
+    if (Object.prototype.hasOwnProperty.call(BUILTIN_STRUCTURES, structure.id)) continue;
     map[structure.id] = structure;
   }
   return map;
@@ -1870,7 +1873,11 @@ function renderHome() {
   if (dashboardStructuresList) {
     const oneHourMs = 60 * 60 * 1000;
     const now = Date.now();
-    const customIds = new Set(customStructures.map((structure) => structure.id));
+    const customIds = new Set(
+      customStructures
+        .filter((structure) => !Object.prototype.hasOwnProperty.call(BUILTIN_STRUCTURES, structure.id))
+        .map((structure) => structure.id),
+    );
     const structureItems = getCatalogStructureList()
       .map((structure) => {
         const isCustom = customIds.has(structure.id);

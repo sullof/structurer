@@ -1,0 +1,65 @@
+{
+  "title": "Murder on the Orient Express",
+  "structure": "12-Step Mystery Formula",
+  "notes": [
+    { "kind": "plot", "column": 0, "order": 0, "text": "In 1934, after solving a theft in the Middle East, Hercule Poirot boards the Orient Express expecting a quiet trip to Europe. A snowbound luxury train, an uneasy passenger list, and a sleeping car full of secrets establish a perfect closed-circle mystery." },
+    { "kind": "character", "column": 0, "order": 1, "text": "Poirot is introduced as brilliant, precise, and almost doctrinaire about order. He believes truth is discoverable if one observes carefully and refuses sentimentality.", "characterName": "Hercule Poirot", "archetype": "hero" },
+    { "kind": "theme", "column": 0, "order": 2, "text": "The hook asks the novel's moral question before the crime is even named: what should prevail when law and justice diverge?" },
+    { "kind": "location", "column": 0, "order": 3, "text": "The Orient Express functions as a moving locked room: finite suspects, controlled geography, and no easy outside intervention once weather halts the line." },
+
+    { "kind": "plot", "column": 1, "order": 0, "text": "Poirot's reputation attracts attention immediately; fellow passengers recognize him as a famous detective. He is reluctantly positioned as the one person capable of untangling whatever goes wrong." },
+    { "kind": "character", "column": 1, "order": 1, "text": "M. Bouc, director of the railway company and Poirot's friend, becomes practical support for the investigation and gives Poirot formal authority once a crime is discovered.", "characterName": "M. Bouc", "archetype": "ally" },
+    { "kind": "character", "column": 1, "order": 2, "text": "Dr. Constantine serves as forensic counterpart: less theatrical than Poirot, but essential for grounding speculation in physical evidence.", "characterName": "Dr. Constantine", "archetype": "ally" },
+    { "kind": "theme", "column": 1, "order": 3, "text": "The sleuth beat defines the story engine: this case will be solved through contradiction analysis, social reading, and tiny material clues rather than brute force." },
+
+    { "kind": "plot", "column": 2, "order": 0, "text": "The victim is discovered as Samuel Ratchett, stabbed multiple times overnight in his locked compartment. The wounds are inconsistent in angle and force, suggesting either staged chaos or multiple attackers." },
+    { "kind": "character", "column": 2, "order": 1, "text": "Ratchett had tried to hire Poirot as protection before the murder, claiming he was receiving death threats. Poirot refused, feeling instinctive disgust.", "characterName": "Samuel Ratchett", "archetype": "shadow" },
+    { "kind": "theme", "column": 2, "order": 2, "text": "The perfect-crime planning appears in the artifacts left behind: a broken watch stopped at 1:15, a burnt note fragment, mismatched handkerchief, and contradictory eyewitness impressions of who moved through the corridor." },
+    { "kind": "detail", "column": 2, "order": 3, "text": "The compartment was bolted from inside, window apparently unhelpful, and footprints unreliable due to train conditions. The scene advertises impossibility while quietly offering too many clues." },
+
+    { "kind": "plot", "column": 3, "order": 0, "text": "Passenger interviews reveal a culturally and socially diverse coach: princess, governess, colonel, missionary, salesman, valet, countess, and others. Everyone seems plausible, no one fully transparent." },
+    { "kind": "character", "column": 3, "order": 1, "text": "Mrs. Hubbard appears garrulous and comic, claiming a man was in her compartment. Her performative anxiety makes her look harmless while drawing attention away from calculated details.", "characterName": "Mrs. Hubbard", "archetype": "shapeshifter" },
+    { "kind": "character", "column": 3, "order": 2, "text": "Mary Debenham and Colonel Arbuthnot insist they barely know each other, yet their body language and synchronized denials suggest rehearsed distance.", "characterName": "Mary Debenham", "archetype": "shapeshifter" },
+    { "kind": "theme", "column": 3, "order": 3, "text": "Suspect construction is the novel's core pleasure: each testimony is truthful in fragments but deceptive in framing, forcing Poirot to parse motive beneath social masks." },
+
+    { "kind": "plot", "column": 4, "order": 0, "text": "Physical clues proliferate: a pipe cleaner in a compartment where no pipe owner admits use, a scarlet kimono sighting no one can verify, and a handkerchief monogrammed with an 'H' that points in too many directions." },
+    { "kind": "detail", "column": 4, "order": 1, "text": "Witnesses report hearing noises at incompatible times; the timeline appears impossible if a single killer committed the attack and moved unseen through narrow corridors." },
+    { "kind": "character", "column": 4, "order": 2, "text": "The train conductor's movements create a red-herring thread: uniforms, doors, and corridor visibility become manipulable variables in staged testimony.", "characterName": "Pierre Michel", "archetype": "guardian" },
+    { "kind": "theme", "column": 4, "order": 3, "text": "This beat models fair-play mystery craft: clues are all present, but their narrative arrangement encourages the reader to overvalue theatrical evidence and undervalue emotional linkage." },
+
+    { "kind": "plot", "column": 5, "order": 0, "text": "The inciting incident locks the story into high stakes: the train is immobilized in deep snow, police support is delayed, and the murderer is certainly still onboard." },
+    { "kind": "location", "column": 5, "order": 1, "text": "Snow transforms the train from transport into pressure chamber. Time, weather, and confinement force rapid deduction and prevent suspects from escaping consequence." },
+    { "kind": "character", "column": 5, "order": 2, "text": "Bouc formally asks Poirot to solve the murder before Yugoslav police take over, establishing trust in Poirot's method over bureaucratic procedure.", "characterName": "M. Bouc", "archetype": "ally" },
+    { "kind": "theme", "column": 5, "order": 3, "text": "The launch beat clarifies stakes: if Poirot fails, the official system may produce a convenient but false culprit; if he succeeds, he may uncover a truth no institution wants." },
+
+    { "kind": "plot", "column": 6, "order": 0, "text": "Poirot, Bouc, and Constantine execute structured interviews, then compare alibis against corridor movements, bell pulls, and compartment access. Contradictions accumulate faster than resolution." },
+    { "kind": "character", "column": 6, "order": 1, "text": "Antonio Foscarelli, Hector MacQueen, and Edward Masterman each display selective cooperation: eager in details that exonerate themselves, evasive where emotional history might surface.", "characterName": "Hector MacQueen", "archetype": "shapeshifter" },
+    { "kind": "subplot", "column": 6, "order": 2, "text": "The detective trio itself becomes a procedural subplot: Bouc favors reputation management, Constantine favors medical plausibility, Poirot favors pattern integrity. Their tension sharpens the inquiry." },
+    { "kind": "theme", "column": 6, "order": 3, "text": "The investigation beat teaches method: Poirot does not seek a dramatic confession first; he builds a matrix where lies become mathematically unsustainable." },
+
+    { "kind": "plot", "column": 7, "order": 0, "text": "As inquiry deepens, suspects subtly coordinate emotional narratives while maintaining legal deniability. Each new answer solves one inconsistency and creates two more." },
+    { "kind": "character", "column": 7, "order": 1, "text": "Count and Countess Andrenyi, Princess Dragomiroff, and Greta Ohlsson project distinct class personas, yet all react sharply when references to American childcare tragedy emerge.", "characterName": "Countess Andrenyi", "archetype": "shapeshifter" },
+    { "kind": "plot", "column": 7, "order": 2, "text": "Threat level rises from social to moral: Poirot realizes this may not be ordinary greed or passion, but a collective emotional wound seeking closure through choreography." },
+    { "kind": "theme", "column": 7, "order": 3, "text": "Rising action reframes danger: the detective is not racing only against a killer, but against a shared pact among intelligent people who may prefer sacrificial falsehood to legal truth." },
+
+    { "kind": "plot", "column": 8, "order": 0, "text": "The burnt paper fragment is reconstructed enough to reveal '...member little Daisy Armstrong...' connecting Ratchett to the infamous Armstrong kidnapping case in America." },
+    { "kind": "character", "column": 8, "order": 1, "text": "Ratchett is identified as Cassetti, the criminal who kidnapped and murdered child Daisy Armstrong and escaped full justice through money and legal maneuvering.", "characterName": "Samuel Ratchett", "archetype": "shadow" },
+    { "kind": "theme", "column": 8, "order": 2, "text": "Midpoint twist detonates the case: this is no random train murder but a revenge architecture tied to one of the century's most emotionally charged crimes." },
+    { "kind": "detail", "column": 8, "order": 3, "text": "With this revelation, innocuous details become relational signals: accents, occupations, and mannerisms map to the Armstrong household, military circles, domestic staff, and family allies." },
+
+    { "kind": "plot", "column": 9, "order": 0, "text": "At the low point, Poirot confronts a near-impossible conclusion: too many passengers appear indirectly connected to Armstrong; no single perpetrator model cleanly explains wounds, timing, and staged artifacts." },
+    { "kind": "character", "column": 9, "order": 1, "text": "Poirot's crisis is ethical as much as logical. He can expose everyone and hand them to formal justice, or recognize that formal justice failed first when Cassetti walked free.", "characterName": "Hercule Poirot", "archetype": "hero" },
+    { "kind": "theme", "column": 9, "order": 2, "text": "All-is-lost in mystery form: the detective has the facts but no morally clean outcome. The puzzle is solvable; the conscience problem is not." },
+    { "kind": "subplot", "column": 9, "order": 3, "text": "Bouc urges pragmatic closure to protect railway reputation, while Constantine stresses legal protocol. Poirot stands alone between institutional convenience and personal integrity." },
+
+    { "kind": "plot", "column": 10, "order": 0, "text": "The breakthrough arrives as pattern completion: twelve stab wounds, twelve connected passengers, and layered misdirection imply a collective execution in which each participant took one blow." },
+    { "kind": "character", "column": 10, "order": 1, "text": "Mrs. Hubbard is unmasked as Linda Arden, Daisy Armstrong's grandmother and architect of the operation. Her theatrical persona had been strategic camouflage, not comic relief.", "characterName": "Linda Arden", "archetype": "trickster" },
+    { "kind": "detail", "column": 10, "order": 2, "text": "Even peripheral staff fit the Armstrong web: the conductor is linked by family grief, servants are former household employees, and military figures tie back through Colonel Armstrong's network." },
+    { "kind": "theme", "column": 10, "order": 3, "text": "Breakthrough clue here is cumulative, not singular: the truth emerges when Poirot stops treating anomalies as noise and reads them as deliberate ensemble design." },
+
+    { "kind": "plot", "column": 11, "order": 0, "text": "Poirot presents two solutions: an external assassin boarded, killed Cassetti, and escaped in snow (officially convenient), or all twelve passengers jointly executed Cassetti in symbolic jury fashion (factually complete)." },
+    { "kind": "character", "column": 11, "order": 1, "text": "In the final confrontation, no suspect pleads innocence. Instead, they stand in quiet solidarity, accepting moral ownership of the act while leaving legal framing to Poirot's discretion.", "characterName": "Hercule Poirot", "archetype": "hero" },
+    { "kind": "theme", "column": 11, "order": 2, "text": "Resolution crystallizes the book's enduring question: is justice obedience to law, or can collective conscience legitimately answer when law has already betrayed the innocent?" },
+    { "kind": "detail", "column": 11, "order": 3, "text": "Poirot recommends the first solution to authorities, preserving legal order while privately acknowledging the second. The case closes with order restored on paper and ambiguity preserved in the soul." }
+  ]
+}

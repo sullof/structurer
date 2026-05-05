@@ -2,6 +2,8 @@
 
 **1.19.3** - 2026-05-05
 - **New built-in narrative template:** added **12-Step Mystery Formula** to default structures, with twelve dedicated phases tailored to whodunit plotting (hook, suspect web, clue layering, midpoint twist, all-is-lost, breakthrough clue, and final reveal) (`src/app-config.js`, `README.md`).
+- **New built-in mystery demo story:** added a full-content demo board for **Murder on the Orient Express** mapped to **12-Step Mystery Formula**, with dense multi-note phase coverage comparable to other built-in demos (`src/data/murder-on-the-orient-express-12-step-mystery-demo.json`, `src/demo-boards.js`, `index.html`, `README.md`).
+- **Dashboard structure catalog refresh safety:** prevented custom/local structures from shadowing built-in structure IDs, so newly shipped default structures remain visible and up to date in the dashboard after demo reset and app updates (`src/main.js`).
 
 
 **1.19.2** - 2026-04-29
