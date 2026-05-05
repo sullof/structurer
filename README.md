@@ -46,6 +46,7 @@ Built-in demos are included as ready-to-study examples:
 - 7-Point Story Structure -> The Hunger Games
 - Romancing the Beat -> Pride and Prejudice
 - MICE Quotient -> Inception
+- 12-Step Mystery Formula -> Murder on the Orient Express
 
 ## Series
 
