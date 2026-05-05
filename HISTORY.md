@@ -1,5 +1,8 @@
 # History
 
+**1.19.3** - 2026-05-05
+- **New built-in narrative template:** added **12-Step Mystery Formula** to default structures, with twelve dedicated phases tailored to whodunit plotting (hook, suspect web, clue layering, midpoint twist, all-is-lost, breakthrough clue, and final reveal) (`src/app-config.js`, `README.md`).
+
 
 **1.19.2** - 2026-04-29
 - **Local URL watchdog script:** added a laptop-friendly monitor command that checks one or more URLs on a timer, tracks consecutive failures, and triggers an audible alert only when a target transitions to DOWN (plus recovery logging) to simplify remote Docker outage detection (`scripts/url-monitor.js`, `package.json`, `README.md`).

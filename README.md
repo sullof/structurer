@@ -31,6 +31,7 @@ Built-in structures include:
 - 7-Point Story Structure
 - Romancing the Beat
 - MICE Quotient
+- 12-Step Mystery Formula
 
 You can also create and save custom structures directly in the dashboard.
 

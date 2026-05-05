@@ -506,6 +506,75 @@ export const BUILTIN_STRUCTURES = {
       },
     ],
   },
+  mystery_12_step: {
+    id: "mystery_12_step",
+    name: "12-Step Mystery Formula",
+    description:
+      "A practical beat map for whodunit stories: hook the case, shape investigator and suspects, escalate clues and pressure, then resolve with a final reveal. Useful for murder mysteries and investigative thrillers that rely on controlled information, red herrings, and a fair-play payoff.",
+    author: "Popular writing-craft template for mystery plotting (12-step variant).",
+    phases: [
+      {
+        title: "The Concept and Hook",
+        description:
+          "Define the core crime premise and opening intrigue that immediately raises a compelling mystery question.",
+      },
+      {
+        title: "Develop the Sleuth",
+        description:
+          "Build a believable investigator with clear motivation, strengths, blind spots, and personal stakes in solving the case.",
+      },
+      {
+        title: "Plan the Perfect Crime",
+        description:
+          "Clarify victim, culprit, method, and hidden mistake so the crime is coherent and leaves a trail to uncover.",
+      },
+      {
+        title: "Craft Suspects and Secrets",
+        description:
+          "Create a suspect field with motives, opportunities, and concealed truths that keep suspicion moving.",
+      },
+      {
+        title: "Plant Clues and Red Herrings",
+        description:
+          "Seed fair clues while layering misdirection, so readers can theorize without an obvious early solution.",
+      },
+      {
+        title: "The Inciting Incident",
+        description:
+          "The triggering event (often discovery of the body) launches the formal investigation.",
+      },
+      {
+        title: "The Investigation Begins",
+        description:
+          "The sleuth interviews witnesses, gathers evidence, and tests early theories against new facts.",
+      },
+      {
+        title: "Rising Action and Obstacles",
+        description:
+          "Complications intensify: conflicting testimonies, dead ends, threats, and mounting pressure on the sleuth.",
+      },
+      {
+        title: "The Midpoint Twist",
+        description:
+          "A major reversal reframes the case, invalidates assumptions, or exposes a deeper layer of deception.",
+      },
+      {
+        title: "The 'All Is Lost' Moment",
+        description:
+          "At the low point, the investigation appears broken and the antagonist seems to have the advantage.",
+      },
+      {
+        title: "The Breakthrough Clue",
+        description:
+          "A decisive insight or overlooked detail snaps key pieces together and points to the true solution.",
+      },
+      {
+        title: "The Climax and Resolution",
+        description:
+          "Confront the culprit, reveal the full logic of the crime, and restore order with clear aftermath.",
+      },
+    ],
+  },
 };
 
 export const BUILTIN_ARCHETYPES = [
