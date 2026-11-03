@@ -1,3 +1,5 @@
+import { t } from "../i18n/index.js";
+
 export function createEditNoteTypesModalController({
   getAllNoteTypes,
   getBuiltinNoteTypes,
@@ -55,25 +57,25 @@ export function createEditNoteTypesModalController({
       .join("");
 
     listEl.innerHTML = types
-      .map((t) => {
-        const isBuiltin = builtin.some((b) => b.id === t.id);
-        const canDeleteCustom = !isBuiltin && !isNoteTypeInUse(t.id);
-        const idLabel = isBuiltin ? `Built-in · ${t.id}` : `Custom · ${t.id}`;
-        const baseColor = isValidHexColor(t.color) ? t.color : "#f3f4f6";
+      .map((noteType) => {
+        const isBuiltin = builtin.some((b) => b.id === noteType.id);
+        const canDeleteCustom = !isBuiltin && !isNoteTypeInUse(noteType.id);
+        const idLabel = isBuiltin ? t("builtInId", { id: noteType.id }) : t("customId", { id: noteType.id });
+        const baseColor = isValidHexColor(noteType.color) ? noteType.color : "#f3f4f6";
         const currentColor = normalizeHexColor(baseColor);
-        const safeId = escapeHtml(t.id);
+        const safeId = escapeHtml(noteType.id);
         return `
       <div class="edit-note-type-row" data-note-type-id="${safeId}" data-is-builtin="${isBuiltin}">
         <p class="edit-note-type-row-title">${escapeHtml(idLabel)}</p>
         <div class="edit-note-type-fields">
           <div class="edit-note-type-label-field">
-            <label for="ntl-${safeId}">Label</label>
-            <input id="ntl-${safeId}" class="edit-note-type-label-input" type="text" maxlength="80" value="${escapeHtml(t.label)}" ${
-              isBuiltin ? 'readonly aria-readonly="true" title="Built-in labels are fixed; only color can be changed."' : ""
+            <label for="ntl-${safeId}">${escapeHtml(t("label"))}</label>
+            <input id="ntl-${safeId}" class="edit-note-type-label-input" type="text" maxlength="80" value="${escapeHtml(noteType.label)}" ${
+              isBuiltin ? `readonly aria-readonly="true" title="${escapeHtml(t("builtInLabelsAre"))}"` : ""
             } />
           </div>
           <div class="edit-note-type-hex-field">
-            <label for="ntc-${safeId}">Color (hex)</label>
+            <label for="ntc-${safeId}">${escapeHtml(t("colorHex"))}</label>
             <div class="edit-note-type-hex-row">
               <input id="ntc-${safeId}" class="edit-note-type-hex-input" type="text" value="${escapeHtml(currentColor)}" placeholder="#RRGGBB or #RGB" autocomplete="off" />
               <span class="edit-note-type-swatch-preview" style="background-color:${escapeHtml(currentColor)}"></span>
@@ -82,7 +84,7 @@ export function createEditNoteTypesModalController({
           <div class="color-grid color-grid--edit-row">${paletteHtml}</div>
           ${
             canDeleteCustom
-              ? `<div class="edit-note-type-row-delete"><button type="button" class="ghost-button danger-menu-item" data-role="delete-custom-note-type" data-note-type-id="${safeId}">Delete this type</button></div>`
+              ? `<div class="edit-note-type-row-delete"><button type="button" class="ghost-button danger-menu-item" data-role="delete-custom-note-type" data-note-type-id="${safeId}">${escapeHtml(t("deleteThisType"))}</button></div>`
               : ""
           }
         </div>
@@ -135,12 +137,12 @@ export function createEditNoteTypesModalController({
       const label = labelInput.value.trim();
       const color = parseHexColorInput(hexInput.value);
       if (!label) {
-        await appAlert(`Please enter a label for note type "${id}".`);
+        await appAlert(t("pleaseEnterALabel", { id }));
         labelInput.focus();
         return;
       }
       if (!color) {
-        await appAlert(`Please enter a valid hex color for "${label}" (e.g. #fef08a or #rgb).`);
+        await appAlert(t("pleaseEnterAValid", { label }));
         hexInput.focus();
         return;
       }
@@ -170,7 +172,7 @@ export function createEditNoteTypesModalController({
           const id = delBtn.dataset.noteTypeId;
           if (!id || getBuiltinNoteTypes().some((b) => b.id === id) || isNoteTypeInUse(id)) return;
           const typeLabel = getNoteTypeById(id).label;
-          const confirmed = await appAlert(`Delete note type "${typeLabel}"? This cannot be undone.`, {
+          const confirmed = await appAlert(t("deleteNoteTypeLabel", { label: typeLabel }), {
             confirm: true,
           });
           if (!confirmed) return;

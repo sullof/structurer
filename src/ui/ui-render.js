@@ -1,4 +1,5 @@
 import { titleLineTemplate } from "../components/title-line";
+import { t, tCount } from "../i18n/index.js";
 
 function escapeHtml(text) {
   return String(text ?? "")
@@ -54,20 +55,20 @@ export function structurePhaseRowTemplate(index, phase = { title: "", descriptio
         class="structure-phase-name-input"
         data-role="phase-input"
         maxlength="80"
-        placeholder="Phase name"
+        placeholder="${escapeHtml(t("phaseName"))}"
         value="${title}"
         required
-        aria-label="Phase name"
+        aria-label="${escapeHtml(t("phaseName"))}"
       />
       <textarea
         class="structure-phase-description-input"
         data-role="phase-description-input"
         maxlength="1200"
         rows="2"
-        placeholder="Optional help text for this column"
-        aria-label="Phase description (optional)"
+        placeholder="${escapeHtml(t("optionalHelpTextFor"))}"
+        aria-label="${escapeHtml(t("phaseDescriptionOptional"))}"
       >${description}</textarea>
-      <button type="button" class="ghost-button structure-phase-remove-btn" data-role="remove-phase-row" aria-label="Remove row">✕</button>
+      <button type="button" class="ghost-button structure-phase-remove-btn" data-role="remove-phase-row" aria-label="${escapeHtml(t("removeRow"))}">✕</button>
     </div>
   `;
 }
@@ -90,8 +91,8 @@ export function structureAlteredEditPhaseRowTemplate(
       : ` data-structure-phase-origin="${Number(structurePhaseOrigin)}"`;
   const removeDisabled = canRemove ? "" : " disabled";
   const removeTitle = canRemove
-    ? ' title="Remove row"'
-    : ' title="You can remove this phase only when it has no notes and no phase comments in this story."';
+    ? ` title="${escapeHtml(t("removeRow"))}"`
+    : ` title="${escapeHtml(t("youCanRemoveThis"))}"`;
   return `
     <div class="structure-phase-row"${originAttr}>
       <span class="phase-row-index">${rowIndex + 1}.</span>
@@ -100,20 +101,20 @@ export function structureAlteredEditPhaseRowTemplate(
         class="structure-phase-name-input"
         data-role="phase-input"
         maxlength="80"
-        placeholder="Phase name"
+        placeholder="${escapeHtml(t("phaseName"))}"
         value="${title}"
         required
-        aria-label="Phase name"
+        aria-label="${escapeHtml(t("phaseName"))}"
       />
       <textarea
         class="structure-phase-description-input"
         data-role="phase-description-input"
         maxlength="1200"
         rows="2"
-        placeholder="Optional help text for this column"
-        aria-label="Phase description (optional)"
+        placeholder="${escapeHtml(t("optionalHelpTextFor"))}"
+        aria-label="${escapeHtml(t("phaseDescriptionOptional"))}"
       >${description}</textarea>
-      <button type="button" class="ghost-button structure-phase-remove-btn" data-role="remove-phase-row" aria-label="Remove row"${removeDisabled}${removeTitle}>✕</button>
+      <button type="button" class="ghost-button structure-phase-remove-btn" data-role="remove-phase-row" aria-label="${escapeHtml(t("removeRow"))}"${removeDisabled}${removeTitle}>✕</button>
     </div>
   `;
 }
@@ -131,7 +132,7 @@ export function boardCardTemplate(
   const safeTitle = escapeHtml(board.title);
   const titleMarkup =
     board.id === editingStoryTitleBoardId
-      ? `<input class="inline-story-title-input board-card-title-input" type="text" maxlength="80" value="${escapeHtml(board.title)}" data-role="inline-story-title-input" data-board-id="${board.id}" aria-label="Story name" />`
+      ? `<input class="inline-story-title-input board-card-title-input" type="text" maxlength="80" value="${escapeHtml(board.title)}" data-role="inline-story-title-input" data-board-id="${board.id}" aria-label="${escapeHtml(t("storyName"))}" />`
       : `<span class="board-card-title-text" data-role="board-title-dblclick" data-board-id="${board.id}">${safeTitle}</span>`;
   const titleLine = titleLineTemplate({
     titleHtml: titleMarkup,
@@ -141,16 +142,16 @@ export function boardCardTemplate(
   });
   const userCardClass = !isDemo && !isAiAnalysisImport ? " board-card-user" : "";
   return `
-    <article class="board-card${userCardClass}" data-board-id="${board.id}" role="button" tabindex="0" aria-label="Open ${safeTitle}">
+    <article class="board-card${userCardClass}" data-board-id="${board.id}" role="button" tabindex="0" aria-label="${escapeHtml(t("openTitle", { title: board.title }))}">
       <div>
         <strong><div class="inline-story-title-root" data-role="inline-story-title-root" data-board-id="${board.id}"><span class="inline-story-title-host" data-role="inline-story-title-host">${titleLine}</span></div></strong>
         <div class="board-meta">
-          <div class="board-meta-line">${structureLineHtml} • ${noteCount} notes</div>
-          <div class="board-meta-line">Updated ${updatedAtText}</div>
+          <div class="board-meta-line">${structureLineHtml} • ${escapeHtml(tCount(noteCount, "nNote", "nNotes"))}</div>
+          <div class="board-meta-line">${escapeHtml(t("updatedDate", { date: updatedAtText }))}</div>
         </div>
       </div>
       <div class="board-actions">
-        <button type="button" class="action-button" data-role="board-actions" aria-label="Story actions">
+        <button type="button" class="action-button" data-role="board-actions" aria-label="${escapeHtml(t("storyActions2"))}">
           <span class="action-icon" aria-hidden="true">⋯</span>
         </button>
       </div>
@@ -161,12 +162,12 @@ export function boardCardTemplate(
 /** Dashboard-only card after the story list: opens Build AI import prompt. */
 export function dashboardAiPromptCtaCardTemplate() {
   return `
-    <article class="board-card board-card-ai-prompt-cta" data-role="dashboard-ai-prompt-cta" role="button" tabindex="0" aria-label="Open Build AI import prompt">
+    <article class="board-card board-card-ai-prompt-cta" data-role="dashboard-ai-prompt-cta" role="button" tabindex="0" aria-label="${escapeHtml(t("openBuildAiImport"))}">
       <div>
-        <strong><span class="board-card-ai-prompt-cta-title">Want analyses that aren’t in the demos?</span></strong>
+        <strong><span class="board-card-ai-prompt-cta-title">${escapeHtml(t("wantAnalysesThatArenT"))}</span></strong>
         <div class="board-meta">
           <div class="board-meta-line">
-            Click here to build a prompt for an AI assistant, then import the JSON into Structurer.
+            ${escapeHtml(t("clickHereToBuild"))}
           </div>
         </div>
       </div>
@@ -195,18 +196,18 @@ export function noteTemplate(
       ? [archetype?.label || "", note.characterName || ""]
           .map((part) => part.trim())
           .filter(Boolean)
-          .join(" - ") || "Character"
+          .join(" - ") || t("character")
       : "";
   const collapsedPreview =
     note.kind === "character"
-      ? characterLabel || textPreview || "Character note"
-      : textPreview || "Empty note";
+      ? characterLabel || textPreview || t("characterNote")
+      : textPreview || t("emptyNote");
 
   const characterUI =
     isEditing && !collapsed && note.kind === "character"
       ? `
       <div class="character-fields">
-        <select data-role="archetype" aria-label="Character archetype">
+        <select data-role="archetype" aria-label="${escapeHtml(t("characterArchetype"))}">
           ${archetypes
             .map(
               (a) =>
@@ -220,8 +221,8 @@ export function noteTemplate(
           type="text"
           data-role="character-name"
           value="${note.characterName || ""}"
-          placeholder="Character name"
-          aria-label="Character name"
+          placeholder="${escapeHtml(t("characterName"))}"
+          aria-label="${escapeHtml(t("characterName"))}"
         />
       </div>
     `
@@ -238,7 +239,7 @@ export function noteTemplate(
         data-role="text"
         data-note-id="${note.id}"
         style="${legacyTextareaStyle}"
-        placeholder="Write your note..."
+        placeholder="${escapeHtml(t("writeYourNote"))}"
       >${note.text || ""}</textarea>`
       : `<div class="note-readonly-text">${(note.text || "").trim() || " "}</div>`;
 
@@ -249,32 +250,32 @@ export function noteTemplate(
         data-role="text"
         data-note-id="${note.id}"
         style="${adaptiveHeightStyle}"
-        placeholder="Write your note..."
+        placeholder="${escapeHtml(t("writeYourNote"))}"
       >${note.text || ""}</textarea>`
       : `<div class="note-readonly-text note-text-body note-text-body--adaptive" data-note-id="${note.id}" style="${adaptiveHeightStyle}">${(note.text || "").trim() || " "}</div>`;
 
   const adaptiveWrap = legacyFullHeightNoteCards
     ? legacyNoteBody
-    : `<div class="note-adaptive-wrap">${adaptiveNoteBody}<button type="button" class="note-text-resize-handle" data-role="note-text-resize-grip" data-note-id="${note.id}" title="Drag to resize height" aria-label="Resize note text height" draggable="false">${NOTE_TEXT_RESIZE_HANDLE_SVG}</button></div>`;
+    : `<div class="note-adaptive-wrap">${adaptiveNoteBody}<button type="button" class="note-text-resize-handle" data-role="note-text-resize-grip" data-note-id="${note.id}" title="${escapeHtml(t("dragToResizeHeight"))}" aria-label="${escapeHtml(t("resizeNoteTextHeight"))}" draggable="false">${NOTE_TEXT_RESIZE_HANDLE_SVG}</button></div>`;
 
   return `
     <article class="note ${collapsed ? "is-collapsed" : ""}${isEditing ? " is-note-editing" : ""}" data-id="${note.id}" data-kind="${note.kind}" draggable="true" style="--note-bg: ${
     noteType?.color || "#f3f4f6"
   };">
       <div class="note-head">
-        <button class="phase-drag" data-role="note-drag-handle" title="Drag note">⋮⋮</button>
+        <button class="phase-drag" data-role="note-drag-handle" title="${escapeHtml(t("dragNote"))}">⋮⋮</button>
         ${collapsed ? `<div class="collapsed-preview" title="${collapsedPreview}">${collapsedPreview}</div>` : ""}
         ${
           !collapsed
             ? `<span class="badge">${
                 note.kind === "character"
                   ? `${archetype.icon ? `${archetype.icon} ` : ""}${characterLabel}`
-                  : noteType?.label || "Note"
+                  : noteType?.label || t("note")
               }</span>`
             : ""
         }
         <div class="note-head-actions">
-          ${isEditing ? `<button type="button" class="delete" data-role="delete" title="Delete note" aria-label="Delete note">${NOTE_DELETE_ICON_SVG}</button>` : ""}
+          ${isEditing ? `<button type="button" class="delete" data-role="delete" title="${escapeHtml(t("deleteNote"))}" aria-label="${escapeHtml(t("deleteNote"))}">${NOTE_DELETE_ICON_SVG}</button>` : ""}
         </div>
       </div>
       ${characterUI}
@@ -291,7 +292,7 @@ export function addNoteModalBodyTemplate(columnIndex, archetypes, noteTypes) {
     nonCharacterTypes.length === 0
       ? ""
       : `
-      <div class="add-note-modal-type-grid" role="group" aria-label="Note type">
+      <div class="add-note-modal-type-grid" role="group" aria-label="${escapeHtml(t("noteType"))}">
         ${nonCharacterTypes
           .map((type) => {
             const bg = normalizedNoteTypeHex(type.color) || "#f3f4f6";
@@ -318,8 +319,8 @@ export function addNoteModalBodyTemplate(columnIndex, archetypes, noteTypes) {
         hasCharacter
           ? `
       <div class="add-note-modal-divider" role="presentation"></div>
-      <p class="add-note-modal-section-title">Character</p>
-      <div class="add-note-modal-archetype-grid" role="group" aria-label="Archetype">
+      <p class="add-note-modal-section-title">${escapeHtml(t("character"))}</p>
+      <div class="add-note-modal-archetype-grid" role="group" aria-label="${escapeHtml(t("archetype"))}">
         ${archetypes
           .map((archetype) => {
             const icon = archetype.icon ? String(archetype.icon).trim() : "";

@@ -3367,6 +3367,52 @@ a:hover {
   margin: 0;
 }
 
+.app-footer-locale {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 12px;
+}
+
+.app-footer-locale-choices {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.app-footer-locale-choice {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.app-footer-locale-choice:hover:not(:disabled) {
+  color: #111827;
+}
+
+.app-footer-locale-choice:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
+}
+
+.app-footer-locale-choice:disabled {
+  color: inherit;
+  text-decoration: none;
+  cursor: default;
+}
+
+.app-footer-locale-sep {
+  user-select: none;
+}
+
 .app-footer-links {
   margin: 0 0 12px;
 }

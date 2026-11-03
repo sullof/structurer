@@ -6,6 +6,8 @@
  * - `await appDialog({ title, message, render, ... })` -> Promise<T | null> (null = cancel / dismiss)
  */
 
+import { t } from "../i18n/index.js";
+
 const queue = [];
 let isOpen = false;
 let currentResolve = null;
@@ -89,12 +91,13 @@ function processQueue() {
   if (item.mode === "message" || item.mode === "confirm") {
     clearCustomRoot();
     messageEl.classList.remove("hidden");
-    messageEl.textContent = item.message;
-    if (titleEl) titleEl.textContent = item.mode === "confirm" ? "Confirm" : "Notice";
+    messageEl.textContent = t(item.message);
+    if (titleEl) titleEl.textContent = t(item.mode === "confirm" ? "confirm" : "notice");
 
     if (item.mode === "message") {
       currentMode = "message";
       okBtn.classList.remove("hidden");
+      okBtn.textContent = t("ok");
       cancelBtn.classList.add("hidden");
       confirmBtn.classList.add("hidden");
       okBtn.focus();
@@ -104,15 +107,16 @@ function processQueue() {
       cancelBtn.classList.remove("hidden");
       confirmBtn.classList.remove("hidden");
       confirmBtn.disabled = false;
-      confirmBtn.textContent = "Confirm";
-      cancelBtn.textContent = "Cancel";
+      confirmBtn.textContent = t("confirm");
+      cancelBtn.textContent = t("cancel");
+      okBtn.textContent = t("ok");
       cancelBtn.focus();
     }
   } else if (item.mode === "custom") {
     currentMode = "custom";
-    messageEl.textContent = item.message || "";
+    messageEl.textContent = item.message ? t(item.message) : "";
     messageEl.classList.toggle("hidden", !item.message);
-    if (titleEl) titleEl.textContent = item.title || "Notice";
+    if (titleEl) titleEl.textContent = t(item.title || "notice");
 
     customRoot.innerHTML = "";
     customRoot.classList.remove("hidden");
@@ -120,8 +124,9 @@ function processQueue() {
     okBtn.classList.add("hidden");
     cancelBtn.classList.remove("hidden");
     confirmBtn.classList.remove("hidden");
-    confirmBtn.textContent = item.confirmLabel || "Confirm";
-    cancelBtn.textContent = item.cancelLabel || "Cancel";
+    confirmBtn.textContent = t(item.confirmLabel || "confirm");
+    cancelBtn.textContent = t(item.cancelLabel || "cancel");
+    okBtn.textContent = t("ok");
     confirmBtn.disabled = true;
 
     const api = {

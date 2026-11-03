@@ -1,3 +1,5 @@
+import { t } from "../i18n/index.js";
+
 export function createSharedViewActionsController({
   ensureSafeSharedSourceUrl,
   onOpenJson,
@@ -51,7 +53,7 @@ export function createSharedViewActionsController({
 
   function setWrapColumnsEnabled(isEnabled) {
     if (!toggleWrapBtnEl) return;
-    toggleWrapBtnEl.textContent = `Wrap columns: ${isEnabled ? "On" : "Off"}`;
+    toggleWrapBtnEl.textContent = t(isEnabled ? "wrapColumnsOn" : "wrapColumnsOff");
   }
 
   function isActionsMenuOpen() {
