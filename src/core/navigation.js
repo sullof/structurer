@@ -29,6 +29,8 @@ export function createNavigationController({
   renderPhaseDetail,
   applyColumnWidth,
   applyWrapColumns,
+  resolveBoardBySlug,
+  resolveGroupBySlug,
 }) {
   const {
     landingView,
@@ -429,9 +431,13 @@ export function createNavigationController({
     }
     if (path.startsWith("/group/")) {
       const slug = path.slice("/group/".length);
-      const group = getGroups().find((item) => item.slug === slug);
+      const group = groupForSlug(slug);
       if (!group) {
         showNotFound("sharing");
+        return;
+      }
+      if (group.slug !== slug) {
+        openGroup(group.id, true);
         return;
       }
       showGroup(group.id);
@@ -440,7 +446,7 @@ export function createNavigationController({
     const phaseRouteMatch = path.match(/^\/([^/]+)\/phase\/(\d+)$/);
     if (phaseRouteMatch) {
       const [, slug, phaseIndexRaw] = phaseRouteMatch;
-      const board = getBoards().find((item) => item.slug === slug);
+      const board = boardForSlug(slug);
       const oneBasedIndex = Number(phaseIndexRaw);
       if (!board || !Number.isInteger(oneBasedIndex)) {
         showNotFound("sharing");
@@ -448,6 +454,14 @@ export function createNavigationController({
       }
       const phaseCount = getStructureConfig(board.structureId).phases.length;
       const phaseIndex = oneBasedIndex - 1;
+      if (board.slug !== slug) {
+        if (phaseIndex < 0 || phaseIndex >= phaseCount) {
+          openBoard(board.id, true);
+          return;
+        }
+        openBoardPhase(board.id, phaseIndex, true);
+        return;
+      }
       if (phaseIndex < 0 || phaseIndex >= phaseCount) {
         openBoard(board.id, true);
         return;
@@ -457,14 +471,26 @@ export function createNavigationController({
       return;
     }
     const slug = path.slice(1);
-    const board = getBoards().find((item) => item.slug === slug);
+    const board = boardForSlug(slug);
     if (!board) {
       const variant = pathLooksLikeSharedStructurerLink(path) ? "sharing" : "generic";
       showNotFound(variant);
       return;
     }
     setBoardBackGroupId(null);
+    if (board.slug !== slug) {
+      openBoard(board.id, true);
+      return;
+    }
     showBoard(board.id);
+  }
+
+  function boardForSlug(slug) {
+    return getBoards().find((item) => item.slug === slug) || resolveBoardBySlug?.(slug) || null;
+  }
+
+  function groupForSlug(slug) {
+    return getGroups().find((item) => item.slug === slug) || resolveGroupBySlug?.(slug) || null;
   }
 
   return {

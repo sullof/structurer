@@ -3371,6 +3371,28 @@ a:hover {
   margin: 0 0 12px;
 }
 
+.app-footer-links .link-button {
+  font-size: inherit;
+  font-weight: 400;
+}
+
+.app-footer-locale-choices {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.app-footer-locale-choice:disabled,
+.app-footer-locale-choice:disabled:hover {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: default;
+}
+
+.app-footer-locale-sep {
+  user-select: none;
+}
+
 .app-footer > p + p {
   margin-top: 6px;
 }

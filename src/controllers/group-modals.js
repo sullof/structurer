@@ -1,4 +1,5 @@
 import { appAlert } from "../ui/app-alert.js";
+import { t } from "../i18n/index.js";
 
 function escapeHtml(text) {
   return String(text ?? "")
@@ -52,7 +53,7 @@ export function createGroupModalController({
         (board) => `<div class="reorder-item" data-board-id="${board.id}">
       <span class="reorder-handle" draggable="true" aria-hidden="true">⋮⋮</span>
       <span class="reorder-item-title">${escapeHtml(board.title)}</span>
-      <button type="button" class="reorder-remove ghost-button" data-board-id="${board.id}" aria-label="Remove from series">✕</button>
+      <button type="button" class="reorder-remove ghost-button" data-board-id="${board.id}" aria-label="${t("removeFromSeries")}">✕</button>
     </div>`,
       )
       .join("");
@@ -68,7 +69,7 @@ export function createGroupModalController({
     groupReorderAddSelectEl.innerHTML = "";
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = eligible.length === 0 ? "No other stories to add" : "Add a story...";
+    placeholder.textContent = t(eligible.length === 0 ? "noOtherStoriesTo" : "addAStory");
     groupReorderAddSelectEl.appendChild(placeholder);
     eligible.forEach((board) => {
       const opt = document.createElement("option");
@@ -108,7 +109,7 @@ export function createGroupModalController({
     if (groupReorderSeriesNameInputEl && groupReorderModalGroupId && commitGroupTitleRename) {
       const result = commitGroupTitleRename(groupReorderModalGroupId, groupReorderSeriesNameInputEl.value);
       if (result.ok) {
-        if (result.changed) showGroupReorderStatus("Series name saved");
+        if (result.changed) showGroupReorderStatus(t("seriesNameSaved"));
       } else if (result.error === "empty") {
         const g = getGroups().find((item) => item.id === groupReorderModalGroupId);
         if (g) groupReorderSeriesNameInputEl.value = g.title;
@@ -239,7 +240,7 @@ export function createGroupModalController({
       const groups = getGroups();
       const group = groups.find((item) => item.id === groupActionsModalGroupId);
       if (!group) return;
-      const confirmed = await appAlert(`Delete series "${group.title}"? This action cannot be undone.`, {
+      const confirmed = await appAlert(t("deleteSeriesTitleThis", { title: group.title }), {
         confirm: true,
       });
       if (!confirmed) return;
@@ -271,7 +272,7 @@ export function createGroupModalController({
       if (!groupReorderModalGroupId) return;
       const result = commitGroupTitleRename(groupReorderModalGroupId, groupReorderSeriesNameInputEl.value);
       if (result.ok) {
-        if (result.changed) showGroupReorderStatus("Series name saved");
+        if (result.changed) showGroupReorderStatus(t("seriesNameSaved"));
         return;
       }
       if (result.error === "empty") {

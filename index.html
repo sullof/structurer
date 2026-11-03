@@ -438,15 +438,16 @@
           </details>
 
           <details class="help-faq-item">
-            <summary>I don't speak English. Where can I find structures in my language?</summary>
+            <summary>My language is not supported. Where can I find structures in my language?</summary>
             <div class="help-faq-content">
               <p>
-                The built-in structure presets in Structurer are in English. For frameworks labeled in other languages
-                (or regional narrative patterns), use community <strong>extensions</strong>: they are custom structure
-                packs you <strong>import</strong> into the app so they appear when you create a new story.
+                The interface and the built-in structures are available in English, Italian, and Spanish. Choose your
+                language from <strong>Language</strong> in the footer. Your choice is saved in this browser.
+                Unmodified demo stories switch to that language. A demo you have edited stays as you left it.
               </p>
               <p>
-                For what extensions are, where to download JSON, and how to import (file or paste), see the next
+                For other languages, or for regional narrative patterns, you can still import community
+                <strong>extensions</strong>: custom structure packs that appear when you create a new story. See the next
                 question: <strong>What are extensions and how do I use them?</strong>
               </p>
             </div>
@@ -674,7 +675,7 @@
 
             <label class="ai-prompt-label" for="ai-prompt-analysis-language-select">Language of the analysis text</label>
             <select id="ai-prompt-analysis-language-select" class="ai-prompt-select" aria-label="Language of the analysis text">
-              <option value="English" selected>English</option>
+              <option value="English">English</option>
               <option value="Italian">Italian</option>
               <option value="Spanish">Spanish</option>
               <option value="French">French</option>
@@ -1698,6 +1699,17 @@
           <button id="go-privacy-from-footer" class="link-button" type="button">Privacy Policy</button> —
           <button id="go-terms-from-footer" class="link-button" type="button">Terms and conditions</button> —
           <button id="go-help-from-footer" class="link-button" type="button">Help</button>
+          —
+          <span class="app-footer-locale">
+            <span id="locale-switch-label">Language</span>:
+            <span class="app-footer-locale-choices" data-i18n-skip role="group" aria-labelledby="locale-switch-label">
+              <button type="button" class="link-button app-footer-locale-choice" data-locale="en">EN</button>
+              <span class="app-footer-locale-sep" aria-hidden="true">•</span>
+              <button type="button" class="link-button app-footer-locale-choice" data-locale="es">ES</button>
+              <span class="app-footer-locale-sep" aria-hidden="true">•</span>
+              <button type="button" class="link-button app-footer-locale-choice" data-locale="it">IT</button>
+            </span>
+          </span>
         </p>
 
         <p>

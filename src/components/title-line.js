@@ -1,3 +1,5 @@
+import { t } from "../i18n/index.js";
+
 function escapeHtml(text) {
   return String(text ?? "")
     .replace(/&/g, "&amp;")
@@ -25,7 +27,9 @@ export function titleLineTemplate({
 }) {
   const baseLabelClass = labelClassByVariant(labelVariant);
   const mergedLabelClass = [baseLabelClass, labelExtraClass].filter(Boolean).join(" ").trim();
-  const labelMarkup = labelText ? `<span class="${escapeHtml(mergedLabelClass)}">${escapeHtml(labelText)}</span>` : "";
+  const labelMarkup = labelText
+    ? `<span class="${escapeHtml(mergedLabelClass)}">${escapeHtml(t(labelText))}</span>`
+    : "";
   const titleMarkup = titleClass
     ? `<span class="${escapeHtml(titleClass)}">${titleHtml}</span>`
     : titleHtml;

@@ -1,3 +1,5 @@
+import { t } from "../i18n/index.js";
+
 export function createBoardNoteActionsController({
   boardEl,
   boardInteractions,
@@ -22,7 +24,7 @@ export function createBoardNoteActionsController({
     overlay.classList.add("hidden");
     overlay.setAttribute("aria-hidden", "true");
     if (bodyRoot) bodyRoot.innerHTML = "";
-    if (titleEl) titleEl.textContent = "Add note";
+    if (titleEl) titleEl.textContent = t("addNote");
   }
 
   function openAddNoteModal(columnIndex) {
@@ -30,7 +32,7 @@ export function createBoardNoteActionsController({
     bodyRoot.innerHTML = buildAddNoteModalBody(columnIndex);
     const phaseTitle = getPhaseTitleForColumn ? getPhaseTitleForColumn(columnIndex) : "";
     if (titleEl) {
-      titleEl.textContent = phaseTitle ? `Add note to ${phaseTitle}` : "Add note";
+      titleEl.textContent = phaseTitle ? t("addNoteToPhase", { phase: phaseTitle }) : t("addNote");
     }
     overlay.classList.remove("hidden");
     overlay.setAttribute("aria-hidden", "false");

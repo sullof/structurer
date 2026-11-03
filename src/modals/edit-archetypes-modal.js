@@ -1,3 +1,5 @@
+import { t } from "../i18n/index.js";
+
 export function createEditArchetypesModalController({
   getAllArchetypes,
   getBuiltinArchetypes,
@@ -29,7 +31,9 @@ export function createEditArchetypesModalController({
         const isBuiltin = builtin.some((b) => b.id === archetype.id);
         const inUse = isArchetypeInUse(archetype.id);
         const canDeleteCustom = !isBuiltin && !inUse;
-        const idLabel = isBuiltin ? `Built-in · ${archetype.id}` : `Custom · ${archetype.id}`;
+        const idLabel = isBuiltin
+          ? t("builtInId", { id: archetype.id })
+          : t("customId", { id: archetype.id });
         const safeId = escapeHtml(archetype.id);
         const safeLabel = escapeHtml(archetype.label);
         const safeIcon = escapeHtml(archetype.icon || "✨");
@@ -39,20 +43,20 @@ export function createEditArchetypesModalController({
         <div class="edit-note-type-fields">
           ${
             isBuiltin
-              ? `<div class="edit-archetype-builtin-display" aria-label="Built-in archetype">
+              ? `<div class="edit-archetype-builtin-display" aria-label="${escapeHtml(t("builtInArchetype"))}">
                   <span class="edit-archetype-builtin-icon" aria-hidden="true">${safeIcon}</span>
                   <span class="edit-archetype-builtin-label">${safeLabel}</span>
                 </div>`
               : `<div class="edit-archetype-label-field">
-                  <label for="arc-${safeId}">Label</label>
+                  <label for="arc-${safeId}">${escapeHtml(t("label"))}</label>
                   <input id="arc-${safeId}" class="edit-archetype-label-input" type="text" maxlength="80" value="${safeLabel}" />
                 </div>`
           }
           ${
             canDeleteCustom
-              ? `<div class="edit-note-type-row-delete"><button type="button" class="ghost-button danger-menu-item" data-role="delete-custom-archetype" data-archetype-id="${safeId}">Delete this archetype</button></div>`
+              ? `<div class="edit-note-type-row-delete"><button type="button" class="ghost-button danger-menu-item" data-role="delete-custom-archetype" data-archetype-id="${safeId}">${escapeHtml(t("deleteThisArchetype"))}</button></div>`
               : !isBuiltin
-                ? `<p class="subtitle" style="margin:0;">Used in one or more notes. Remove those references first to delete this archetype.</p>`
+                ? `<p class="subtitle" style="margin:0;">${escapeHtml(t("usedInOneOr"))}</p>`
                 : ""
           }
         </div>
@@ -86,13 +90,13 @@ export function createEditArchetypesModalController({
       if (!input) continue; // Built-ins have no editable input.
       const label = String(input.value || "").trim();
       if (!label) {
-        await appAlert(`Please enter a label for archetype "${id}".`);
+        await appAlert(t("pleaseEnterALabelFor", { id }));
         input.focus();
         return;
       }
       const normalized = label.toLowerCase().replace(/\s+/g, " ");
       if (normalizedLabels.has(normalized)) {
-        await appAlert(`Duplicate archetype label "${label}". Please use unique names.`);
+        await appAlert(t("duplicateArchetypeLabelLabel", { label }));
         input.focus();
         return;
       }
@@ -117,7 +121,7 @@ export function createEditArchetypesModalController({
         const builtin = getBuiltinArchetypes();
         if (!id || builtin.some((b) => b.id === id) || isArchetypeInUse(id)) return;
         const archetypeLabel = getArchetypeById(id).label;
-        const confirmed = await appAlert(`Delete archetype "${archetypeLabel}"? This cannot be undone.`, {
+        const confirmed = await appAlert(t("deleteArchetypeLabelThis", { label: archetypeLabel }), {
           confirm: true,
         });
         if (!confirmed) return;
