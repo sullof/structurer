@@ -170,7 +170,7 @@ export const uiIt = {
   whichIsNotIncluded:
     "(non inclusa di default), puoi aggiungerne le fasi a mano e salvarla come struttura tua, riutilizzabile.",
   youCanAlsoImportReady: "Puoi anche importare pacchetti di strutture già pronti dalla bacheca",
-  iDonTSpeak: "Non parlo inglese. Dove trovo le strutture nella mia lingua?",
+  iDonTSpeak: "La mia lingua non è supportata. Dove trovo le strutture nella mia lingua?",
   theInterfaceAndThe:
     "L’interfaccia e le strutture integrate sono disponibili in inglese, italiano e spagnolo. Scegli la lingua da",
   language: "Lingua",

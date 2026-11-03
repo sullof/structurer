@@ -171,7 +171,7 @@ export const uiEs = {
   whichIsNotIncluded:
     "(no incluida por defecto), puedes añadir sus fases a mano y guardarla como estructura propia y reutilizable.",
   youCanAlsoImportReady: "También puedes importar paquetes de estructuras ya hechos desde el panel",
-  iDonTSpeak: "No hablo inglés. ¿Dónde encuentro estructuras en mi idioma?",
+  iDonTSpeak: "Mi idioma no está soportado. ¿Dónde encuentro estructuras en mi idioma?",
   theInterfaceAndThe:
     "La interfaz y las estructuras incluidas están en inglés, italiano y español. Elige el idioma en",
   language: "Idioma",

@@ -167,7 +167,7 @@ export const uiEn = {
   whichIsNotIncluded:
     "(which is not included by default), you can add its phases manually and save it as your own reusable structure.",
   youCanAlsoImportReady: "You can also import ready-made custom structure packs from dashboard",
-  iDonTSpeak: "I don't speak English. Where can I find structures in my language?",
+  iDonTSpeak: "My language is not supported. Where can I find structures in my language?",
   theInterfaceAndThe:
     "The interface and the built-in structures are available in English, Italian, and Spanish. Choose your language from",
   language: "Language",

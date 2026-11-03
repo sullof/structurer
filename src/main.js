@@ -17,9 +17,11 @@ import {
 import {
   MATRIX_TRILOGY,
   demoBoardMatches,
+  findDemoIdByTitleSlug,
   findDemoIdForBoard,
   getDemoBoardData,
   getDemoDefinition,
+  isMatrixTrilogyTitleSlug,
   isUnmodifiedDemoContent,
 } from "./demo-boards";
 import {
@@ -2059,6 +2061,21 @@ function autoResizeTextareas() {
   });
 }
 
+function findBoardByLocalizedDemoSlug(slug) {
+  const demoId = findDemoIdByTitleSlug(slug);
+  if (!demoId) return null;
+  return (
+    boards.find((board) => isDemoBoard(board) && (board.demoId === demoId || findDemoIdForBoard(board) === demoId)) ||
+    null
+  );
+}
+
+function findGroupByLocalizedTrilogySlug(slug) {
+  if (!isMatrixTrilogyTitleSlug(slug)) return null;
+  const titles = new Set(Object.values(MATRIX_TRILOGY.titles).map((title) => title.trim().toLowerCase()));
+  return groups.find((group) => titles.has(String(group.title || "").trim().toLowerCase())) || null;
+}
+
 const navigation = createNavigationController({
   views: {
     landingView,
@@ -2102,6 +2119,8 @@ const navigation = createNavigationController({
   },
   applyColumnWidth,
   applyWrapColumns,
+  resolveBoardBySlug: findBoardByLocalizedDemoSlug,
+  resolveGroupBySlug: findGroupByLocalizedTrilogySlug,
 });
 
 function showHome() {
@@ -5586,17 +5605,31 @@ function syncAiPromptAnalysisLanguageCustomVisibility() {
   aiPromptAnalysisLangCustomWrap.classList.toggle("hidden", aiPromptAnalysisLangSelect.value !== "other");
 }
 
+function analysisLanguageNameForLocale(locale = getLocale()) {
+  if (locale === "it") return "Italian";
+  if (locale === "es") return "Spanish";
+  return "English";
+}
+
+function applyCurrentLocaleToAnalysisLanguageSelect() {
+  if (!aiPromptAnalysisLangSelect) return;
+  aiPromptAnalysisLangSelect.value = analysisLanguageNameForLocale();
+  syncAiPromptAnalysisLanguageCustomVisibility();
+}
+
 function getAiPromptAnalysisLanguage() {
-  if (!aiPromptAnalysisLangSelect) return "English";
+  const fallback = analysisLanguageNameForLocale();
+  if (!aiPromptAnalysisLangSelect) return fallback;
   if (aiPromptAnalysisLangSelect.value === "other") {
     const custom = aiPromptAnalysisLangCustomInput ? aiPromptAnalysisLangCustomInput.value.trim() : "";
-    return custom || "English";
+    return custom || fallback;
   }
-  return aiPromptAnalysisLangSelect.value;
+  return aiPromptAnalysisLangSelect.value || fallback;
 }
 
 function refreshAiAnalysisPromptPage() {
   if (!aiPromptStructureSelect || !aiPromptOutputTextarea) return;
+  applyCurrentLocaleToAnalysisLanguageSelect();
   const catalog = getCatalogStructureList();
   const previous = aiPromptStructureSelect.value;
   aiPromptStructureSelect.innerHTML = catalog
@@ -6826,12 +6859,14 @@ syncRouteToState(true);
 onLocaleChange(() => {
   syncUnmodifiedDemosToLocale(getLocale());
   ensureMatrixTrilogySeriesDemo();
+  syncRouteToState(true);
   applyWrapColumns();
   applyDemoVisibilityControl();
   if (homeView && !homeView.classList.contains("hidden")) renderHome();
   if (groupView && !groupView.classList.contains("hidden")) renderGroup();
   if (editorView && !editorView.classList.contains("hidden")) renderEditor();
   if (phaseView && !phaseView.classList.contains("hidden")) renderPhaseDetailView();
+  if (aiAnalysisPromptView && !aiAnalysisPromptView.classList.contains("hidden")) refreshAiAnalysisPromptPage();
 });
 
 const appVersionEl = document.querySelector("#app-version");

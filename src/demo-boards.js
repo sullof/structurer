@@ -101,6 +101,33 @@ export function findDemoIdForBoard(board) {
   return null;
 }
 
+export function demoSlugFromTitle(title) {
+  const normalized = String(title || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return normalized || "board";
+}
+
+export function findDemoIdByTitleSlug(slug) {
+  const wanted = String(slug || "").trim().toLowerCase();
+  if (!wanted) return null;
+  for (const demoId of DEMO_IDS) {
+    for (const locale of DEMO_LOCALES) {
+      const data = packs[demoId]?.[locale];
+      if (data && demoSlugFromTitle(data.title) === wanted) return demoId;
+    }
+  }
+  return null;
+}
+
+export function isMatrixTrilogyTitleSlug(slug) {
+  const wanted = String(slug || "").trim().toLowerCase();
+  return Object.values(MATRIX_TRILOGY.titles).some((title) => demoSlugFromTitle(title) === wanted);
+}
+
 export function isUnmodifiedDemoContent(board, demoId) {
   const pack = packs[demoId];
   if (!board || !pack) return false;
