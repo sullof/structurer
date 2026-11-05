@@ -34,6 +34,8 @@ export const uiEs = {
   buildAiImportPrompt: "Crear prompt de importación IA",
   toGenerateAStrict:
     "para generar un prompt JSON estricto en inglés y elegir el idioma del texto de análisis en las notas.",
+  youCanAlsoPasteA:
+    "También puedes pegar la sinopsis de tu propia historia y pedir al modelo que coloque esos eventos en la estructura, marcando cada fase que falte con una nota de ausencia.",
   aboutTheDemos: "Sobre las demos",
   demosUseWellKnown:
     "Las demos usan películas conocidas, pero Structurer sirve para cualquier forma narrativa: novelas, cuentos, guiones, seriales y más.",
@@ -193,6 +195,8 @@ export const uiEs = {
   wantAnalysesThatAren: "(«¿Quieres análisis que no están en las demos?») o usa",
   belowYouGetA:
     "aquí abajo: obtienes un prompt listo para un asistente de IA (las instrucciones siguen en inglés; puedes elegir el idioma del texto de análisis en las notas). Los pasos para importar el JSON están en esa página, después de generar el prompt.",
+  theSamePageCanAlso:
+    "La misma página también puede convertir una sinopsis completa de tu historia en un tablero. El modelo debe marcar cada fase que la sinopsis no cubra con una nota de ausencia, sin inventar el paso que falta.",
   aiOutputCanContain:
     "La salida de la IA puede tener errores; revisa las notas después de importar. Usa las importaciones solo para estudio personal y respeta el copyright de la obra.",
   howDoExportImport: "¿Cómo funcionan la exportación, la importación y la combinación?",
@@ -270,12 +274,23 @@ export const uiEs = {
   ifYouOnlyWant: "Si solo quieres restaurar las demos, usa",
   insteadAndIfYou: ". Y si quieres conservar el trabajo actual, exporta antes las historias.",
   pickAStructureTemplate:
-    "Elige una plantilla de estructura y el título de la obra. Structurer prepara un bloque de texto (en inglés) para pegar en ChatGPT, Claude u otro modelo: pide que responda con",
+    "Elige una plantilla de estructura y luego la tarea: analizar una obra conocida a partir del título, o convertir una sinopsis completa en tu historia sobre esa estructura. Structurer prepara un bloque de texto (en inglés) para pegar en ChatGPT, Claude u otro modelo: pide que responda con",
   only: "solo",
   validJsonInStructurer: "JSON válido en el formato de importación de Structurer. Elige aparte el idioma del",
-  analysisTextInsideThe: "texto de análisis dentro de las notas",
+  analysisTextInsideThe: "texto de las notas",
   separatelySoNonEnglish: ", para que quien no escribe en inglés obtenga un texto legible sin traducir las instrucciones.",
   structureTemplate2: "Plantilla de estructura",
+  task: "Tarea",
+  analyzeAKnownWork: "Analizar una obra conocida",
+  structureASynopsis: "Estructurar una sinopsis",
+  storyTitleOptional: "Título de la historia (opcional)",
+  leaveEmptyToLet: "Déjalo vacío para que el modelo elija un título breve",
+  storyTitleLabel: "Título de la historia",
+  synopsis: "Sinopsis",
+  everyEventInThe: "Todos los eventos de la historia, en el orden en que deben entenderse",
+  synopsisOfTheStory: "Sinopsis de la historia",
+  writeEveryEventThat:
+    "Escribe cada evento que deba aparecer en el tablero. Si falta una fase de la estructura elegida, el modelo debe decirlo con una nota de ausencia y no debe inventar ese paso.",
   workTitle: "Título de la obra",
   mediumOptional: "Medio (opcional)",
   notSpecified: "Sin especificar",
@@ -285,7 +300,7 @@ export const uiEs = {
   shortStory: "Cuento",
   playStage: "Teatro",
   other: "Otro",
-  languageOfTheAnalysis: "Idioma del texto de análisis",
+  languageOfTheAnalysis: "Idioma del texto de las notas",
   english: "Inglés",
   italian: "Italiano",
   spanish: "Español",
@@ -317,6 +332,9 @@ export const uiEs = {
   specifyLanguageEnglishName: "Especifica el idioma (nombre en inglés)",
   promptToCopy: "Prompt para copiar",
   copyPrompt: "Copiar prompt",
+  whenTheTaskIs:
+    "Si la tarea es Estructurar una sinopsis, el prompt omite aiAnalysisImport para que el tablero sea tu historia, y pide notas de ausencia allí donde falte una fase en la sinopsis.",
+  pasteASynopsisAbove: "Pega una sinopsis arriba para generar el prompt.",
   afterTheAiReturns: "Cuando la IA devuelva el JSON",
   copyTheModelS:
     "Copia la respuesta del modelo como JSON simple (quita las vallas markdown si envolvió el contenido).",
