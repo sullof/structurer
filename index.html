@@ -86,6 +86,10 @@
                 <strong>Build AI import prompt</strong> to generate a strict JSON prompt in English while selecting the
                 language you want for the analysis text in notes.
               </p>
+              <p>
+                You can also paste a synopsis of your own story and ask the model to place those events on the structure,
+                marking any missing phase with an absence note.
+              </p>
             </article>
             <article class="landing-card card-about-demos">
               <h3>About the demos</h3>
@@ -494,6 +498,10 @@
                 in the notes). Full steps for importing the JSON are on that page after you generate the prompt.
               </p>
               <p>
+                The same page can also turn a full synopsis of your own story into a board. The model must mark any phase
+                the synopsis does not cover with an absence note, instead of inventing the missing beat.
+              </p>
+              <p>
                 <button id="go-ai-analysis-prompt-from-help" type="button" class="ghost-button help-inline-action">
                   Build AI import prompt
                 </button>
@@ -641,26 +649,61 @@
 
         <section class="help-card ai-analysis-prompt-card">
           <p class="subtitle">
-            Pick a structure template and the work’s title. Structurer builds one block of text (in English) to paste into
+            Pick a structure template, then choose a task: analyze a known work from its title, or turn a full synopsis into
+            your story on that structure. Structurer builds one block of text (in English) to paste into
             ChatGPT, Claude, or another LLM—ask it to reply with <strong>only</strong> valid JSON in Structurer’s import
-            shape. Choose the language for the <strong>analysis text inside the notes</strong> separately so non-English
+            shape. Choose the language for the <strong>note text</strong> separately so non-English
             writers get readable output without translating the instructions themselves.
           </p>
 
           <form id="ai-analysis-prompt-form" class="ai-analysis-prompt-form">
+            <label class="ai-prompt-label" for="ai-prompt-mode-select">Task</label>
+            <select id="ai-prompt-mode-select" class="ai-prompt-select" aria-label="Task">
+              <option value="analysis">Analyze a known work</option>
+              <option value="synopsis">Structure a synopsis</option>
+            </select>
+
             <label class="ai-prompt-label" for="ai-prompt-structure-select">Structure template</label>
             <select id="ai-prompt-structure-select" class="ai-prompt-select" required aria-label="Structure template"></select>
 
-            <label class="ai-prompt-label" for="ai-prompt-work-title">Work title</label>
-            <input
-              id="ai-prompt-work-title"
-              class="ai-prompt-input"
-              type="text"
-              maxlength="120"
-              placeholder="e.g. Casablanca, Forrest Gump"
-              required
-              aria-label="Film or book title"
-            />
+            <div id="ai-prompt-work-fields" class="ai-prompt-mode-fields">
+              <label class="ai-prompt-label" for="ai-prompt-work-title">Work title</label>
+              <input
+                id="ai-prompt-work-title"
+                class="ai-prompt-input"
+                type="text"
+                maxlength="120"
+                placeholder="e.g. Casablanca, Forrest Gump"
+                required
+                aria-label="Film or book title"
+              />
+            </div>
+
+            <div id="ai-prompt-synopsis-fields" class="ai-prompt-mode-fields hidden">
+              <label class="ai-prompt-label" for="ai-prompt-story-title">Story title (optional)</label>
+              <input
+                id="ai-prompt-story-title"
+                class="ai-prompt-input"
+                type="text"
+                maxlength="120"
+                placeholder="Leave empty to let the model choose a short title"
+                aria-label="Story title"
+              />
+
+              <label class="ai-prompt-label" for="ai-prompt-synopsis">Synopsis</label>
+              <textarea
+                id="ai-prompt-synopsis"
+                class="ai-prompt-synopsis"
+                rows="12"
+                maxlength="50000"
+                placeholder="Every event in the story, in the order you want it understood"
+                aria-label="Synopsis of the story"
+              ></textarea>
+              <p class="subtitle ai-prompt-hint">
+                Write every event that should appear on the board. If a phase of the chosen structure is missing, the model
+                must say so with an absence note and must not invent that beat.
+              </p>
+            </div>
 
             <label class="ai-prompt-label" for="ai-prompt-medium-select">Medium (optional)</label>
             <select id="ai-prompt-medium-select" class="ai-prompt-select" aria-label="Medium">
@@ -673,8 +716,8 @@
               <option value="other">Other</option>
             </select>
 
-            <label class="ai-prompt-label" for="ai-prompt-analysis-language-select">Language of the analysis text</label>
-            <select id="ai-prompt-analysis-language-select" class="ai-prompt-select" aria-label="Language of the analysis text">
+            <label class="ai-prompt-label" for="ai-prompt-analysis-language-select">Language of the note text</label>
+            <select id="ai-prompt-analysis-language-select" class="ai-prompt-select" aria-label="Language of the note text">
               <option value="English">English</option>
               <option value="Italian">Italian</option>
               <option value="Spanish">Spanish</option>
@@ -746,6 +789,10 @@
                 notes by note UID (see the import FAQ for conflicts).
               </li>
             </ol>
+            <p class="subtitle ai-prompt-json-followup-note">
+              When the task is Structure a synopsis, the prompt omits aiAnalysisImport so the board is your story, and it
+              asks for absence notes wherever a phase is missing from the synopsis.
+            </p>
             <p class="subtitle ai-prompt-json-followup-note">
               AI output can contain mistakes; review notes after import. Use imports for personal study only and respect the
               work’s copyright.

@@ -1351,6 +1351,31 @@ a:hover {
   font: inherit;
 }
 
+.ai-prompt-mode-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.ai-prompt-mode-fields.hidden {
+  display: none;
+}
+
+.ai-prompt-synopsis {
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.ai-prompt-hint {
+  margin: 0;
+  max-width: 68ch;
+}
+
 .ai-prompt-output-wrap {
   margin-top: 8px;
 }

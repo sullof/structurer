@@ -32,6 +32,8 @@ export const uiEn = {
   buildAiImportPrompt: "Build AI import prompt",
   toGenerateAStrict:
     "to generate a strict JSON prompt in English while selecting the language you want for the analysis text in notes.",
+  youCanAlsoPasteA:
+    "You can also paste a synopsis of your own story and ask the model to place those events on the structure, marking any missing phase with an absence note.",
   aboutTheDemos: "About the demos",
   demosUseWellKnown:
     "Demos use well-known films, but Structurer is designed for any narrative format: novels, short stories, screenplays, serialized fiction, and more.",
@@ -188,6 +190,8 @@ export const uiEn = {
   wantAnalysesThatAren: "(“Want analyses that aren’t in the demos?”) or use",
   belowYouGetA:
     "below: you get a ready-made prompt for an AI assistant (instructions stay in English; you can choose the language for the analysis text in the notes). Full steps for importing the JSON are on that page after you generate the prompt.",
+  theSamePageCanAlso:
+    "The same page can also turn a full synopsis of your own story into a board. The model must mark any phase the synopsis does not cover with an absence note, instead of inventing the missing beat.",
   aiOutputCanContain:
     "AI output can contain mistakes; review notes after import. Use imports for personal study only and respect the work’s copyright.",
   howDoExportImport: "How do export, import, and merge work?",
@@ -264,13 +268,24 @@ export const uiEn = {
   ifYouOnlyWant: "If you only want to restore the demo stories, use",
   insteadAndIfYou: "instead. And if you want to keep your current work, export stories first.",
   pickAStructureTemplate:
-    "Pick a structure template and the work’s title. Structurer builds one block of text (in English) to paste into ChatGPT, Claude, or another LLM—ask it to reply with",
+    "Pick a structure template, then choose a task: analyze a known work from its title, or turn a full synopsis into your story on that structure. Structurer builds one block of text (in English) to paste into ChatGPT, Claude, or another LLM—ask it to reply with",
   only: "only",
   validJsonInStructurer: "valid JSON in Structurer’s import shape. Choose the language for the",
-  analysisTextInsideThe: "analysis text inside the notes",
+  analysisTextInsideThe: "note text",
   separatelySoNonEnglish:
     "separately so non-English writers get readable output without translating the instructions themselves.",
   structureTemplate2: "Structure template",
+  task: "Task",
+  analyzeAKnownWork: "Analyze a known work",
+  structureASynopsis: "Structure a synopsis",
+  storyTitleOptional: "Story title (optional)",
+  leaveEmptyToLet: "Leave empty to let the model choose a short title",
+  storyTitleLabel: "Story title",
+  synopsis: "Synopsis",
+  everyEventInThe: "Every event in the story, in the order you want it understood",
+  synopsisOfTheStory: "Synopsis of the story",
+  writeEveryEventThat:
+    "Write every event that should appear on the board. If a phase of the chosen structure is missing, the model must say so with an absence note and must not invent that beat.",
   workTitle: "Work title",
   mediumOptional: "Medium (optional)",
   notSpecified: "Not specified",
@@ -280,7 +295,7 @@ export const uiEn = {
   shortStory: "Short story",
   playStage: "Play / stage",
   other: "Other",
-  languageOfTheAnalysis: "Language of the analysis text",
+  languageOfTheAnalysis: "Language of the note text",
   english: "English",
   italian: "Italian",
   spanish: "Spanish",
@@ -312,6 +327,9 @@ export const uiEn = {
   specifyLanguageEnglishName: "Specify language (English name)",
   promptToCopy: "Prompt to copy",
   copyPrompt: "Copy prompt",
+  whenTheTaskIs:
+    "When the task is Structure a synopsis, the prompt omits aiAnalysisImport so the board is your story, and it asks for absence notes wherever a phase is missing from the synopsis.",
+  pasteASynopsisAbove: "Paste a synopsis above to build the prompt.",
   afterTheAiReturns: "After the AI returns JSON",
   copyTheModelS: "Copy the model’s answer as plain JSON (strip markdown code fences if it wrapped the payload).",
   theBuiltInPrompt: "The built-in prompt asks for",

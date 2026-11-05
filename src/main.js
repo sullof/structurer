@@ -243,7 +243,12 @@ const closeDashboardImportStoryPasteModalBtn = document.querySelector("#close-da
 const importStoryPasteForm = document.querySelector("#import-story-paste-form");
 const importStoryPasteText = document.querySelector("#import-story-paste-text");
 const aiPromptStructureSelect = document.querySelector("#ai-prompt-structure-select");
+const aiPromptModeSelect = document.querySelector("#ai-prompt-mode-select");
+const aiPromptWorkFields = document.querySelector("#ai-prompt-work-fields");
+const aiPromptSynopsisFields = document.querySelector("#ai-prompt-synopsis-fields");
 const aiPromptWorkTitleInput = document.querySelector("#ai-prompt-work-title");
+const aiPromptStoryTitleInput = document.querySelector("#ai-prompt-story-title");
+const aiPromptSynopsisInput = document.querySelector("#ai-prompt-synopsis");
 const aiPromptMediumSelect = document.querySelector("#ai-prompt-medium-select");
 const aiPromptAnalysisLangSelect = document.querySelector("#ai-prompt-analysis-language-select");
 const aiPromptAnalysisLangCustomWrap = document.querySelector("#ai-prompt-analysis-language-custom-wrap");
@@ -3445,8 +3450,15 @@ function normalizeImportedStructurePhase(phase, pathLabel) {
  * Remove LLM/chat noise (e.g. `json` + ``` fences, intro text) by keeping the span from the first `{` to the last `}`.
  * Structurer story and structure-template exports are a single root JSON object.
  */
+/** ChatGPT copy often ends each line with `\` and writes spaces as `&#x20;`. */
+function unwrapAiCopiedJsonEscapes(rawText) {
+  const s = String(rawText ?? "");
+  if (!/\\(?:\r\n|\n|\r)/.test(s)) return s;
+  return s.replace(/&#x0*20;|&#32;|&nbsp;/gi, " ").replace(/\\(?:\r\n|\n|\r)/g, "\n");
+}
+
 function stripLeadingTrailingOutsideJsonObject(rawText) {
-  const s = String(rawText ?? "").trim();
+  const s = unwrapAiCopiedJsonEscapes(rawText).trim();
   if (!s) return s;
   const open = s.indexOf("{");
   const close = s.lastIndexOf("}");
@@ -3748,7 +3760,7 @@ function exportFullAppBackup() {
 }
 
 function restoreFullAppBackupFromText(rawText) {
-  const parsed = JSON.parse(rawText);
+  const parsed = JSON.parse(stripLeadingTrailingOutsideJsonObject(rawText));
   if (!parsed || typeof parsed !== "object") {
     throw new Error("Invalid backup JSON.");
   }
@@ -5641,9 +5653,21 @@ function refreshAiAnalysisPromptPage() {
   syncAiPromptOutputFromForm();
 }
 
+function aiPromptMode() {
+  return aiPromptModeSelect && aiPromptModeSelect.value === "synopsis" ? "synopsis" : "analysis";
+}
+
+function syncAiPromptModeFields() {
+  const synopsis = aiPromptMode() === "synopsis";
+  if (aiPromptWorkFields) aiPromptWorkFields.classList.toggle("hidden", synopsis);
+  if (aiPromptSynopsisFields) aiPromptSynopsisFields.classList.toggle("hidden", !synopsis);
+  if (aiPromptWorkTitleInput) aiPromptWorkTitleInput.required = !synopsis;
+}
+
 function syncAiPromptOutputFromForm() {
   if (!aiPromptStructureSelect || !aiPromptOutputTextarea) return;
   syncAiPromptAnalysisLanguageCustomVisibility();
+  syncAiPromptModeFields();
   const id = aiPromptStructureSelect.value;
   const entry = getCatalogStructureList().find((s) => s.id === id) || getCatalogStructureList()[0];
   if (!entry) {
@@ -5655,15 +5679,25 @@ function syncAiPromptOutputFromForm() {
     aiPromptOutputTextarea.value = t("thisStructureHasNo");
     return;
   }
+  const mode = aiPromptMode();
+  const synopsis = aiPromptSynopsisInput ? aiPromptSynopsisInput.value.trim() : "";
+  if (mode === "synopsis" && !synopsis) {
+    aiPromptOutputTextarea.value = t("pasteASynopsisAbove");
+    return;
+  }
   const workTitle = aiPromptWorkTitleInput ? aiPromptWorkTitleInput.value.trim() : "";
+  const storyTitle = aiPromptStoryTitleInput ? aiPromptStoryTitleInput.value.trim() : "";
   const medium = aiPromptMediumSelect ? aiPromptMediumSelect.value : "unspecified";
   const analysisLanguage = getAiPromptAnalysisLanguage();
-  const noteKinds = BUILTIN_NOTE_TYPES.map((t) => ({ id: t.id, label: t.label }));
+  const noteKinds = BUILTIN_NOTE_TYPES.map((type) => ({ id: type.id, label: type.label }));
   const archetypes = BUILTIN_ARCHETYPES.map((a) => ({ id: a.id, label: a.label, icon: a.icon }));
   aiPromptOutputTextarea.value = buildLlmStoryAnalysisPrompt({
     structureId: entry.id,
     structureName: entry.name,
     workTitle: workTitle || t("workTitleFillIn"),
+    mode,
+    synopsis,
+    storyTitle,
     medium,
     analysisLanguage,
     phaseTitles,
@@ -6035,8 +6069,8 @@ if (aiAnalysisPromptForm) {
 if (copyAiPromptBtn && aiPromptOutputTextarea) {
   copyAiPromptBtn.addEventListener("click", async () => {
     const text = aiPromptOutputTextarea.value;
-    if (!text.trim()) {
-      await appAlert("Nothing to copy yet. Fill in the work title and pick a structure.");
+    if (!text.trim() || (aiPromptMode() === "synopsis" && !(aiPromptSynopsisInput && aiPromptSynopsisInput.value.trim()))) {
+      await appAlert(aiPromptMode() === "synopsis" ? t("pasteASynopsisAbove") : t("nothingToCopyYet"));
       return;
     }
     try {
@@ -6588,7 +6622,7 @@ if (dashboardRestoreBackupActionBtn && restoreAppBackupInput) {
     try {
       const text = await file.text();
       // Validate early so user sees immediate feedback before confirmation modal.
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(stripLeadingTrailingOutsideJsonObject(text));
       if (!parsed || typeof parsed !== "object" || parsed.backupType !== "structurer.full-backup") {
         throw new Error("This file is not a Structurer full backup.");
       }

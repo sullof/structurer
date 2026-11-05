@@ -40,6 +40,7 @@ const NOTE_LABELS = {
     todo: "Todo",
     location: "Location",
     milestone: "Milestone",
+    absence: "Absence",
   },
   it: {
     plot: "Trama",
@@ -55,6 +56,7 @@ const NOTE_LABELS = {
     todo: "Da fare",
     location: "Luogo",
     milestone: "Tappa",
+    absence: "Assenza",
   },
   es: {
     plot: "Trama",
@@ -70,6 +72,7 @@ const NOTE_LABELS = {
     todo: "Pendiente",
     location: "Lugar",
     milestone: "Hito",
+    absence: "Ausencia",
   },
 };
 

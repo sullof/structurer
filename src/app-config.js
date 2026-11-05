@@ -45,4 +45,5 @@ export const BUILTIN_NOTE_TYPES = [
   { id: "todo", label: "Todo", color: "#eef0f2" },
   { id: "location", label: "Location", color: "#f5f0ae" },
   { id: "milestone", label: "Milestone", color: "#cefafa" },
+  { id: "absence", label: "Absence", color: "#fcfcfc" },
 ];
